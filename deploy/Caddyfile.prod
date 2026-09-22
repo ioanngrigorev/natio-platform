@@ -68,15 +68,23 @@ app.{$SITE_DOMAIN} {
 }
 
 # --- Developer portal host -------------------------------------------------
+#
+# This redirects rather than rewrites, and that is the fix for a bug this
+# configuration shipped with. Rewriting every path to /docs{uri} also rewrote
+# the asset paths: a request for /_next/static/x.css became /docs/_next/... and
+# 404ed, so the host served an unstyled 404 page. Excluding the asset prefixes
+# would work, but it means maintaining a list of everything Next.js serves from
+# the root and being wrong the first time that list changes.
+#
+# A redirect has no such list. It also gives the documentation one canonical
+# URL instead of two that must be kept identical.
 docs.{$SITE_DOMAIN} {
 	import hardening
 
 	handle /openapi.json {
 		reverse_proxy api:4000
 	}
-	# Serve the /docs tree at the root of this host.
 	handle {
-		rewrite * /docs{uri}
-		reverse_proxy web:3000
+		redir https://{$SITE_DOMAIN}/docs{uri} permanent
 	}
 }

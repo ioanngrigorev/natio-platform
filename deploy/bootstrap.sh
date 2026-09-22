@@ -231,6 +231,43 @@ if [ -n "${NATIO_ADMIN_EMAIL:-}" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# 8b. Self-update timer
+#
+# Nothing outside this host can reach it — the environment these changes are
+# authored in has no route here on any port — so without a pull-based deploy
+# every subsequent fix would cost a full reinstall. The server watches its own
+# branch instead.
+# ---------------------------------------------------------------------------
+install -m 0755 "$APP_DIR/deploy/self-update.sh" /usr/local/bin/natio-self-update
+cat > /etc/systemd/system/natio-deploy.service <<EOF
+[Unit]
+Description=Roll NATIO forward if its branch moved
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=APP_DIR=${APP_DIR}
+Environment=NATIO_REPO_REF=${NATIO_REPO_REF}
+ExecStart=/usr/local/bin/natio-self-update
+EOF
+cat > /etc/systemd/system/natio-deploy.timer <<'EOF'
+[Unit]
+Description=Check for NATIO updates
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=3min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now natio-deploy.timer
+echo "self-update: checking origin/${NATIO_REPO_REF} every 3 minutes (log: /var/log/natio-deploy.log)"
+
+# ---------------------------------------------------------------------------
 # 9. Backups
 # ---------------------------------------------------------------------------
 install -d -m 750 -o "$DEPLOY_USER" -g "$DEPLOY_USER" /var/backups/natio
