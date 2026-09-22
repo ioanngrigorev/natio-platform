@@ -52,6 +52,10 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq ca-certificates curl git ufw fail2ban unattended-upgrades postgresql-client-16 || \
   apt-get install -y -qq ca-certificates curl git ufw fail2ban unattended-upgrades postgresql-client
+# Needed only when BACKUP_S3_URI is configured, but installing it later means
+# noticing that hourly backups have been failing to leave the host. Not fatal
+# if the package is unavailable; backup.sh says so plainly when it is missing.
+apt-get install -y -qq awscli || echo "warn: awscli not installed; off-host backup copies will be unavailable"
 
 # Swap. The Next.js build is the memory peak of the whole install, and on a
 # small host it is the difference between a deploy and an OOM kill. Size it
@@ -303,6 +307,7 @@ export APP_DIR=$APP_DIR
 export BACKUP_DIR=/var/backups/natio
 export RETENTION_DAYS=30
 ${BACKUP_S3_URI:+export BACKUP_S3_URI=$BACKUP_S3_URI}
+${BACKUP_S3_ENDPOINT:+export BACKUP_S3_ENDPOINT=$BACKUP_S3_ENDPOINT}
 exec $APP_DIR/deploy/backup.sh
 EOF
 chmod +x /etc/cron.hourly/natio-backup

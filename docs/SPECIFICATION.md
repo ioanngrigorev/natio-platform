@@ -383,9 +383,15 @@ because its absence is invisible:
   success. A truncated dump sitting under the real name is worse than no dump,
   because it is indistinguishable from a good one until the day it is needed.
 - **The off-host destination is used when it is set.** `BACKUP_S3_URI` is
-  copied to on every run. When it is unset the script says so on every run
-  rather than once at install: a backup on the host that holds the database
-  protects against a bad migration and nothing else.
+  copied to on every run, with `BACKUP_S3_ENDPOINT` for storage that speaks S3
+  without being AWS — Vultr Object Storage is the obvious destination for a
+  Vultr host, and without an endpoint the upload silently goes to Amazon and
+  fails on credentials for a service nobody configured. When `BACKUP_S3_URI` is
+  set but the `aws` CLI is absent the run fails with that stated, rather than
+  with a shell's "command not found"; the local dump is still kept. When
+  `BACKUP_S3_URI` is unset the script says so on every run rather than once at
+  install: a backup on the host that holds the database protects against a bad
+  migration and nothing else.
 - **The encryption key is not in the dump.** Restoring one of these onto a host
   with a different key produces rows nobody can decrypt, and the platform will
   refuse to start (§13.1) rather than run against them. The key is backed up

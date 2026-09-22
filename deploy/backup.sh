@@ -8,6 +8,10 @@
 #   on the host (no postgres client installed; talks to the container)
 #              APP_DIR=/opt/natio ./deploy/backup.sh
 #
+# Off-host copies need BACKUP_S3_URI, and BACKUP_S3_ENDPOINT for anything that
+# is S3-compatible without being AWS (Vultr Object Storage, Backblaze, MinIO).
+# Credentials come from the usual AWS_* variables or ~/.aws/credentials.
+#
 # Produces a custom-format dump, verifies it can be listed, copies it off the
 # host if told where, prunes by age and prints one line for the log.
 #
@@ -64,8 +68,19 @@ echo "natio-backup ok file=${FILE} size=${SIZE} retention_days=${RETENTION_DAYS}
 
 # Off-host copy. A backup on the same host protects against a bad migration
 # and against nothing else: the disk that holds the database holds the backup.
+#
+# BACKUP_S3_ENDPOINT exists because the obvious destination for a Vultr host is
+# Vultr Object Storage, which speaks S3 but is not AWS. Without an endpoint the
+# upload goes to Amazon, fails, and the operator is left reading a credentials
+# error about a service they never configured.
 if [ -n "${BACKUP_S3_URI:-}" ]; then
-  aws s3 cp "$FILE" "${BACKUP_S3_URI%/}/natio-${STAMP}.dump" --only-show-errors
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "natio-backup FAILED: BACKUP_S3_URI is set but the aws CLI is not installed;" >&2
+    echo "                     the dump is on this host only. Install it with: apt-get install -y awscli" >&2
+    exit 1
+  fi
+  aws s3 cp "$FILE" "${BACKUP_S3_URI%/}/natio-${STAMP}.dump" --only-show-errors \
+    ${BACKUP_S3_ENDPOINT:+--endpoint-url "$BACKUP_S3_ENDPOINT"}
   echo "natio-backup uploaded=${BACKUP_S3_URI%/}/natio-${STAMP}.dump"
 else
   # Said every run rather than once at install, because this is the difference
