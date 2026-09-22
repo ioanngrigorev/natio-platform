@@ -53,11 +53,17 @@ apt-get update -qq
 apt-get install -y -qq ca-certificates curl git ufw fail2ban unattended-upgrades postgresql-client-16 || \
   apt-get install -y -qq ca-certificates curl git ufw fail2ban unattended-upgrades postgresql-client
 
-# Swap: the Next.js build is memory hungry on a 4 GB box.
+# Swap. The Next.js build is the memory peak of the whole install, and on a
+# small host it is the difference between a deploy and an OOM kill. Size it
+# against actual RAM rather than assuming: 2 GB of RAM needs more help than 4.
+RAM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
 if ! swapon --show | grep -q .; then
-  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  if [ "$RAM_MB" -lt 3000 ]; then SWAP_G=4; else SWAP_G=2; fi
+  fallocate -l "${SWAP_G}G" /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
   grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-  echo "swap: 2G enabled"
+  # Swapping during a build is the point here, so let the kernel do it freely.
+  sysctl -q -w vm.swappiness=60 || true
+  echo "swap: ${SWAP_G}G enabled (host has ${RAM_MB} MB RAM)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -196,7 +202,15 @@ fi
 cd "$APP_DIR"
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
-$COMPOSE build
+# Build one image at a time. Compose builds in parallel by default, which on a
+# small host means two Node toolchains competing for the same scarce memory and
+# both losing. Sequential is slower on a big machine and the difference between
+# working and not on a small one.
+for image in web api; do
+  echo "building $image..."
+  $COMPOSE build "$image"
+done
+
 $COMPOSE up -d postgres redis
 echo "waiting for postgres..."
 for i in $(seq 1 60); do

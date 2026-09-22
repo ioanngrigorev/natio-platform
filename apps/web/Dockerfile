@@ -10,6 +10,13 @@ COPY apps/web apps/web
 ARG NEXT_PUBLIC_API_URL=https://api.natio.me
 ARG NEXT_PUBLIC_SITE_URL=https://natio.me
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NODE_ENV=production
+# Cap the build heap. Left unbounded, V8 sizes the old space from total system
+# memory and happily grows past what a small host has, at which point the
+# kernel OOM-kills the build instead of letting it page. With an explicit
+# ceiling the build stays inside RAM plus swap and finishes — slowly on a 1
+# vCPU box, but it finishes. Override with --build-arg on a larger host.
+ARG NODE_BUILD_HEAP_MB=1536
+ENV NODE_OPTIONS=--max-old-space-size=$NODE_BUILD_HEAP_MB
 RUN pnpm --filter @natio/web run build
 
 # ---------- runtime ----------
