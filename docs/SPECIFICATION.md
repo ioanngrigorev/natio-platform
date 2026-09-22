@@ -251,6 +251,12 @@ One failing chain must not stop the others, and one failing address must not
 stop the next: errors are recorded and the cycle continues. A provider outage
 must never be indistinguishable from "nothing arrived".
 
+Reachability is observable rather than inferred: `GET /admin/chains/health`
+probes every watched chain and names the ones that did not answer. Without it
+a node unreachable from the production host means on-chain payments quietly
+never settle — a warning in a log nobody reads, and an invoice that stays
+open — and there would be no way to tell that from nobody having paid.
+
 ### 8.3.1 Transfers the chain withdraws
 
 An EVM log carries `removed: true` when a reorg drops the block that contained

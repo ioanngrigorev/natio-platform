@@ -188,3 +188,25 @@ describe("the asset registry, read off the chains", () => {
     }
   });
 });
+
+describe("knowing whether production can reach the chains at all", () => {
+  it("reports each network's reachability instead of failing as a whole", async () => {
+    const { chainHealth } = await import("../../src/modules/wallets/watcher.js");
+    // Bitcoin answers, the rest do not: one dead endpoint must not hide the
+    // state of the others, which is the point of asking at all.
+    const mixed: FetchLike = async (url) =>
+      url.includes("mempool") || url.includes("blockstream")
+        ? { ok: true, status: 200, text: async () => "800000" }
+        : { ok: false, status: 503, text: async () => "down" };
+
+    const health = await chainHealth({ fetchImpl: mixed });
+    const byNetwork = Object.fromEntries(health.map((h) => [h.network, h]));
+
+    expect(Object.keys(byNetwork).sort()).toEqual(["bitcoin", "bsc", "ethereum", "polygon", "tron"]);
+    expect(byNetwork.bitcoin!.ok).toBe(true);
+    for (const n of ["ethereum", "bsc", "polygon"]) {
+      expect(byNetwork[n]!.ok).toBe(false);
+      expect(byNetwork[n]!.message).toBeTruthy();
+    }
+  }, 30_000);
+});

@@ -28,6 +28,7 @@ import { createRiskRule, deleteRiskRule, listRiskRules, updateRiskRule } from ".
 import { createSettlementFromProviderReport, getSettlementDetail, listSettlements } from "../../modules/settlements/service.js";
 import { getBatchDetail, listBatches, parseProviderCsv, resolveItem, runReconciliation, sandboxProviderReport } from "../../modules/reconciliation/service.js";
 import { getDeliveryDetail, listDeliveries, resendDelivery } from "../../modules/webhooks/service.js";
+import { chainHealth } from "../../modules/wallets/watcher.js";
 import { getDb as _db } from "../../db/client.js";
 import { actorFromRequest } from "../context.js";
 import { requireAdmin } from "../guards.js";
@@ -159,6 +160,26 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         const p = await getPayoutDetail(db, req.params.id);
         if (!p) throw Errors.notFound("Payout", req.params.id);
         return p;
+      });
+
+      // ------------------------------------------------------------------ chains
+      /**
+       * Can this host actually reach the chains it claims to watch?
+       *
+       * `chainHealth` existed but nothing called it, so the answer was
+       * unobtainable: a node unreachable from production means on-chain
+       * payments quietly never settle, with a warning in a log nobody reads
+       * and an invoice that simply stays open. Reading it costs one request
+       * per chain and turns that into something a person can look at.
+       */
+      r.get("/chains/health", async (req) => {
+        need(req, "admin.read");
+        const chains = await chainHealth();
+        return {
+          data: chains,
+          // Named explicitly so "all ok" cannot be confused with "nothing checked".
+          unreachable: chains.filter((c) => !c.ok).map((c) => c.network),
+        };
       });
 
       // ---------------------------------------------------------------- providers
