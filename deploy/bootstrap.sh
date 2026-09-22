@@ -137,6 +137,11 @@ fi
 # Never leave the token in the git config on disk.
 git -C "$APP_DIR" remote set-url origin "$NATIO_REPO"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$APP_DIR"
+# The checkout now belongs to the deploy user while root still has to run git
+# in it — for this script's own re-runs and for the update timer. Without this
+# git refuses with "dubious ownership", and it does so quietly enough to look
+# like the timer simply never fired.
+git config --system --add safe.directory "$APP_DIR" 2>/dev/null || true
 echo "source: $(git -C "$APP_DIR" rev-parse --short HEAD) on $NATIO_REPO_REF"
 
 # ---------------------------------------------------------------------------
@@ -267,6 +272,16 @@ EOF
 systemctl daemon-reload
 systemctl enable --now natio-deploy.timer
 echo "self-update: checking origin/${NATIO_REPO_REF} every 3 minutes (log: /var/log/natio-deploy.log)"
+
+# Run it once, now, while there is a console to read the result on. The repo is
+# already current so this is a no-op — which is the point: it proves the script
+# executes cleanly rather than failing the first time nobody is watching.
+if /usr/local/bin/natio-self-update; then
+  echo "self-update: dry run completed cleanly"
+else
+  echo "self-update: DRY RUN FAILED (exit $?) — deploys will not roll automatically"
+  tail -20 /var/log/natio-deploy.log 2>/dev/null | sed 's/^/    /'
+fi
 
 # ---------------------------------------------------------------------------
 # 9. Backups

@@ -31,9 +31,19 @@ fi
 cd "$APP_DIR"
 COMPOSE="docker compose -f docker-compose.prod.yml"
 
-git fetch --quiet origin "$REF"
-local_head=$(git rev-parse HEAD)
-remote_head=$(git rev-parse "origin/$REF")
+# Two things about this repository make plain git calls fail here, and both
+# fail silently enough to look like "the timer never ran".
+#
+# The checkout is owned by the deploy user and this unit runs as root, so git
+# refuses it as "dubious ownership" unless the path is declared safe. And the
+# clone is shallow, so the two commits often share no ancestor in the local
+# graph — which makes `git log A..B` an error rather than an empty list, and
+# under `set -e` that kills the script before anything is built.
+GIT="git -c safe.directory=$APP_DIR"
+
+$GIT fetch --quiet --depth 1 origin "$REF"
+local_head=$($GIT rev-parse HEAD)
+remote_head=$($GIT rev-parse FETCH_HEAD)
 
 if [ "$local_head" = "$remote_head" ]; then
   exit 0
@@ -41,13 +51,14 @@ fi
 
 echo ""
 echo "=== $(date -u +%FT%TZ) rolling ${local_head:0:8} -> ${remote_head:0:8} ==="
-git log --oneline "${local_head}..${remote_head}" | sed 's/^/  /'
+# Informational only: on a shallow clone this legitimately has nothing to say.
+$GIT log --oneline "${local_head}..${remote_head}" 2>/dev/null | sed 's/^/  /' || true
 
-git reset --hard "origin/$REF"
+$GIT reset --hard FETCH_HEAD
 
 # Build before touching anything that is currently serving traffic. If this
 # fails the script exits here and the old containers keep running.
-export NATIO_GIT_SHA="$(git rev-parse --short HEAD)"
+export NATIO_GIT_SHA="$($GIT rev-parse --short HEAD)"
 for image in web api; do
   echo "--- building $image ---"
   $COMPOSE build "$image"
@@ -61,4 +72,4 @@ $COMPOSE up -d api worker web proxy
 
 echo "--- state ---"
 $COMPOSE ps
-echo "=== $(date -u +%FT%TZ) rolled to $(git rev-parse --short HEAD) ==="
+echo "=== $(date -u +%FT%TZ) rolled to $($GIT rev-parse --short HEAD) ==="
