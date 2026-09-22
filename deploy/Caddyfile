@@ -1,0 +1,59 @@
+# Single-host routing for NATIO.
+#
+# One domain (default for the first deployment):
+#   natio.me/            → website + dashboard + admin (Next.js)
+#   natio.me/v1/*        → API
+#   natio.me/health      → API health
+#   natio.me/openapi.json, /providers/webhooks/*, /sandbox/* → API
+#
+# Subdomains (preferred once DNS is in place) are at the bottom of this file.
+
+{
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$SITE_HOST}:80 {
+	encode zstd gzip
+
+	# Security headers the API/Next do not already set at the edge.
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	# Public API and API-owned paths.
+	@api path /v1/* /health /openapi.json /providers/webhooks/* /sandbox/* /public/*
+	handle @api {
+		reverse_proxy api:4000
+	}
+
+	# Browser calls from the dashboard/admin go to /api/* and are proxied by Next.js
+	# itself (see apps/web/next.config.mjs) so cookies stay first-party.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# --- Subdomain layout (enable once natio.me DNS points here) ------------
+# natio.me, www.natio.me {
+# 	encode zstd gzip
+# 	reverse_proxy web:3000
+# }
+# app.natio.me {
+# 	encode zstd gzip
+# 	reverse_proxy web:3000
+# }
+# docs.natio.me {
+# 	encode zstd gzip
+# 	rewrite * /docs{uri}
+# 	reverse_proxy web:3000
+# }
+# api.natio.me {
+# 	encode zstd gzip
+# 	reverse_proxy api:4000
+# }

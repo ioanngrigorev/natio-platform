@@ -1,0 +1,82 @@
+# Production routing for NATIO. Caddy obtains and renews Let's Encrypt
+# certificates automatically for every hostname listed here, so all of them must
+# resolve to this server before certificates can be issued. Until DNS propagates
+# Caddy retries in the background; the site is reachable over HTTP meanwhile.
+#
+# Hostnames come from the environment (set in .env by the bootstrap script):
+#   SITE_DOMAIN   natio.me
+#   ACME_EMAIL    address Let's Encrypt uses for expiry notices
+
+{
+	email {$ACME_EMAIL}
+	admin off
+	servers {
+		# Only the Docker network sits in front of us; trust nothing else to set
+		# X-Forwarded-For. The API applies its own TRUST_PROXY on top of this.
+		trusted_proxies static private_ranges
+	}
+}
+
+(hardening) {
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+	}
+	encode zstd gzip
+}
+
+# --- Public site, dashboard, admin, docs -----------------------------------
+{$SITE_DOMAIN} {
+	import hardening
+
+	# API-owned paths served from the same origin, so a single domain works even
+	# before the subdomains are in DNS.
+	@api path /v1/* /health /openapi.json /providers/webhooks/* /sandbox/* /public/*
+	handle @api {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	import hardening
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+# --- Dedicated API host ----------------------------------------------------
+api.{$SITE_DOMAIN} {
+	import hardening
+	reverse_proxy api:4000
+}
+
+# --- Dashboard host --------------------------------------------------------
+app.{$SITE_DOMAIN} {
+	import hardening
+
+	# Browser calls from the dashboard go to /api/* on this same origin and are
+	# proxied by Next.js to the API, which keeps session cookies first-party.
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# --- Developer portal host -------------------------------------------------
+docs.{$SITE_DOMAIN} {
+	import hardening
+
+	handle /openapi.json {
+		reverse_proxy api:4000
+	}
+	# Serve the /docs tree at the root of this host.
+	handle {
+		rewrite * /docs{uri}
+		reverse_proxy web:3000
+	}
+}

@@ -1,0 +1,149 @@
+# NATIO production stack. Used by deploy/bootstrap.sh on a fresh server.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml run --rm migrate
+#
+# Differences from the development compose file: real TLS hostnames, no seed
+# service, the database and Redis are never published to the host, the app
+# connects as a least-privilege role, and every service restarts unless stopped.
+name: natio
+
+x-api-base: &api-base
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+  image: natio/api:local
+  restart: unless-stopped
+  env_file: [.env]
+  environment:
+    DATABASE_URL: postgres://natio_app:${NATIO_APP_DB_PASSWORD:?set in .env}@postgres:5432/natio
+    REDIS_URL: redis://redis:6379
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: natio_migrator
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: natio
+      # Consumed once by deploy/postgres-init/10-roles.sh.
+      NATIO_APP_DB_PASSWORD: ${NATIO_APP_DB_PASSWORD:?set in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U natio_migrator -d natio"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    expose: ["5432"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    expose: ["6379"]
+
+  api:
+    <<: *api-base
+    environment:
+      DATABASE_URL: postgres://natio_app:${NATIO_APP_DB_PASSWORD:?set in .env}@postgres:5432/natio
+      REDIS_URL: redis://redis:6379
+      NATIO_PROCESS_ROLE: api
+      API_HOST: 0.0.0.0
+    expose: ["4000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  worker:
+    <<: *api-base
+    environment:
+      DATABASE_URL: postgres://natio_app:${NATIO_APP_DB_PASSWORD:?set in .env}@postgres:5432/natio
+      REDIS_URL: redis://redis:6379
+      NATIO_PROCESS_ROLE: worker
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://api.${SITE_DOMAIN:?set in .env}
+        NEXT_PUBLIC_SITE_URL: https://${SITE_DOMAIN:?set in .env}
+    image: natio/web:local
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://api:4000
+    depends_on:
+      api: { condition: service_started }
+    expose: ["3000"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set in .env}
+    depends_on: [api, web]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # --- one-shot jobs (profile: tools) ---------------------------------------
+  # Migrations run as the schema owner, not as the runtime role.
+  migrate:
+    <<: *api-base
+    restart: "no"
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgres://natio_migrator:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/natio
+    command: ["node", "dist/db/migrate.js"]
+
+  create-admin:
+    <<: *api-base
+    restart: "no"
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgres://natio_migrator:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/natio
+      NATIO_ADMIN_EMAIL: ${NATIO_ADMIN_EMAIL:-}
+      NATIO_ADMIN_NAME: ${NATIO_ADMIN_NAME:-NATIO Admin}
+      NATIO_ADMIN_PASSWORD: ${NATIO_ADMIN_PASSWORD:-}
+    command: ["node", "dist/db/create-admin.js"]
+
+volumes:
+  pgdata:
+  redisdata:
+  caddydata:
+  caddyconfig:

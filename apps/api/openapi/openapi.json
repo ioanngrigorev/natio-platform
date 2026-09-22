@@ -1,0 +1,277 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NATIO Universal Payment API",
+    "version": "1.0.0",
+    "description": "One integration for payments, payouts, transactions and settlements across multiple providers. NATIO is a payment orchestration layer: funds move between the merchant and licensed payment providers. All amounts are integers in the currency's minor unit (e.g. 1000 = 10.00 USD).",
+    "contact": { "name": "NATIO Developer Support", "url": "https://natio.me/developers" }
+  },
+  "servers": [
+    { "url": "https://api.natio.me", "description": "Production" },
+    { "url": "http://localhost:4000", "description": "Local development" }
+  ],
+  "security": [{ "apiKey": [] }],
+  "tags": [
+    { "name": "Payments" },
+    { "name": "Refunds" },
+    { "name": "Payouts" },
+    { "name": "Transactions" },
+    { "name": "Balances" },
+    { "name": "Settlements" },
+    { "name": "Payment methods" },
+    { "name": "Webhooks" },
+    { "name": "Sandbox" }
+  ],
+  "paths": {
+    "/v1/payments": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Create a payment",
+        "description": "Creates a payment and runs it through risk evaluation, routing and provider orchestration synchronously. The response contains the final status for synchronous methods, or `processing` with `next_action` for asynchronous methods (redirect, QR). Send an `Idempotency-Key` header to make retries safe.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePaymentRequest" }, "example": { "amount": 10000, "currency": "USD", "payment_method": "card", "country": "US", "reference": "ORD-1001", "customer": { "external_id": "cust_42", "email": "buyer@example.com" }, "test_scenario": "failover" } } } },
+        "responses": {
+          "201": { "description": "Payment created and processed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/Validation" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      },
+      "get": {
+        "tags": ["Payments"],
+        "summary": "List payments",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated statuses" },
+          { "name": "currency", "in": "query", "schema": { "type": "string" } },
+          { "name": "country", "in": "query", "schema": { "type": "string" } },
+          { "name": "payment_method", "in": "query", "schema": { "type": "string" } },
+          { "name": "reference", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Cursor" }
+        ],
+        "responses": { "200": { "description": "Paginated list", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentList" } } } } }
+      }
+    },
+    "/v1/payments/{id}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Retrieve a payment",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }],
+        "responses": { "200": { "description": "Payment", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/v1/payments/{id}/timeline": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Payment timeline",
+        "description": "Ordered narrative of everything NATIO did for the payment: risk, routing, provider attempts, failover, webhooks.",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }],
+        "responses": { "200": { "description": "Timeline", "content": { "application/json": { "schema": { "type": "object", "properties": { "payment_id": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/TimelineEvent" } } } } } } } }
+      }
+    },
+    "/v1/payments/{id}/capture": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Capture an authorized payment",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "amount": { "type": "integer", "description": "Minor units; defaults to the full authorized amount" } } } } } },
+        "responses": { "200": { "description": "Captured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } } }, "409": { "$ref": "#/components/responses/Conflict" } }
+      }
+    },
+    "/v1/payments/{id}/cancel": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Cancel a payment",
+        "description": "Cancels a created, pending, authorized or customer-action payment. Payments that are being sent to a provider cannot be cancelled.",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "reason": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Cancelled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payment" } } } }, "409": { "$ref": "#/components/responses/Conflict" } }
+      }
+    },
+    "/v1/payments/{id}/refund": {
+      "post": {
+        "tags": ["Refunds"],
+        "summary": "Refund a payment",
+        "parameters": [{ "$ref": "#/components/parameters/Id" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "amount": { "type": "integer", "description": "Minor units; defaults to the remaining refundable amount" }, "reason": { "type": "string" }, "metadata": { "type": "object" } } } } } },
+        "responses": { "201": { "description": "Refund", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Refund" } } } }, "409": { "$ref": "#/components/responses/Conflict" } }
+      }
+    },
+    "/v1/payments/{id}/refunds": {
+      "get": { "tags": ["Refunds"], "summary": "List refunds of a payment", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Refunds", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Refund" } } } } } } } } }
+    },
+    "/v1/refunds/{id}": {
+      "get": { "tags": ["Refunds"], "summary": "Retrieve a refund", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Refund", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Refund" } } } } } }
+    },
+    "/v1/payouts": {
+      "post": {
+        "tags": ["Payouts"],
+        "summary": "Create a payout",
+        "description": "Sends funds to a beneficiary through a licensed provider selected by the payout routing rules. Destinations are tokenised references; raw account numbers are never accepted.",
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePayoutRequest" }, "example": { "amount": 250000, "currency": "EUR", "destination": { "type": "bank_account", "token": "benef_tok_8f3a", "display": "IBAN ****4321", "holder_name": "Acme GmbH", "country": "DE" }, "reference": "PAYOUT-2026-09-001" } } } },
+        "responses": { "201": { "description": "Payout", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payout" } } } }, "422": { "$ref": "#/components/responses/Validation" } }
+      },
+      "get": { "tags": ["Payouts"], "summary": "List payouts", "parameters": [{ "name": "status", "in": "query", "schema": { "type": "string" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }], "responses": { "200": { "description": "Payouts", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Payout" } }, "has_more": { "type": "boolean" }, "next_cursor": { "type": ["string", "null"] } } } } } } } }
+    },
+    "/v1/payouts/{id}": {
+      "get": { "tags": ["Payouts"], "summary": "Retrieve a payout", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Payout", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payout" } } } } } }
+    },
+    "/v1/payouts/{id}/cancel": {
+      "post": { "tags": ["Payouts"], "summary": "Cancel a payout", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Cancelled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Payout" } } } }, "409": { "$ref": "#/components/responses/Conflict" } } }
+    },
+    "/v1/transactions": {
+      "get": {
+        "tags": ["Transactions"],
+        "summary": "List transactions",
+        "description": "Ledger-style records of every financial movement (payments, refunds, payouts), including failed ones for monitoring.",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["payment", "refund", "payout", "fee", "adjustment"] } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "currency", "in": "query", "schema": { "type": "string" } },
+          { "name": "provider_account_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Cursor" }
+        ],
+        "responses": { "200": { "description": "Transactions", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } }, "has_more": { "type": "boolean" }, "next_cursor": { "type": ["string", "null"] } } } } } } }
+      }
+    },
+    "/v1/balances": {
+      "get": {
+        "tags": ["Balances"],
+        "summary": "Processed and settled amounts per currency",
+        "description": "NATIO is not a custodian. Figures are derived from processed transactions and settlement data reported by providers.",
+        "responses": { "200": { "description": "Balances", "content": { "application/json": { "schema": { "type": "object", "properties": { "custodian": { "type": "boolean", "const": false }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Balance" } } } } } } } }
+      }
+    },
+    "/v1/settlements": {
+      "get": { "tags": ["Settlements"], "summary": "List provider settlements", "parameters": [{ "name": "status", "in": "query", "schema": { "type": "string" } }, { "name": "provider_account_id", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "Settlements", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Settlement" } } } } } } } } }
+    },
+    "/v1/settlements/{id}": {
+      "get": { "tags": ["Settlements"], "summary": "Retrieve a settlement with its items", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Settlement", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Settlement" } } } } } }
+    },
+    "/v1/payment-methods": {
+      "post": {
+        "tags": ["Payment methods"],
+        "summary": "Store a tokenised payment method reference",
+        "description": "Stores a reference to a token issued by a PCI-compliant provider. NATIO never accepts card numbers or CVV.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["type", "provider_token"], "properties": { "type": { "$ref": "#/components/schemas/PaymentMethodType" }, "provider_token": { "type": "string" }, "provider_code": { "type": "string" }, "customer": { "$ref": "#/components/schemas/CustomerInput" }, "display": { "type": "object", "additionalProperties": { "type": "string" }, "example": { "brand": "visa", "last4": "4242" } } } } } } },
+        "responses": { "201": { "description": "Stored", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentMethod" } } } } }
+      }
+    },
+    "/v1/payment-methods/{id}": {
+      "get": { "tags": ["Payment methods"], "summary": "Retrieve a payment method", "parameters": [{ "$ref": "#/components/parameters/Id" }], "responses": { "200": { "description": "Payment method", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentMethod" } } } } } }
+    },
+    "/v1/webhooks/test": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Send a test event to your webhook endpoints",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "event_type": { "type": "string", "default": "payment.successful" } } } } } },
+        "responses": { "200": { "description": "Queued", "content": { "application/json": { "schema": { "type": "object", "properties": { "event_id": { "type": "string" }, "deliveries": { "type": "integer" } } } } } } }
+      }
+    },
+    "/v1/test/scenarios": {
+      "get": { "tags": ["Sandbox"], "summary": "List sandbox test scenarios", "responses": { "200": { "description": "Scenarios", "content": { "application/json": { "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "description": { "type": "string" } } } } } } } } } } }
+    },
+    "/v1/me": {
+      "get": { "tags": ["Sandbox"], "summary": "Identify the API key's merchant, project and mode", "responses": { "200": { "description": "Identity" } } }
+    }
+  },
+  "webhooks": {
+    "payment.successful": {
+      "post": {
+        "summary": "Payment succeeded",
+        "description": "Sent for every event type the endpoint subscribes to: payment.created, payment.processing, payment.authorized, payment.successful, payment.failed, payment.cancelled, payment.refunded, refund.successful, refund.failed, payout.created, payout.successful, payout.failed, settlement.created. Verify `Natio-Signature` (t=<unix>,v1=<hex HMAC-SHA256 of \"<t>.<raw body>\" with your endpoint secret>) and reject timestamps older than 5 minutes.",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookEvent" } } } },
+        "responses": { "2XX": { "description": "Acknowledge with any 2xx. Non-2xx responses are retried with backoff (30s, 2m, 10m, 30m, 2h)." } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "apiKey": { "type": "http", "scheme": "bearer", "description": "API key: `sk_test_...` (sandbox) or `sk_live_...` (production)" } },
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+      "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "maxLength": 255 }, "description": "Unique key per logical request. Replays return the original response; reuse with a different body returns 422." },
+      "Limit": { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200, "default": 50 } },
+      "Cursor": { "name": "cursor", "in": "query", "schema": { "type": "string" }, "description": "`next_cursor` from the previous page" }
+    },
+    "responses": {
+      "Unauthorized": { "description": "Missing or invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "Resource not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Conflict": { "description": "Invalid state transition or idempotency conflict", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Validation": { "description": "Validation failed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "RateLimited": { "description": "Too many requests", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": { "type": "object", "properties": { "error": { "type": "object", "properties": { "type": { "type": "string", "enum": ["invalid_request_error", "authentication_error", "permission_error", "not_found_error", "idempotency_error", "rate_limit_error", "state_error", "provider_error", "risk_error", "internal_error"] }, "code": { "type": "string" }, "message": { "type": "string" }, "param": { "type": "string" }, "details": {} } }, "request_id": { "type": "string" } } },
+      "PaymentMethodType": { "type": "string", "enum": ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"] },
+      "PaymentStatus": { "type": "string", "enum": ["created", "pending", "processing", "authorized", "captured", "successful", "failed", "cancelled", "refunded", "partially_refunded"] },
+      "CustomerInput": { "type": "object", "properties": { "id": { "type": "string" }, "external_id": { "type": "string" }, "email": { "type": "string", "format": "email" }, "name": { "type": "string" }, "country": { "type": "string", "minLength": 2, "maxLength": 2 } } },
+      "CreatePaymentRequest": {
+        "type": "object",
+        "required": ["amount", "currency", "payment_method"],
+        "properties": {
+          "amount": { "type": "integer", "minimum": 1, "description": "Minor units" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "payment_method": { "oneOf": [{ "$ref": "#/components/schemas/PaymentMethodType" }, { "type": "object", "required": ["type"], "properties": { "type": { "$ref": "#/components/schemas/PaymentMethodType" }, "token": { "type": "string" }, "id": { "type": "string", "description": "Stored payment method id (pm_...)" } } }] },
+          "capture_method": { "type": "string", "enum": ["automatic", "manual"] },
+          "country": { "type": "string", "minLength": 2, "maxLength": 2 },
+          "customer": { "$ref": "#/components/schemas/CustomerInput" },
+          "description": { "type": "string", "maxLength": 500 },
+          "reference": { "type": "string", "maxLength": 128, "description": "Your order id" },
+          "return_url": { "type": "string", "format": "uri" },
+          "metadata": { "type": "object", "additionalProperties": true, "maxProperties": 50 },
+          "test_scenario": { "type": "string", "description": "Sandbox only. See GET /v1/test/scenarios." },
+          "device": { "type": "object", "properties": { "ip": { "type": "string" }, "user_agent": { "type": "string" }, "fingerprint": { "type": "string" } } }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "pay_7Kq2mN9xR4vL8wP1tY3z" },
+          "object": { "type": "string", "const": "payment" },
+          "mode": { "type": "string", "enum": ["test", "live"] },
+          "status": { "$ref": "#/components/schemas/PaymentStatus" },
+          "amount": { "type": "integer" },
+          "currency": { "type": "string" },
+          "captured_amount": { "type": "integer" },
+          "refunded_amount": { "type": "integer" },
+          "capture_method": { "type": "string" },
+          "payment_method": { "type": "object", "properties": { "type": { "$ref": "#/components/schemas/PaymentMethodType" }, "id": { "type": ["string", "null"] } } },
+          "country": { "type": ["string", "null"] },
+          "description": { "type": ["string", "null"] },
+          "reference": { "type": ["string", "null"] },
+          "customer": { "type": ["object", "null"] },
+          "metadata": { "type": "object" },
+          "route": { "type": "object", "properties": { "provider": { "type": ["object", "null"], "properties": { "id": { "type": "string" }, "code": { "type": "string" }, "name": { "type": "string" } } }, "provider_account_id": { "type": ["string", "null"] }, "provider_payment_id": { "type": ["string", "null"] }, "attempts": { "type": "integer" }, "routing_decision_id": { "type": ["string", "null"] }, "rule": { "type": ["string", "null"] } } },
+          "risk": { "type": "object", "properties": { "decision_id": { "type": ["string", "null"] }, "score": { "type": ["integer", "null"] } } },
+          "failure": { "type": ["object", "null"], "properties": { "code": { "type": "string" }, "category": { "type": "string", "enum": ["soft", "hard", "technical", "policy"] }, "message": { "type": "string" } } },
+          "next_action": { "type": ["object", "null"], "properties": { "type": { "type": "string", "enum": ["redirect", "qr_code", "display_details"] }, "url": { "type": "string" }, "qrPayload": { "type": "string" }, "expiresAt": { "type": "string" } } },
+          "fee": { "type": "object", "properties": { "amount": { "type": "integer" }, "currency": { "type": "string" } } },
+          "processing_time_ms": { "type": ["integer", "null"] },
+          "attempts": { "type": "array", "items": { "$ref": "#/components/schemas/Attempt" } },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "processed_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "PaymentList": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Payment" } }, "has_more": { "type": "boolean" }, "next_cursor": { "type": ["string", "null"] } } },
+      "Attempt": { "type": "object", "properties": { "id": { "type": "string" }, "attempt_number": { "type": "integer" }, "status": { "type": "string", "enum": ["created", "processing", "unknown", "authorized", "succeeded", "failed", "cancelled"] }, "outcome": { "type": ["string", "null"], "enum": ["success", "requires_action", "soft_decline", "hard_decline", "technical_error", "timeout", "provider_unavailable", "unknown", null] }, "provider_id": { "type": "string" }, "provider_name": { "type": ["string", "null"] }, "provider_account_id": { "type": "string" }, "provider_payment_id": { "type": ["string", "null"] }, "provider_code": { "type": ["string", "null"] }, "provider_message": { "type": ["string", "null"] }, "failure": { "type": ["object", "null"] }, "fee_amount": { "type": "integer" }, "latency_ms": { "type": ["integer", "null"] }, "created_at": { "type": "string", "format": "date-time" } } },
+      "TimelineEvent": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" }, "title": { "type": "string" }, "description": { "type": ["string", "null"] }, "attempt_id": { "type": ["string", "null"] }, "data": { "type": "object" }, "created_at": { "type": "string", "format": "date-time" } } },
+      "Refund": { "type": "object", "properties": { "id": { "type": "string" }, "object": { "type": "string", "const": "refund" }, "payment_id": { "type": "string" }, "amount": { "type": "integer" }, "currency": { "type": "string" }, "status": { "type": "string", "enum": ["created", "processing", "successful", "failed"] }, "reason": { "type": ["string", "null"] }, "provider_refund_id": { "type": ["string", "null"] }, "failure": { "type": ["object", "null"] }, "created_at": { "type": "string", "format": "date-time" } } },
+      "CreatePayoutRequest": { "type": "object", "required": ["amount", "currency", "destination"], "properties": { "amount": { "type": "integer", "minimum": 1 }, "currency": { "type": "string" }, "destination": { "type": "object", "required": ["type", "display"], "properties": { "type": { "type": "string", "enum": ["bank_account", "wallet", "card_token"] }, "token": { "type": "string", "description": "Provider beneficiary token" }, "display": { "type": "string", "description": "Masked display value" }, "holder_name": { "type": "string" }, "country": { "type": "string" } } }, "description": { "type": "string" }, "reference": { "type": "string" }, "metadata": { "type": "object" }, "test_scenario": { "type": "string", "enum": ["success", "technical_error", "hard_decline", "unavailable", "timeout"] } } },
+      "Payout": { "type": "object", "properties": { "id": { "type": "string" }, "object": { "type": "string", "const": "payout" }, "mode": { "type": "string" }, "status": { "type": "string", "enum": ["created", "pending", "processing", "successful", "failed", "cancelled"] }, "amount": { "type": "integer" }, "currency": { "type": "string" }, "destination": { "type": "object" }, "route": { "type": "object" }, "fee": { "type": "object" }, "failure": { "type": ["object", "null"] }, "created_at": { "type": "string", "format": "date-time" } } },
+      "Transaction": { "type": "object", "properties": { "id": { "type": "string" }, "type": { "type": "string" }, "status": { "type": "string" }, "entity_type": { "type": "string" }, "entity_id": { "type": "string" }, "payment_id": { "type": ["string", "null"] }, "amount": { "type": "integer", "description": "Signed; negative for refunds and payouts" }, "currency": { "type": "string" }, "fee_amount": { "type": "integer" }, "net_amount": { "type": "integer" }, "provider_name": { "type": ["string", "null"] }, "provider_reference": { "type": ["string", "null"] }, "payment_method": { "type": ["string", "null"] }, "country": { "type": ["string", "null"] }, "processing_time_ms": { "type": ["integer", "null"] }, "failure_code": { "type": ["string", "null"] }, "settlement_id": { "type": ["string", "null"] }, "occurred_at": { "type": "string", "format": "date-time" } } },
+      "Balance": { "type": "object", "properties": { "currency": { "type": "string" }, "processed_gross": { "type": "integer" }, "fees": { "type": "integer" }, "processed_net": { "type": "integer" }, "settled_by_providers": { "type": "integer" }, "awaiting_provider_settlement": { "type": "integer" }, "payouts_sent": { "type": "integer" }, "note": { "type": "string" } } },
+      "Settlement": { "type": "object", "properties": { "id": { "type": "string" }, "provider_name": { "type": ["string", "null"] }, "settlement_entity": { "type": ["string", "null"] }, "settlement_reference": { "type": ["string", "null"] }, "currency": { "type": "string" }, "gross_amount": { "type": "integer" }, "fee_amount": { "type": "integer" }, "net_amount": { "type": "integer" }, "transaction_count": { "type": "integer" }, "period_start": { "type": "string", "format": "date-time" }, "period_end": { "type": "string", "format": "date-time" }, "status": { "type": "string", "enum": ["pending", "settled", "failed"] }, "settled_at": { "type": ["string", "null"], "format": "date-time" }, "items": { "type": "array", "items": { "type": "object" } } } },
+      "PaymentMethod": { "type": "object", "properties": { "id": { "type": "string" }, "object": { "type": "string", "const": "payment_method" }, "type": { "$ref": "#/components/schemas/PaymentMethodType" }, "customer_id": { "type": ["string", "null"] }, "display": { "type": "object" }, "status": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } } },
+      "WebhookEvent": { "type": "object", "properties": { "id": { "type": "string", "example": "evt_..." }, "type": { "type": "string", "example": "payment.successful" }, "mode": { "type": "string", "enum": ["test", "live"] }, "created_at": { "type": "string", "format": "date-time" }, "data": { "type": "object", "properties": { "object": { "type": "object", "description": "The payment, refund, payout or settlement object" } } } } }
+    }
+  }
+}

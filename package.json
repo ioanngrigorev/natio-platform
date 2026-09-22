@@ -1,0 +1,25 @@
+{
+  "name": "natio",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NATIO — payment orchestration platform (modular monolith: API + web)",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "msgpackr-extract"]
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "pnpm -r run lint",
+    "db:migrate": "pnpm --filter @natio/api run db:migrate",
+    "db:seed": "pnpm --filter @natio/api run db:seed",
+    "api": "pnpm --filter @natio/api run dev",
+    "web": "pnpm --filter @natio/web run dev",
+    "worker": "pnpm --filter @natio/api run worker"
+  }
+}

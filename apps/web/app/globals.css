@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink: #0e1320;
+  --color-surface: #ffffff;
+  --color-canvas: #f4f6f9;
+  --color-border: #d2d7df;
+  --chart-1: #2b4ba8;
+  --chart-2: #0e8c7a;
+  --chart-3: #c2620f;
+  --chart-4: #8a4bdb;
+  --chart-other: #7c8798;
+  --chart-grid: #e8ebf0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  @apply bg-ink-50 text-ink-900 font-sans text-[14px] leading-[1.5];
+}
+
+::selection {
+  background: #d9e2f5;
+}
+
+.mono {
+  @apply font-mono text-[12.5px];
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tables */
+.data-table {
+  @apply w-full border-collapse text-[13px];
+}
+.data-table th {
+  @apply text-left text-[11px] font-medium uppercase tracking-[0.06em] text-ink-500 px-3 py-2 border-b border-ink-200 bg-white whitespace-nowrap;
+}
+.data-table td {
+  @apply px-3 py-2 border-b border-ink-100 align-middle whitespace-nowrap;
+}
+.data-table tr:last-child td {
+  @apply border-b-0;
+}
+.data-table tbody tr:hover {
+  @apply bg-ink-50;
+}
+.data-table td.num,
+.data-table th.num {
+  @apply text-right tabular;
+}
+
+/* Dark data table (public site + /docs). Always paired with `.data-table`, which
+   keeps the dashboard/admin tables on the light treatment above untouched. */
+.data-table.data-table-dark th {
+  @apply border-night-700 bg-night-900 font-mono text-[10.5px] font-normal uppercase tracking-[0.12em] text-mist-400 px-3.5 py-2.5;
+}
+.data-table.data-table-dark td {
+  @apply border-night-700 text-mist-400 px-3.5 py-2.5;
+}
+.data-table.data-table-dark tbody tr:hover {
+  @apply bg-night-900/50;
+}
+.data-table.data-table-dark tr:last-child td {
+  @apply border-b-0;
+}
+
+/* Forms */
+.input {
+  @apply block w-full rounded-md border border-ink-200 bg-white px-3 py-[7px] text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:bg-ink-50 disabled:text-ink-400;
+}
+.label {
+  @apply block text-[12px] font-medium text-ink-600 mb-1;
+}
+.help {
+  @apply text-[12px] text-ink-500 mt-1;
+}
+
+/* Dark form controls (public site + /docs). The light `.input` / `.label` above
+   stay exactly as they are for the dashboard and admin. */
+.input-dark {
+  @apply block w-full appearance-none rounded-lg border border-night-600 bg-night-850 px-3.5 py-2.5 text-[14px] leading-6 text-mist-50 transition-colors placeholder:text-mist-600 hover:border-night-500 focus:border-iris focus:outline-none focus:ring-2 focus:ring-iris/25 disabled:cursor-not-allowed disabled:opacity-50;
+}
+.label-dark {
+  @apply mb-2 block font-mono text-[10.5px] uppercase tracking-[0.14em] text-mist-400;
+}
+.help-dark {
+  @apply mt-2 text-[12.5px] leading-5 text-mist-400;
+}
+
+/* Marketing prose */
+.prose-natio h2 {
+  @apply text-[22px] font-semibold tracking-tight text-ink-900 mt-10 mb-3;
+}
+.prose-natio h3 {
+  @apply text-[16px] font-semibold text-ink-900 mt-6 mb-2;
+}
+.prose-natio p {
+  @apply text-[15px] text-ink-700 leading-7 mb-4;
+}
+.prose-natio ul {
+  @apply list-disc pl-5 mb-4 text-[15px] text-ink-700 leading-7;
+}
+.prose-natio code {
+  @apply font-mono text-[12.5px] bg-ink-100 text-ink-800 px-1 py-[1px] rounded;
+}
+.prose-natio pre {
+  @apply bg-ink-900 text-ink-100 rounded-lg p-4 text-[12.5px] leading-6 overflow-x-auto mb-5;
+}
+.prose-natio pre code {
+  @apply bg-transparent text-inherit p-0;
+}
+.prose-natio table {
+  @apply w-full text-[13px] mb-5 border border-ink-200;
+}
+.prose-natio th {
+  @apply text-left bg-ink-50 px-3 py-2 border-b border-ink-200 font-medium;
+}
+.prose-natio td {
+  @apply px-3 py-2 border-b border-ink-100 align-top;
+}
+.prose-natio a {
+  @apply text-brand-600 underline underline-offset-2;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark brand surface (public site + /docs). The dashboard and admin keep the
+   light `.prose-natio` rules above; `.prose-dark` overrides them on dark pages.
+   --------------------------------------------------------------------------- */
+.prose-dark h2 {
+  @apply text-[26px] font-medium tracking-[-0.022em] text-mist-50 mt-14 mb-4;
+}
+.prose-dark h3 {
+  @apply text-[17px] font-medium tracking-[-0.01em] text-mist-50 mt-9 mb-2.5;
+}
+.prose-dark h4 {
+  @apply text-[14.5px] font-medium text-mist-200 mt-6 mb-2;
+}
+.prose-dark p {
+  @apply text-[15px] text-mist-400 leading-[1.75] mb-5;
+}
+.prose-dark strong {
+  @apply text-mist-200 font-medium;
+}
+.prose-dark ul,
+.prose-dark ol {
+  @apply mb-5 text-[15px] text-mist-400 leading-[1.75] pl-5;
+}
+.prose-dark ul {
+  @apply list-disc;
+}
+.prose-dark ol {
+  @apply list-decimal;
+}
+.prose-dark li::marker {
+  @apply text-mist-600;
+}
+.prose-dark code {
+  @apply font-mono text-[12.5px] bg-night-800 text-iris px-1.5 py-[2px] rounded border border-night-700;
+}
+.prose-dark pre {
+  @apply bg-night-900 border border-night-700 text-mist-200 rounded-xl p-5 text-[12.5px] leading-[1.7] overflow-x-auto mb-6;
+}
+.prose-dark pre code {
+  @apply bg-transparent text-inherit p-0 border-0;
+}
+.prose-dark table {
+  @apply w-full text-[13.5px] mb-6 border border-night-700 rounded-lg overflow-hidden;
+}
+.prose-dark th {
+  @apply text-left bg-night-900 px-3.5 py-2.5 border-b border-night-700 font-mono text-[10.5px] uppercase tracking-[0.12em] text-mist-400 font-normal;
+}
+.prose-dark td {
+  @apply px-3.5 py-2.5 border-b border-night-700 align-top text-mist-400;
+}
+.prose-dark tbody tr:last-child td {
+  @apply border-b-0;
+}
+.prose-dark a {
+  @apply text-iris no-underline hover:underline underline-offset-4;
+}
+.prose-dark hr {
+  @apply border-night-700 my-10;
+}
+.prose-dark blockquote {
+  @apply border-l-2 border-iris/40 pl-4 text-mist-400 italic mb-5;
+}
+
+/* Dark scrollbar for code blocks so they don't flash a light track. */
+.prose-dark pre::-webkit-scrollbar,
+.code-scroll-dark::-webkit-scrollbar {
+  height: 8px;
+}
+.prose-dark pre::-webkit-scrollbar-thumb,
+.code-scroll-dark::-webkit-scrollbar-thumb {
+  background: #2a3040;
+  border-radius: 4px;
+}

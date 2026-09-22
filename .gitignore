@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+out
+coverage
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+/data
+/backups
+*.tsbuildinfo
+.pnpm-store
+.sandbox-credentials.json

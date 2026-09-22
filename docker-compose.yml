@@ -1,0 +1,139 @@
+# NATIO — local/staging stack. For production see docs/DEPLOYMENT.md.
+# Start:  cp .env.example .env && docker compose up -d --build
+# Then:   docker compose run --rm migrate && docker compose run --rm seed
+name: natio
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-natio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-natio}
+      POSTGRES_DB: ${POSTGRES_DB:-natio}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-natio} -d ${POSTGRES_DB:-natio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Not published by default: the database stays on the internal network.
+    expose: ["5432"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    expose: ["6379"]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      NATIO_PROCESS_ROLE: api
+      DATABASE_URL: postgres://${POSTGRES_USER:-natio}:${POSTGRES_PASSWORD:-natio}@postgres:5432/${POSTGRES_DB:-natio}
+      REDIS_URL: redis://redis:6379
+      API_HOST: 0.0.0.0
+      # Behind the compose reverse proxy only.
+      TRUST_PROXY: ${TRUST_PROXY:-loopback}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    expose: ["4000"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      NATIO_PROCESS_ROLE: worker
+      DATABASE_URL: postgres://${POSTGRES_USER:-natio}:${POSTGRES_PASSWORD:-natio}@postgres:5432/${POSTGRES_DB:-natio}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    # Webhook delivery and provider sync only — no HTTP listener.
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'node dist/index.js' >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:8080}
+    restart: unless-stopped
+    environment:
+      # Server-side calls go over the internal network, never through the proxy.
+      API_INTERNAL_URL: http://api:4000
+      NODE_ENV: production
+    depends_on:
+      api: {condition: service_started}
+    expose: ["3000"]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${PROXY_HTTP_PORT:-8080}:80"
+      - "${PROXY_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    environment:
+      SITE_HOST: ${SITE_HOST:-localhost}
+    depends_on: [api, web]
+
+  # --- one-shot jobs ---------------------------------------------------
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-natio}:${POSTGRES_PASSWORD:-natio}@postgres:5432/${POSTGRES_DB:-natio}
+    command: ["node", "dist/db/migrate.js"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+    profiles: ["tools"]
+
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-natio}:${POSTGRES_PASSWORD:-natio}@postgres:5432/${POSTGRES_DB:-natio}
+      REDIS_URL: redis://redis:6379
+    command: ["node", "dist/db/seed.js"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    restart: "no"
+    profiles: ["tools"]
+
+volumes:
+  pgdata:
+  redisdata:
+  caddydata:
+  caddyconfig:
