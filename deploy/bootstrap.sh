@@ -253,6 +253,10 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
+# A build on this host takes tens of minutes. systemd's default start timeout
+# is 90 seconds, so without this the unit is killed mid-build every single
+# time — leaving a half-built image and no explanation.
+TimeoutStartSec=0
 Environment=APP_DIR=${APP_DIR}
 Environment=NATIO_REPO_REF=${NATIO_REPO_REF}
 ExecStart=/usr/local/bin/natio-self-update
