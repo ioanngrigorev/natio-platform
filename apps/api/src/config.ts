@@ -66,6 +66,19 @@ const schema = z.object({
   WEBHOOK_MAX_ATTEMPTS: int(6),
   WEBHOOK_ALLOW_PRIVATE_URLS: bool,
 
+  /**
+   * Whether the worker polls public chain endpoints for incoming payments.
+   *
+   * Off unless asked for. The watcher reaches out to third-party hosts on a
+   * timer, and a deployment that has no crypto merchants should not be making
+   * those requests at all — nor should a test run, which would otherwise hit
+   * the real TronGrid.
+   */
+  CHAIN_WATCH_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
+
   SEED_DEMO_PASSWORD: z.string().default("Natio-demo-2026"),
   SEED_ADMIN_EMAIL: z.string().default("admin@natio.local"),
   SEED_MERCHANT_EMAIL: z.string().default("owner@demo-merchant.local"),
