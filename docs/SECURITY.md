@@ -516,6 +516,29 @@ same value.
 
 ---
 
+## 3b. Accepted exposures
+
+Things that are deliberately not fixed, with the reasoning, so that "we never noticed" and "we
+decided" stay distinguishable.
+
+**`/health` reports the running commit, publicly.** The repository is public, so this tells anyone
+exactly which code is serving — including whether a published fix has actually been deployed yet.
+That converts the window between a security commit landing on GitHub and rolling onto the server
+into something an attacker can poll for rather than guess at.
+
+It is kept anyway, for now. The server deploys itself and cannot be logged into from anywhere the
+platform is developed, so without this field the question "which version is live?" has no answer at
+all — and an operator who cannot tell what is running is a larger risk than a fingerprint on a
+codebase that is public regardless. Version fingerprinting is also weak protection: asset hashes and
+rendered markup give most of it away.
+
+**Before real merchant traffic, this should change**, together with pointing the deploy timer at a
+tag rather than at `main`. The straightforward version is to keep `/health` to `status` and `checks`
+for load balancers and move the commit behind an authenticated endpoint.
+
+**Auto-deploy follows `main`.** A push and a release are currently the same event. That is right for
+a platform with no merchants on it and wrong the moment there are any.
+
 ## 4. Verifying this yourself
 
 ```bash
