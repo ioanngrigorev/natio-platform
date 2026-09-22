@@ -2,6 +2,46 @@
 
 This describes how to run NATIO in production. It assumes you have a PostgreSQL 16 database, a Redis instance, a place to run containers, and a TLS-terminating proxy. The stack is deliberately small: two Node processes (API and worker), one Next.js process, Postgres and Redis.
 
+## The live deployment
+
+One instance in Frankfurt runs the whole stack: 1 vCPU, 2 GB of RAM, 55 GB of disk. `natio.me` and the `www`, `api`, `app` and `docs` subdomains all point at it, Caddy terminates TLS and obtains certificates by itself, and the six containers below share that single core. It is small on purpose and adequate for a pilot; the section on capacity at the end says where it stops being adequate.
+
+### Deploys are pull-based, and that is not a stylistic choice
+
+The server watches its own branch. A systemd timer runs `deploy/self-update.sh` every three minutes, and when `origin/main` has moved it builds the images, migrates and swaps the containers. **Deploying is therefore `git push` and then waiting a few minutes.** Nothing needs to connect to the server.
+
+This exists because nothing can connect to the server. The environment the platform is developed in has no network route to it — not on 443 and not on 22, verified rather than assumed — so there is no "ssh in and restart it" step available, and adding an SSH key would not create one. Before this timer existed, changing a single line of configuration meant reinstalling the host.
+
+The script builds before it swaps. A build that fails leaves the running containers exactly where they were, because a server on the previous version is much better than a server on none. It also takes a lock, since a build on this host takes tens of minutes and the timer fires every three.
+
+Auto-deploying `main` is right for a platform with no merchants on it. Before there are merchants, point `NATIO_REPO_REF` at a tag or a protected branch so that a push and a release stop being the same event.
+
+### Getting a shell, and the trap in doing so
+
+`bash /opt/natio/deploy/bootstrap.sh` re-runs the whole provision and is safe to run repeatedly — every step is idempotent. The generated `.env` is preserved, so secrets survive.
+
+Reaching a shell to run it means the provider's web console, because `bootstrap.sh` hardens sshd to key-only and a fresh instance has no key installed. Two things about that console cost real time the first time:
+
+The root password changes on every reinstall. A console page or a browser tab opened before a reinstall shows the previous password, and it will be rejected with nothing but `Login incorrect` to explain why. Reload the instance page before copying it.
+
+Linux prints nothing at all while a password is typed — no dots, no asterisks, no moving cursor. That is correct behaviour and not a broken keyboard or a stuck console.
+
+### When a deploy fails
+
+`bootstrap.sh` traps errors, so a failure ends with a labelled banner naming the line, the re-run command and the log path rather than a silent exit. The console shows it; `/var/log/natio-bootstrap.log` keeps it. The self-update timer logs to `/var/log/natio-deploy.log`.
+
+One failure mode is worth naming because it has already happened: the image build succeeds on every developer machine and fails on the server, because git does not store empty directories and the Dockerfile copies one. `apps/api/test/unit/dockerfile-sources.test.ts` now checks every COPY source against `git ls-files` for exactly this reason.
+
+### Capacity
+
+Memory is the constraint, not the processor. At rest the stack occupies roughly 1.0–1.2 GB of the 2 GB: PostgreSQL around 200 MB, each Node process 150 MB or so, Redis and Caddy a few tens between them, and the operating system with Docker around 250 MB.
+
+The processor is not the limit anyone will hit first. One shared core serves on the order of a hundred requests per second of reads and something like twenty to forty payment creations per second — over a million payments a day, which is far beyond the point at which other things break.
+
+What does bind is the build. It is the memory peak of the entire install, and on 2 GB it is the difference between a deploy and an OOM kill, which is why swap is sized against actual RAM, the Next.js build heap is capped explicitly, and images build one at a time rather than in parallel. Expect twenty-five to forty-five minutes per deploy on this host.
+
+The other real limits are structural rather than numeric: one disk and one instance, with the hourly `pg_dump` living on that same disk, so it survives a corrupted database but not a lost instance. When traffic arrives, move PostgreSQL off the box before adding cores to it.
+
 ## What runs where
 
 NATIO is a modular monolith, so a full deployment is four containers plus two managed services:
