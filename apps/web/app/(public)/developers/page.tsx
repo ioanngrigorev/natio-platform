@@ -73,7 +73,7 @@ export default function DevelopersPage() {
         >
           <FeatureGrid cols={2}>
             <Feature index={1} title="Keys" mono="natio_sk_test_ / natio_sk_live_">
-              Secret keys are scoped to a project and a mode. Test keys reach demo providers; live keys reach the providers configured for your account and are issued after KYB approval. Keys are shown once and stored hashed.
+              Secret keys are scoped to a project and a mode. Test keys reach demo providers; live keys reach the providers configured for your account. Keys are shown once and stored hashed. Live keys are not being issued yet — the business verification that would gate them is not built.
             </Feature>
             <Feature index={2} title="Idempotency" mono="Idempotency-Key">
               Required in practice on every create: a replayed key returns the original response, so a client retry can never duplicate a payment or a payout.

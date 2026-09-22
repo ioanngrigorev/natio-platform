@@ -21,7 +21,7 @@ import {
 export const metadata: Metadata = {
   title: "Natio Business",
   description:
-    "Accept on-chain payments and settle straight to a wallet you control. One integration alongside cards and local methods, with sanctions screening and Didit business verification built in.",
+    "Accept on-chain payments and settle straight to a wallet you control. One integration alongside cards and local methods, on a platform that never takes custody of the funds.",
 };
 
 /**
@@ -77,11 +77,36 @@ const LEDGER: Array<{ term: string; detail: string }> = [
   { term: "Reconciliation is the same machinery", detail: "On-chain receipts land in the same reconciliation and settlement reports as card and bank transactions, so the month closes in one place." },
 ];
 
-const COMPLIANCE: Array<{ term: string; detail: string }> = [
-  { term: "Sanctions screening", detail: "Accounts and counterparties are screened against published lists. This runs on the platform side and is not configurable away by a merchant." },
-  { term: "Business verification", detail: "KYB through Didit: the provider holds the evidence, the platform holds the decision, its reference and its timestamp." },
-  { term: "Jurisdiction rules", detail: "Which markets a merchant may serve is a configuration backed by legal advice for the operating entity, enforced in the engine rather than left to sales." },
-  { term: "Full audit trail", detail: "Every state change, routing decision and administrative action is written to an append-only log that the application itself has no privilege to alter." },
+/**
+ * Split deliberately into what the engine does today and what it does not.
+ * A merchant choosing a payment platform partly on its compliance controls has
+ * to be able to tell the two apart, and the only way to make that possible is
+ * to name the gaps on the same page as the capabilities.
+ */
+const COMPLIANCE_TODAY: Array<{ term: string; detail: string }> = [
+  {
+    term: "Append-only audit trail",
+    detail:
+      "Every state change, routing decision and administrative action is written to a log the application's own database role cannot alter. The constraint is a database trigger, not a convention, so it holds even if the application is wrong.",
+  },
+  {
+    term: "Provider eligibility by country",
+    detail:
+      "Routing will not hand a payment to a provider that does not support the country, currency or method involved; the attempt is refused with a recorded reason rather than sent and declined. This is provider capability, not a licensing control — it is listed here for what it is.",
+  },
+];
+
+const COMPLIANCE_NOT_BUILT: Array<{ term: string; detail: string }> = [
+  {
+    term: "Sanctions and watchlist screening",
+    detail:
+      "Designed, not implemented. NATIO does not screen accounts or counterparties against published lists today, and nothing in the platform should be read as doing so. Said plainly because a screening claim is the kind a merchant would rely on without re-checking.",
+  },
+  {
+    term: "Business verification (KYB)",
+    detail:
+      "Intended to run through an identity provider so the provider holds the evidence and NATIO holds only the decision, its reference and its timestamp. Not integrated yet, and live keys are not issued on the strength of a check that does not exist.",
+  },
 ];
 
 export default function BusinessPage() {
@@ -110,7 +135,7 @@ export default function BusinessPage() {
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-2">
                 <Chip tone="warn">In development</Chip>
-                <span className="text-[13px] text-mist-600">The orchestration platform is live; the crypto layer is being built.</span>
+                <span className="text-[13px] text-mist-600">Orchestration and on-chain settlement are built; identity and screening are not — see status below.</span>
               </div>
             </div>
             <Panel glow title="Create an invoice">
@@ -171,10 +196,18 @@ export default function BusinessPage() {
       {/* --- compliance --------------------------------------------------- */}
       <Section
         eyebrow={<span>Compliance</span>}
-        title="Built into the engine, not bolted onto the sales process."
-        lead="Non-custodial does not mean unregulated. The controls below are enforced by the platform on every transaction, and a merchant cannot configure their way out of them."
+        title="What the engine enforces, and what it does not yet."
+        lead="Non-custodial does not mean unregulated. Two of these controls are in the engine today and a merchant cannot configure their way out of them. Two are not built, and are named here rather than left to be discovered during an audit."
       >
-        <SpecList items={COMPLIANCE} />
+        <SpecList items={COMPLIANCE_TODAY} />
+
+        <div className="mt-12 border-t border-night-700 pt-8">
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+            <Chip tone="warn">Not built</Chip>
+            <span className="text-[13px] text-mist-600">Described because it is planned, listed here because it does not exist yet.</span>
+          </div>
+          <SpecList items={COMPLIANCE_NOT_BUILT} />
+        </div>
       </Section>
 
       {/* --- honest status ------------------------------------------------ */}
@@ -184,16 +217,21 @@ export default function BusinessPage() {
         title="What exists, and what does not."
         lead="A landing page is a promise. These are the parts of it we can currently keep."
       >
-        <FeatureGrid cols={3}>
-          <Feature index="01" title="Live" mono="orchestration">
+        <FeatureGrid cols={4}>
+          <Feature index="01" title="Built" mono="orchestration">
             Payments, payouts, routing across providers, retry and failover, reconciliation, settlement reporting, signed webhooks, the
             merchant dashboard and the developer portal. Tested end to end.
           </Feature>
-          <Feature index="02" title="In progress" mono="crypto">
-            Address derivation from a merchant xpub, per-invoice addresses, chain watching and confirmation handling, and the
-            underpayment and overpayment outcomes described above.
+          <Feature index="02" title="Built" mono="crypto">
+            Address derivation from a merchant xpub, a fresh address per invoice, chain watching on TRON and Bitcoin with confirmation
+            handling, and the underpayment and overpayment outcomes described above. Ethereum, BSC and Polygon derive addresses but are
+            not watched yet, so a payment on those is not noticed automatically.
           </Feature>
-          <Feature index="03" title="Not yet decided" mono="scope">
+          <Feature index="03" title="Not built" mono="compliance">
+            Sanctions screening and KYB, as set out above. The audit trail and provider eligibility checks are in place; the identity
+            and screening controls are not.
+          </Feature>
+          <Feature index="04" title="Not yet decided" mono="scope">
             Supported assets and networks, and which jurisdictions can be served. Both follow from where the operating entity is
             incorporated and what its counsel advises. Published when settled.
           </Feature>

@@ -50,7 +50,7 @@ const KEY_FACTS: Array<{ term: string; detail: string }> = [
   { term: "What is generated on your device", detail: "The seed phrase and every private key derived from it. They are produced in your browser or app and are never transmitted." },
   { term: "What NATIO receives", detail: "An extended public key (xpub). It allows address derivation and balance watching, and nothing else — it is mathematically incapable of signing." },
   { term: "What NATIO stores about you", detail: "Account identifier, the xpub, derived addresses, and observed on-chain transactions. No seed, no key, no document images." },
-  { term: "Where verification data goes", detail: "To Didit, the identity provider, when a jurisdiction requires it. NATIO keeps the decision and a reference, not your passport scan." },
+  { term: "Where verification data would go", detail: "To an identity provider, when a jurisdiction requires it, so NATIO keeps the decision and a reference rather than your passport scan. This is the intended design; no identity provider is connected yet." },
 ];
 
 export default function WalletPage() {
@@ -129,16 +129,16 @@ export default function WalletPage() {
       <Section
         eyebrow={<span>Identity</span>}
         title="Verification only where the law asks for it."
-        lead="Holding your own keys does not exempt anyone from the rules that apply to the service connecting you to a merchant. Where verification is required, it runs through Didit and stays there."
+        lead="Holding your own keys does not exempt anyone from the rules that apply to the service connecting you to a merchant. This is how verification is meant to work here — described in the future tense because none of it is connected yet."
       >
         <Split
           panel={
-            <Panel title="How a check runs">
+            <Panel title="How a check would run">
               <SpecList
                 items={[
-                  { term: "1 · Triggered by rule", detail: "A jurisdiction, an amount threshold or a merchant's own policy asks for verification. Nothing is requested speculatively." },
-                  { term: "2 · Performed by Didit", detail: "You complete the check with the identity provider directly. Documents and biometrics go to them, not to NATIO." },
-                  { term: "3 · Recorded as a decision", detail: "NATIO stores the outcome, the provider's reference and the time. A later audit can prove the check happened without the platform holding the evidence." },
+                  { term: "1 · Triggered by rule", detail: "A jurisdiction, an amount threshold or a merchant's own policy would ask for verification. Nothing requested speculatively." },
+                  { term: "2 · Performed by the provider", detail: "You would complete the check with the identity provider directly. Documents and biometrics go to them, not to NATIO." },
+                  { term: "3 · Recorded as a decision", detail: "NATIO would store the outcome, the provider's reference and the time — enough for a later audit to prove the check happened, without the platform holding the evidence." },
                 ]}
               />
             </Panel>
@@ -150,8 +150,9 @@ export default function WalletPage() {
             when, and under which provider reference — enough to answer a regulator, and nothing that is worth stealing.
           </p>
           <p className="mt-5 text-[15.5px] leading-[1.75] text-mist-400">
-            Sanctions and watchlist screening runs on the platform side against published lists, on the account and on counterparties.
-            That part is not optional and does not depend on which jurisdiction you are in.
+            Sanctions and watchlist screening belongs on the platform side, against published lists, on the account and on
+            counterparties — not optional and not dependent on which jurisdiction you are in. It is not implemented today. A screening
+            claim is the kind nobody re-checks, so it is worth being exact about: NATIO does not screen anyone yet.
           </p>
         </Split>
       </Section>
