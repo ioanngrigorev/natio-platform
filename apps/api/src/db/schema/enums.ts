@@ -114,3 +114,21 @@ export const webhookDeliveryStatusEnum = pgEnum("webhook_delivery_status", [
 
 export const actorTypeEnum = pgEnum("actor_type", ["merchant_user", "admin_user", "api_key", "system"]);
 export const eventLevelEnum = pgEnum("event_level", ["info", "warning", "error"]);
+
+// --- non-custodial on-chain layer ------------------------------------------
+export const chainNetworkEnum = pgEnum("chain_network", ["bitcoin", "ethereum", "bsc", "polygon", "tron"]);
+export const walletAccountStatusEnum = pgEnum("wallet_account_status", ["active", "archived"]);
+/**
+ * reserved  derived and held for an invoice, nothing seen yet
+ * awaiting  a transaction is visible but not yet deeply enough confirmed
+ * settled   confirmed at or above the threshold for the asset
+ * underpaid confirmed, but less than was asked for
+ * expired   the window closed with nothing confirmed
+ */
+export const walletAddressStatusEnum = pgEnum("wallet_address_status", [
+  "reserved",
+  "awaiting",
+  "settled",
+  "underpaid",
+  "expired",
+]);
