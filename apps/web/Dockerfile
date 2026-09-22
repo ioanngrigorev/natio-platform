@@ -6,6 +6,12 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/web/package.json apps/web/
 RUN pnpm install --filter @natio/web... --frozen-lockfile || pnpm install --filter @natio/web...
 COPY apps/web apps/web
+# Git does not store empty directories, so a clean clone can arrive without
+# apps/web/public even though it exists in every developer's working tree.
+# The runtime stage copies that path unconditionally, so create it here: the
+# alternative is an image build that succeeds locally and fails only on a
+# fresh clone — which is to say, only in production.
+RUN mkdir -p apps/web/public
 # NEXT_PUBLIC_* values are inlined at build time.
 ARG NEXT_PUBLIC_API_URL=https://api.natio.me
 ARG NEXT_PUBLIC_SITE_URL=https://natio.me
