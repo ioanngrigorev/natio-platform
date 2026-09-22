@@ -371,3 +371,22 @@ No command performs that silently.
 `deploy/backup-secrets.sh` prints what must be held off the host, with the
 fingerprint to verify a backup against later. A database backup does not cover
 this key, and a backup strategy that assumes it does is not a backup strategy.
+
+### 13.2 Database backups
+
+`bootstrap.sh` installs an hourly `/etc/cron.hourly/natio-backup` that runs
+`deploy/backup.sh`. Three properties are required of it, and each exists
+because its absence is invisible:
+
+- **A dump is kept only once it has been verified.** It is written under a
+  `.partial` name, listed with `pg_restore --list`, and renamed only on
+  success. A truncated dump sitting under the real name is worse than no dump,
+  because it is indistinguishable from a good one until the day it is needed.
+- **The off-host destination is used when it is set.** `BACKUP_S3_URI` is
+  copied to on every run. When it is unset the script says so on every run
+  rather than once at install: a backup on the host that holds the database
+  protects against a bad migration and nothing else.
+- **The encryption key is not in the dump.** Restoring one of these onto a host
+  with a different key produces rows nobody can decrypt, and the platform will
+  refuse to start (§13.1) rather than run against them. The key is backed up
+  separately or the restore is not a restore.

@@ -291,21 +291,27 @@ fi
 # 9. Backups
 # ---------------------------------------------------------------------------
 install -d -m 750 -o "$DEPLOY_USER" -g "$DEPLOY_USER" /var/backups/natio
+# The cron job calls deploy/backup.sh rather than inlining its own pg_dump.
+# It used to inline one, and the inlined copy skipped the two things that make
+# a dump a backup: verifying it can be listed, and copying it off this host.
+# It even exported BACKUP_S3_URI without ever using it, so configuring an
+# off-host destination did nothing and said nothing.
 cat > /etc/cron.hourly/natio-backup <<EOF
 #!/bin/bash
 set -euo pipefail
-cd $APP_DIR
+export APP_DIR=$APP_DIR
 export BACKUP_DIR=/var/backups/natio
 export RETENTION_DAYS=30
 ${BACKUP_S3_URI:+export BACKUP_S3_URI=$BACKUP_S3_URI}
-PGPASSWORD=\$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-) \\
-  docker compose -f docker-compose.prod.yml exec -T postgres \\
-  pg_dump -U natio_migrator -d natio --format=custom --compress=9 --no-owner --no-privileges \\
-  > "\$BACKUP_DIR/natio-\$(date -u +%Y%m%dT%H%M%SZ).dump"
-find "\$BACKUP_DIR" -name 'natio-*.dump' -mtime +\$RETENTION_DAYS -delete
+exec $APP_DIR/deploy/backup.sh
 EOF
 chmod +x /etc/cron.hourly/natio-backup
-echo "backups: hourly pg_dump to /var/backups/natio (30 day retention)"
+if [ -n "${BACKUP_S3_URI:-}" ]; then
+  echo "backups: hourly, verified, to /var/backups/natio and $BACKUP_S3_URI (30 day retention)"
+else
+  echo "backups: hourly, verified, to /var/backups/natio (30 day retention)"
+  echo "backups: WARNING - no BACKUP_S3_URI, so backups live only on this host and die with it"
+fi
 
 
 # ---------------------------------------------------------------------------
