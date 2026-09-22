@@ -105,7 +105,7 @@ const COMPLIANCE_NOT_BUILT: Array<{ term: string; detail: string }> = [
   {
     term: "Business verification (KYB)",
     detail:
-      "Intended to run through an identity provider so the provider holds the evidence and NATIO holds only the decision, its reference and its timestamp. Not integrated yet, and live keys are not issued on the strength of a check that does not exist.",
+      "A KYB decision can be recorded against an account today; the verification behind it cannot. It is intended to run through an identity provider, so the provider holds the evidence and NATIO holds only the outcome, its reference and its timestamp. No provider is integrated, so the record exists and the check does not.",
   },
 ];
 

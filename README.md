@@ -72,7 +72,7 @@ apps/api/           Fastify API + workers (modular monolith)
   openapi/          OpenAPI 3.1 document
 apps/web/           Next.js 14: natio.me, /docs, /dashboard, /admin
 deploy/             Caddyfile, backup/restore scripts, DB role hardening
-docs/               ARCHITECTURE.md, DEPLOYMENT.md, SECURITY.md
+docs/               SPECIFICATION.md, ARCHITECTURE.md, DEPLOYMENT.md, SECURITY.md
 ```
 
 ## Commands
@@ -95,6 +95,7 @@ The architecture is prepared for global and local providers alike. NATIO is not 
 
 ## Documentation
 
+- [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) — **normative**: invariants, contracts, the state machine, what is deliberately not built. A change to any contract updates it in the same commit.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design, the payment path, failover safety, data model
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — production deployment, domains, migrations, backups, monitoring
 - [`docs/SECURITY.md`](docs/SECURITY.md) — security model, controls, review findings, known gaps
