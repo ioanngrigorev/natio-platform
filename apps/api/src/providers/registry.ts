@@ -4,6 +4,7 @@
  * No changes to the orchestration engine are required.
  */
 import { MockProviderAdapter } from "./mock/mock-adapter.js";
+import { YooKassaAdapter } from "./yookassa/yookassa-adapter.js";
 import type { ProviderAdapter } from "./types.js";
 
 const adapters = new Map<string, ProviderAdapter>();
@@ -25,6 +26,9 @@ export function listAdapters(): ProviderAdapter[] {
 // Built-in sandbox adapters.
 registerAdapter(new MockProviderAdapter("mock_acquirer", "NATIO Demo Acquirer", "acquirer"));
 registerAdapter(new MockProviderAdapter("mock_qr", "NATIO Demo QR Provider", "qr"));
+
+// Real connectors.
+registerAdapter(new YooKassaAdapter()); // adapterKey: "yookassa"
 
 // Placeholders for future real connectors (documented in docs/ADDING_A_PROVIDER.md):
 //   registerAdapter(new StripeAdapter());        // adapterKey: "stripe"
