@@ -19,17 +19,31 @@ import { walletAccounts, walletAddresses } from "../../db/schema/index.js";
 import { logger } from "../../lib/logger.js";
 import type { ChainNetwork } from "./derivation.js";
 import { assetSpec, chainClientFor, isObservable, type ChainClientOptions } from "./chains/index.js";
-import { recordObservation } from "./service.js";
+import { markObservationOrphaned, recordObservation } from "./service.js";
 import { markCryptoPaymentSeen, settleCryptoPayment } from "../payments/service.js";
 
-/** Statuses still worth asking a chain about. */
-const WATCHED = ["reserved", "awaiting"] as const;
+/**
+ * Statuses still worth asking a chain about.
+ *
+ * `settled` is in the list, which is not obvious. An address that has been
+ * paid stops being interesting only once the chain can no longer change its
+ * mind, and the confirmation thresholds make that unlikely rather than
+ * impossible. Dropping a settled address from the watch immediately means a
+ * reorg inside the grace window is never seen at all — the invoice stays paid
+ * on money that no longer exists, and nothing anywhere says so.
+ *
+ * Settled addresses are bounded separately, by `settledAt`, so this is a short
+ * tail rather than an ever-growing set.
+ */
+const WATCHED = ["reserved", "awaiting", "settled"] as const;
 
 export interface WatchResult {
   addressesChecked: number;
   transfersSeen: number;
   settled: number;
   expired: number;
+  /** Transfers the chain withdrew, whose observations were taken back. */
+  reorged: number;
   errors: Array<{ network: string; address?: string; message: string }>;
 }
 
@@ -44,7 +58,7 @@ export interface WatchResult {
 const GRACE_MS = 60 * 60 * 1000;
 
 export async function runWatchCycle(db: DbOrTx, opts: ChainClientOptions & { limit?: number } = {}): Promise<WatchResult> {
-  const result: WatchResult = { addressesChecked: 0, transfersSeen: 0, settled: 0, expired: 0, errors: [] };
+  const result: WatchResult = { addressesChecked: 0, transfersSeen: 0, settled: 0, expired: 0, reorged: 0, errors: [] };
   const cutoff = new Date(Date.now() - GRACE_MS);
 
   const rows = await db
@@ -62,7 +76,15 @@ export async function runWatchCycle(db: DbOrTx, opts: ChainClientOptions & { lim
     .where(
       and(
         inArray(walletAddresses.status, [...WATCHED]),
-        or(isNull(walletAddresses.expiresAt), sql`${walletAddresses.expiresAt} > ${cutoff}`),
+        or(
+          // Still open: watch until the invoice window plus grace runs out.
+          and(
+            inArray(walletAddresses.status, ["reserved", "awaiting"]),
+            or(isNull(walletAddresses.expiresAt), sql`${walletAddresses.expiresAt} > ${cutoff}`),
+          ),
+          // Already paid: keep looking only while a reorg could still reach it.
+          and(eq(walletAddresses.status, "settled"), sql`${walletAddresses.settledAt} > ${cutoff}`),
+        ),
       ),
     )
     .limit(opts.limit ?? 500);
@@ -100,6 +122,28 @@ export async function runWatchCycle(db: DbOrTx, opts: ChainClientOptions & { lim
         result.transfersSeen += transfers.length;
 
         for (const t of transfers) {
+          // A transfer the chain has withdrawn must not be credited, and if it
+          // was credited on an earlier cycle it has to be taken back. Marking
+          // it orphaned is what does that: the settled total is a SUM over
+          // rows that are not orphaned, so the correction is arithmetic rather
+          // than a second entry that could disagree with the first.
+          if (t.removed) {
+            const reverted = await markObservationOrphaned(db, {
+              walletAddressId: row.id,
+              network,
+              txHash: t.txHash,
+              outputIndex: t.outputIndex,
+            });
+            if (reverted) {
+              result.reorged += 1;
+              logger.warn(
+                { network, address: row.address, txHash: t.txHash, paymentId: row.paymentId },
+                "chain withdrew a transfer that had been observed; balance recomputed",
+              );
+            }
+            continue;
+          }
+
           const outcome = await recordObservation(db, {
             walletAddressId: row.id,
             merchantId: row.merchantId,
@@ -178,7 +222,7 @@ export async function expireStaleAddresses(db: DbOrTx): Promise<number> {
 
 /** Health probe for the admin provider-monitoring view. */
 export async function chainHealth(opts: ChainClientOptions = {}): Promise<Array<{ network: ChainNetwork; ok: boolean; tip?: number; latencyMs: number; message?: string }>> {
-  const networks: ChainNetwork[] = ["tron", "bitcoin"];
+  const networks: ChainNetwork[] = ["tron", "bitcoin", "ethereum", "bsc", "polygon"];
   return Promise.all(
     networks.map(async (network) => {
       const started = Date.now();

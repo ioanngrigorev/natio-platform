@@ -211,18 +211,74 @@ against the EVM hash — rather than against the implementation's own output.
 
 ### 8.3 Chain observation
 
-Observed: **TRON** (TronGrid) and **Bitcoin** (Esplora).
-Derived but **not observed**: Ethereum, BSC, Polygon. `chainClientFor` throws
-for these deliberately, and the interface says so where a merchant selects one.
-A payment to an unobserved chain is not noticed automatically.
+Observed: **TRON** (TronGrid), **Bitcoin** (Esplora), and **Ethereum**, **BNB
+Smart Chain** and **Polygon** over JSON-RPC.
 
 A transfer is matched on the **contract address**, never on the token symbol.
-Matching on symbol would credit any counterfeit "USDT". A decimals mismatch
-between the payload and the asset specification rejects the transfer.
+Two independent reasons, both found by reading live chains rather than by
+reasoning about them:
+
+- Anyone can deploy a token that calls itself USDT. Matching on the symbol
+  would credit a merchant for a million counterfeit ones.
+- USDT on Polygon reports `symbol()` as **"USDT0"**, while a merchant
+  configures "USDT". Symbol matching would have found nothing at all — a
+  failure that looks exactly like "no payment arrived".
+
+Contract comparison is **case-insensitive**. Nodes answer with lower-cased
+addresses while the configured value is checksummed; a case-sensitive compare
+matches nothing, reports no error, and loses every payment silently.
+
+**Decimals are per network, not per symbol.** USDT has 6 decimals on Ethereum,
+Polygon and TRON, and **18** on BNB Smart Chain. A six-decimal assumption would
+settle a 100 USDT invoice on BSC for a ten-millionth of it, with nothing
+downstream looking unusual. Every contract and exponent in the registry was
+read off its chain with `eth_call`.
+
+EVM observation asks the node to filter: `topics[2]` is the indexed recipient,
+so the query returns this address's transfers rather than the token's entire
+traffic. The window is bounded — public nodes refuse deep history ("archive
+requests require a personal token") — and sized to cover the invoice window
+plus its grace. Re-scanning the same window every cycle is free, because
+recording is idempotent on `(network, tx_hash, log_index)`. The log index, not
+the transaction hash alone, is the discriminator: two transfers to the same
+address in one transaction are two payments.
+
+A JSON-RPC node answers HTTP 200 and puts failures in the response body, so
+the status code alone is not a success check. Treating a body-level error as
+an empty result would report "nothing arrived" during an outage.
 
 One failing chain must not stop the others, and one failing address must not
 stop the next: errors are recorded and the cycle continues. A provider outage
 must never be indistinguishable from "nothing arrived".
+
+### 8.3.1 Transfers the chain withdraws
+
+An EVM log carries `removed: true` when a reorg drops the block that contained
+it. Such a transfer is **not** filtered out inside the client, because an
+observation already recorded has to be taken back: the watcher marks it
+orphaned, and since the settled total is a `SUM` over non-orphaned rows, the
+balance corrects itself rather than needing a compensating entry. The row is
+kept and flagged rather than deleted, so the record of what the chain said
+survives.
+
+An address whose observations have all been withdrawn returns to `reserved`
+with `settled_at` cleared — the honest state, since nothing has arrived. Its
+`first_seen_at` is deliberately left set, which also keeps it out of the
+automatic expiry sweep so that a reorged invoice surfaces to a person instead
+of quietly ageing out.
+
+For this to work at all, `settled` addresses stay in the watch set, bounded by
+`settled_at` rather than by the invoice expiry. Dropping them at settlement
+would mean a reorg inside the grace window is never seen: the invoice stays
+paid on money that no longer exists, and nothing anywhere says otherwise.
+
+**Known limit, stated rather than designed around:** if the payment had
+already been marked `successful`, it stays `successful`. The state machine has
+no path back from it (§5), and inventing one would be worse — money may have
+moved downstream on the strength of that status. What happens instead is that
+the fact is recorded, the address stops being settled, and the discrepancy is
+logged at warning level for a human. Automatic reversal of a completed payment
+is not a decision this layer may take on its own.
 
 ### 8.4 Observation idempotency
 
@@ -311,8 +367,10 @@ This section is normative: public-facing copy must agree with it.
   an administrative endpoint to set it exist, so a decision can be *recorded*.
   No identity provider is integrated, so no evidence is *collected or
   verified*. The distinction matters: the record exists, the check does not.
-- **EVM chain observation — not implemented.** Ethereum, BSC and Polygon derive
-  addresses that nothing watches (§8.3).
+- **Native-coin payments on EVM chains — not implemented.** ETH, BNB and MATIC
+  themselves are not watched; only ERC-20 transfers are, because a balance
+  change cannot be attributed to an invoice the way a Transfer log can. The
+  client refuses an asset with no contract rather than watching nothing.
 - **Supported assets, networks and served jurisdictions — undecided.** These
   follow from where the operating entity is incorporated and what its counsel
   advises.

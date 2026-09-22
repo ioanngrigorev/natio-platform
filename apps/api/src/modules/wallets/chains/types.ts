@@ -26,6 +26,17 @@ export interface ObservedTransfer {
   blockNumber?: number;
   /** Provider payload, kept for audit. */
   raw?: Record<string, unknown>;
+  /**
+   * The chain has withdrawn this transfer — a reorg dropped the block that
+   * contained it. Only EVM logs report this directly; on other chains an
+   * orphaned transfer simply stops being returned.
+   *
+   * It is carried here rather than filtered out inside the client because the
+   * watcher has to do something about it: an observation already recorded
+   * needs marking orphaned, or a payment stays settled on money that no longer
+   * exists.
+   */
+  removed?: boolean;
 }
 
 export interface AssetSpec {
@@ -78,6 +89,53 @@ export async function getJson<T>(fetchImpl: FetchLike, url: string, timeoutMs: n
     } catch {
       throw new ChainUnavailableError(`${label} returned a non-JSON response`);
     }
+  } catch (err) {
+    if (err instanceof ChainUnavailableError) throw err;
+    if (err instanceof Error && err.name === "AbortError") throw new ChainUnavailableError(`${label} did not respond in time`);
+    throw new ChainUnavailableError(err instanceof Error ? err.message : `${label} request failed`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * JSON-RPC over POST, for the EVM chains.
+ *
+ * Separate from `getJson` for one reason beyond the verb: a JSON-RPC node
+ * answers HTTP 200 and puts the failure in the body, so checking the status
+ * code alone reports success on "range too large" or "archive data requires a
+ * token". Both were seen on a live public node while building this.
+ */
+export async function postRpc<T>(
+  fetchImpl: FetchLike,
+  url: string,
+  method: string,
+  params: unknown[],
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      signal: controller.signal,
+    });
+    const body = await res.text();
+    if (!res.ok) throw new ChainUnavailableError(`${label} returned HTTP ${res.status}`);
+    let parsed: { result?: T; error?: { code?: number; message?: string } };
+    try {
+      parsed = JSON.parse(body) as typeof parsed;
+    } catch {
+      throw new ChainUnavailableError(`${label} returned a non-JSON response`);
+    }
+    if (parsed.error) {
+      throw new ChainUnavailableError(`${label} ${method} failed: ${parsed.error.message ?? "unknown JSON-RPC error"}`);
+    }
+    if (parsed.result === undefined) throw new ChainUnavailableError(`${label} ${method} returned no result`);
+    return parsed.result;
   } catch (err) {
     if (err instanceof ChainUnavailableError) throw err;
     if (err instanceof Error && err.name === "AbortError") throw new ChainUnavailableError(`${label} did not respond in time`);

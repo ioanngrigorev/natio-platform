@@ -41,7 +41,19 @@ function formatBaseUnits(value: string, decimals: number): string {
   return frac ? `${whole}.${frac}` : whole;
 }
 
+/**
+ * Base-unit exponents for display. Keyed by network as well as asset because
+ * USDT is not one number: six decimals on Ethereum, Polygon and TRON, and
+ * eighteen on BNB Smart Chain. Rendering a BSC amount with six would show a
+ * merchant a balance a trillion times too large.
+ */
 const DECIMALS: Record<string, number> = { USDT: 6, BTC: 8, ETH: 18 };
+const DECIMALS_BY_NETWORK: Record<string, number> = { "bsc:USDT": 18 };
+
+function decimalsFor(network: string, asset: string): number {
+  const key = `${network.toLowerCase()}:${asset.toUpperCase()}`;
+  return DECIMALS_BY_NETWORK[key] ?? DECIMALS[asset.toUpperCase()] ?? 8;
+}
 
 export default async function WalletsPage() {
   const api = serverApi();
@@ -69,7 +81,7 @@ export default async function WalletsPage() {
       ) : null}
 
       {accounts.data.map((account, i) => {
-        const decimals = DECIMALS[account.asset.toUpperCase()] ?? 8;
+        const decimals = decimalsFor(account.network, account.asset);
         const addresses = addressLists[i]!.data;
         return (
           <Card

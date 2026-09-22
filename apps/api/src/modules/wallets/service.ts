@@ -240,6 +240,44 @@ export async function recordObservation(
 }
 
 /**
+ * Withdraw an observation the chain has taken back.
+ *
+ * `settleFromObservations` sums only rows where `orphaned` is false, so
+ * flipping the flag corrects the balance by itself — no compensating entry,
+ * and no arithmetic that could disagree with the rows it is derived from.
+ * Returning the address to `awaiting` rather than deleting anything keeps the
+ * history of what the chain said and when.
+ *
+ * Until EVM logs arrived nothing set this flag: the column and the filter
+ * existed, and the reorg test flipped it by hand. An EVM log carries
+ * `removed: true` when a reorg drops the block that contained it, which is the
+ * chain saying so directly, so the mechanism is now driven by the chain rather
+ * than by a test.
+ */
+export async function markObservationOrphaned(
+  tx: DbOrTx,
+  input: { walletAddressId: string; network: ChainNetwork; txHash: string; outputIndex: number },
+) {
+  const updated = await tx
+    .update(chainObservations)
+    .set({ orphaned: true, lastSeenAt: new Date() })
+    .where(
+      and(
+        eq(chainObservations.network, input.network),
+        eq(chainObservations.txHash, input.txHash),
+        eq(chainObservations.outputIndex, input.outputIndex),
+        eq(chainObservations.orphaned, false),
+      ),
+    )
+    .returning({ id: chainObservations.id });
+
+  // Nothing was recorded for it in the first place, so there is nothing to
+  // recompute — a reorg that drops a transfer we never saw is a non-event.
+  if (updated.length === 0) return null;
+  return settleFromObservations(tx, input.walletAddressId);
+}
+
+/**
  * Recompute an address's status from its observations.
  *
  * Derived rather than accumulated: the total is a SUM over the observation
@@ -276,6 +314,19 @@ export async function settleFromObservations(tx: DbOrTx, walletAddressId: string
     if (!settledAt) settledAt = new Date();
   } else if (sawSomething) {
     status = "awaiting";
+  } else if (addr.status !== "reserved" && addr.status !== "expired") {
+    // Every observation against this address has been withdrawn by the chain.
+    // The honest state is the one it started in: nothing has arrived. Without
+    // this branch the status simply kept its old value, so an address that
+    // reorged out of existence stayed `settled` while its balance read zero —
+    // the two halves of the same row disagreeing.
+    //
+    // `firstSeenAt` is deliberately left set. It is a true record that
+    // something was once seen here, and it also keeps the address out of the
+    // automatic expiry sweep, so a reorged invoice surfaces to a person
+    // instead of quietly ageing out.
+    status = "reserved";
+    settledAt = null;
   }
 
   await tx

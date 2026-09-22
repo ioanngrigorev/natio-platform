@@ -9,9 +9,9 @@ import { Alert, Button, Field, Mono } from "@/components/ui";
 const NETWORKS: Array<{ value: string; label: string; asset: string; hint: string; observable: boolean }> = [
   { value: "tron", label: "TRON", asset: "USDT", hint: "Account xpub from the m/44'/195'/0' path.", observable: true },
   { value: "bitcoin", label: "Bitcoin", asset: "BTC", hint: "zpub for native segwit, ypub for wrapped, xpub for legacy.", observable: true },
-  { value: "ethereum", label: "Ethereum", asset: "USDT", hint: "Account xpub from m/44'/60'/0'.", observable: false },
-  { value: "bsc", label: "BNB Smart Chain", asset: "USDT", hint: "Account xpub from m/44'/60'/0'.", observable: false },
-  { value: "polygon", label: "Polygon", asset: "USDT", hint: "Account xpub from m/44'/60'/0'.", observable: false },
+  { value: "ethereum", label: "Ethereum", asset: "USDT", hint: "Account xpub from m/44'/60'/0'. USDT, 6 decimals.", observable: true },
+  { value: "bsc", label: "BNB Smart Chain", asset: "USDT", hint: "Account xpub from m/44'/60'/0'. USDT here has 18 decimals, unlike the other chains.", observable: true },
+  { value: "polygon", label: "Polygon", asset: "USDT", hint: "Account xpub from m/44'/60'/0'. USDT, 6 decimals.", observable: true },
 ];
 
 interface Registered {
