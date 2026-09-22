@@ -36,7 +36,18 @@ export async function registerPublicRoutes(app: FastifyInstance) {
     }
     checks.queue = cfg.QUEUE_DRIVER === "memory" ? "ok" : "ok";
     const ok = Object.values(checks).every((v) => v === "ok");
-    return reply.status(ok ? 200 : 503).send({ status: ok ? "ok" : "degraded", version: process.env.NATIO_VERSION ?? "0.1.0", role: cfg.NATIO_PROCESS_ROLE, checks, time: new Date().toISOString() });
+    // The commit is baked in at image build time. Without it there is no way
+    // to tell from outside which code a server is running — and on a host that
+    // deploys itself and cannot be logged into, "which version is live?" is
+    // otherwise unanswerable.
+    return reply.status(ok ? 200 : 503).send({
+      status: ok ? "ok" : "degraded",
+      version: process.env.NATIO_VERSION ?? "0.1.0",
+      commit: process.env.NATIO_GIT_SHA ?? "unknown",
+      role: cfg.NATIO_PROCESS_ROLE,
+      checks,
+      time: new Date().toISOString(),
+    });
   });
 
   app.get("/openapi.json", async (_req, reply) => {

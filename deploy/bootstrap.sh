@@ -206,6 +206,7 @@ COMPOSE="docker compose -f docker-compose.prod.yml"
 # small host means two Node toolchains competing for the same scarce memory and
 # both losing. Sequential is slower on a big machine and the difference between
 # working and not on a small one.
+export NATIO_GIT_SHA="$(git rev-parse --short HEAD)"
 for image in web api; do
   echo "building $image..."
   $COMPOSE build "$image"

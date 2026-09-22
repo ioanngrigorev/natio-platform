@@ -12,6 +12,8 @@ x-api-base: &api-base
   build:
     context: .
     dockerfile: apps/api/Dockerfile
+    args:
+      NATIO_GIT_SHA: ${NATIO_GIT_SHA:-unknown}
   image: natio/api:local
   restart: unless-stopped
   env_file: [.env]

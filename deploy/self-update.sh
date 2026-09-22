@@ -47,6 +47,7 @@ git reset --hard "origin/$REF"
 
 # Build before touching anything that is currently serving traffic. If this
 # fails the script exits here and the old containers keep running.
+export NATIO_GIT_SHA="$(git rev-parse --short HEAD)"
 for image in web api; do
   echo "--- building $image ---"
   $COMPOSE build "$image"

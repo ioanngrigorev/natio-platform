@@ -16,6 +16,9 @@ RUN pnpm --filter @natio/api --prod deploy --legacy /out
 FROM node:22-alpine AS runtime
 RUN apk add --no-cache tini curl && addgroup -g 1001 natio && adduser -u 1001 -G natio -s /bin/sh -D natio
 WORKDIR /app
+# Stamped by the deploy so /health can report which commit is serving.
+ARG NATIO_GIT_SHA=unknown
+ENV NATIO_GIT_SHA=$NATIO_GIT_SHA
 ENV NODE_ENV=production
 
 COPY --from=build --chown=natio:natio /out/node_modules ./node_modules
