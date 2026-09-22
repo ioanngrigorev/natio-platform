@@ -333,6 +333,41 @@ server exposes no deployment endpoint.
 answer to "is this deployed", and it is the check to make before believing a
 deployment succeeded.
 
-`NATIO_ENCRYPTION_KEY` decrypts stored extended public keys. It must be backed
-up separately from the database; losing it means losing the ability to derive
-further addresses for every registered merchant key.
+### 13.1 The encryption key
+
+`NATIO_ENCRYPTION_KEY` decrypts provider credentials, webhook secrets and
+merchant extended public keys. It is generated once by `bootstrap.sh` and
+exists only in the host's `.env`.
+
+The failure mode this creates is not obvious. Restore a database backup onto a
+fresh host, or rebuild one from the startup script while the database survives,
+and bootstrap generates a *new* key against old ciphertext. Nothing looks
+wrong: the process starts, serves traffic, and fails only at the first
+decrypt — a provider call, a webhook signature, a merchant's next on-chain
+payment — by which point nobody connects the two events.
+
+Therefore: **the database records a fingerprint of the key its ciphertext was
+written under, and the process refuses to start when the configured key does
+not match.** The fingerprint is a domain-separated SHA-256, so the row
+discloses nothing usable. Refusing to boot is recoverable in minutes; running
+for a week under the wrong key is not recoverable at all.
+
+A database that predates this check has no stored fingerprint and cannot be
+verified retroactively — the first key seen is recorded and guards every boot
+after it. That is the honest limit: it protects against the next accident, not
+one that already happened.
+
+Deliberate rotation requires **both** keys and re-encrypts every stored secret
+in one transaction:
+
+    NATIO_OLD_ENCRYPTION_KEY=<previous> NATIO_ENCRYPTION_KEY=<new> npm run db:rotate-key
+
+If the previous key is lost there is no recovery by any means. What remains is
+re-entering every provider credential, regenerating and redistributing every
+webhook secret — breaking each merchant's signature verification until they
+store the new one — and every merchant re-registering their settlement key.
+No command performs that silently.
+
+`deploy/backup-secrets.sh` prints what must be held off the host, with the
+fingerprint to verify a backup against later. A database backup does not cover
+this key, and a backup strategy that assumes it does is not a backup strategy.

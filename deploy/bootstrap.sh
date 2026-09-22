@@ -358,3 +358,25 @@ echo "once DNS resolves:  https://${SITE_DOMAIN}   https://app.${SITE_DOMAIN}   
 echo "certificate status: docker compose -f docker-compose.prod.yml logs proxy | grep -i certificate"
 echo "full log:           $LOG"
 echo "admin credentials:  /root/natio-admin-credentials.txt"
+
+# ---------------------------------------------------------------------------
+# The one manual step this script cannot do for the operator.
+#
+# NATIO_ENCRYPTION_KEY exists only in this host's .env. A database backup
+# without it restores rows that nobody can decrypt. The platform now refuses
+# to start against a database encrypted under a different key, so the failure
+# is loud rather than silent — but a loud failure is still a failure.
+# ---------------------------------------------------------------------------
+cat <<'BACKUP'
+
+  ─────────────────────────────────────────────────────────────────────────
+  DO THIS NOW: back up the encryption key off this machine.
+
+      sudo bash /opt/natio/deploy/backup-secrets.sh
+
+  It decrypts every provider credential, webhook secret and merchant
+  settlement key. It is generated once and stored nowhere else. Losing it
+  means every merchant re-registering and re-integrating — a database
+  backup on its own does not cover this.
+  ─────────────────────────────────────────────────────────────────────────
+BACKUP

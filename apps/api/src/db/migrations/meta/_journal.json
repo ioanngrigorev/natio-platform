@@ -36,6 +36,13 @@
       "when": 1790054582088,
       "tag": "0004_crypto_method",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790054583088,
+      "tag": "0005_key_fingerprint",
+      "breakpoints": true
     }
   ]
 }
