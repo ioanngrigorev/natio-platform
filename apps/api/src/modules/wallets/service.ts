@@ -7,7 +7,7 @@
  * make it impossible to say who paid what, on a ledger whose whole job is to
  * say exactly that.
  */
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { DbOrTx } from "../../db/client.js";
 import { chainObservations, walletAccounts, walletAddresses } from "../../db/schema/index.js";
 import { loadConfig } from "../../config.js";
@@ -363,4 +363,93 @@ export async function reserveCryptoAddress(
   });
 
   return { ...reserved, uri: paymentUri(network, reserved.address, settlement.amount, asset) };
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard reads
+// ---------------------------------------------------------------------------
+
+/**
+ * Wallet accounts for a merchant, with a little of what has happened on each.
+ *
+ * The extended key itself is never returned — not even to its owner. The
+ * merchant already has it; sending it back would only create another copy in
+ * another log, and the whole reason it is encrypted at rest is that it maps a
+ * merchant's entire balance history.
+ */
+export async function listWalletAccounts(db: DbOrTx, merchantId: string, mode: "test" | "live") {
+  const accounts = await db
+    .select()
+    .from(walletAccounts)
+    .where(and(eq(walletAccounts.merchantId, merchantId), eq(walletAccounts.mode, mode)))
+    .orderBy(desc(walletAccounts.createdAt));
+
+  return Promise.all(
+    accounts.map(async (a) => {
+      const [stats] = await db
+        .select({
+          addresses: sql<number>`count(*)`,
+          settled: sql<number>`count(*) filter (where ${walletAddresses.status} = 'settled')`,
+          awaiting: sql<number>`count(*) filter (where ${walletAddresses.status} = 'awaiting')`,
+          received: sql<string>`coalesce(sum(${walletAddresses.observedAmount}), 0)::text`,
+        })
+        .from(walletAddresses)
+        .where(eq(walletAddresses.walletAccountId, a.id));
+
+      return {
+        id: a.id,
+        label: a.label,
+        network: a.network,
+        asset: a.asset,
+        script_type: a.scriptType,
+        status: a.status,
+        next_index: a.nextIndex,
+        /** Enough to recognise which key this is without disclosing it. */
+        key_fingerprint: a.keyFingerprint.slice(0, 12),
+        verified_at: a.verifiedAt,
+        created_at: a.createdAt,
+        stats: {
+          addresses: Number(stats?.addresses ?? 0),
+          settled: Number(stats?.settled ?? 0),
+          awaiting: Number(stats?.awaiting ?? 0),
+          received_base_units: stats?.received ?? "0",
+        },
+      };
+    }),
+  );
+}
+
+/** Derived addresses on one account, newest first. */
+export async function listWalletAddresses(db: DbOrTx, merchantId: string, walletAccountId: string, limit = 50) {
+  const rows = await db
+    .select()
+    .from(walletAddresses)
+    .where(and(eq(walletAddresses.merchantId, merchantId), eq(walletAddresses.walletAccountId, walletAccountId)))
+    .orderBy(desc(walletAddresses.createdAt))
+    .limit(Math.min(limit, 200));
+
+  return rows.map((r) => ({
+    id: r.id,
+    address: r.address,
+    derivation_path: r.derivationPath,
+    status: r.status,
+    payment_id: r.paymentId,
+    expected_amount: r.expectedAmount,
+    observed_amount: r.observedAmount,
+    confirmations_required: r.confirmationsRequired,
+    expires_at: r.expiresAt,
+    settled_at: r.settledAt,
+    created_at: r.createdAt,
+  }));
+}
+
+/** Retire a key without deleting its history. */
+export async function archiveWalletAccount(db: DbOrTx, merchantId: string, id: string) {
+  const [updated] = await db
+    .update(walletAccounts)
+    .set({ status: "archived", updatedAt: new Date() })
+    .where(and(eq(walletAccounts.id, id), eq(walletAccounts.merchantId, merchantId)))
+    .returning();
+  if (!updated) throw new ApiError(404, "not_found_error", "wallet_account_not_found", "Wallet account not found.");
+  return updated;
 }

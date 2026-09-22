@@ -100,6 +100,14 @@ const STATUS_TONES: Record<string, string> = {
   test: "bg-warn-bg text-warn",
   warning: "bg-warn-bg text-warn",
   info: "bg-info-bg text-info",
+  // On-chain settlement addresses. `awaiting` is money seen but not yet final,
+  // which is the same kind of in-flight as `processing`; `underpaid` is the one
+  // that genuinely needs a human, so it is the only red one here.
+  awaiting: "bg-info-bg text-info",
+  reserved: "bg-muted-bg text-muted",
+  underpaid: "bg-bad-bg text-bad",
+  expired: "bg-muted-bg text-muted",
+  archived: "bg-muted-bg text-muted",
 };
 
 /** Same semantics on the night surface: tinted fill + hairline, never colour alone. */

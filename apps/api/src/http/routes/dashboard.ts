@@ -10,7 +10,7 @@ import { WEBHOOK_EVENT_TYPES } from "../../db/schema/index.js";
 import { createApiKey, listApiKeys, publicApiKey, revokeApiKey } from "../../modules/api-keys/service.js";
 import { acceptInvite, changePassword, inviteUser, loginMerchant, registerMerchant, revokeSession, setUserStatus, updateUserRole } from "../../modules/auth/service.js";
 import { assignableRoles, MERCHANT_ROLES, permissionsForRole, type MerchantRole, type Permission } from "../../modules/auth/permissions.js";
-import { listAudit } from "../../modules/audit/service.js";
+import { listAudit, recordAudit } from "../../modules/audit/service.js";
 import { breakdowns, overview, providerComparison, timeseries } from "../../modules/analytics/service.js";
 import { createProject, listProjects, listUsers, serializeMerchant, serializeProject, serializeUser, updateMerchantProfile, updateProject } from "../../modules/merchants/service.js";
 import { cancelSchema, captureSchema, createPaymentSchema,
@@ -30,6 +30,7 @@ import { actorFromRequest } from "../context.js";
 import { requireMerchant } from "../guards.js";
 import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie } from "../helpers.js";
 import { parse, parseQuery } from "../validate.js";
+import { archiveWalletAccount, listWalletAccounts, listWalletAddresses, registerWalletAccount } from "../../modules/wallets/service.js";
 
 const passwordSchema = z.string().min(10).max(200).refine((p) => /[a-z]/.test(p) && /[A-Z0-9]/.test(p), { message: "use at least 10 characters with mixed case or digits" });
 
@@ -226,6 +227,64 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       m.delete<{ Params: { id: string } }>("/api-keys/:id", async (req) => {
         need(req, "api_keys.manage");
         return publicApiKey(await revokeApiKey(db, { merchantId: merchantId(req), keyId: req.params.id, actor: actorFromRequest(req) }));
+      });
+
+      // ----------------------------------------------------------------- wallets
+      m.get("/wallets", async (req) => {
+        need(req, "wallets.read");
+        return { data: await listWalletAccounts(db, merchantId(req), req.dashboardMode) };
+      });
+      m.get<{ Params: { id: string } }>("/wallets/:id/addresses", async (req) => {
+        need(req, "wallets.read");
+        return { data: await listWalletAddresses(db, merchantId(req), req.params.id) };
+      });
+      m.post("/wallets", async (req, reply) => {
+        // Not "wallets.read" and deliberately not available to developers:
+        // this decides where the merchant's money lands.
+        need(req, "wallets.manage");
+        const body = parse(
+          z.object({
+            label: z.string().min(2).max(80),
+            network: z.enum(["bitcoin", "ethereum", "bsc", "polygon", "tron"]),
+            asset: z.string().min(2).max(12),
+            extended_key: z.string().min(20).max(256),
+          }),
+          req.body,
+        );
+        const created = await registerWalletAccount(db, {
+          merchantId: merchantId(req),
+          mode: req.dashboardMode,
+          label: body.label,
+          network: body.network,
+          asset: body.asset,
+          extendedKey: body.extended_key,
+        });
+        await recordAudit(db, {
+          merchantId: merchantId(req),
+          actor: actorFromRequest(req),
+          action: "wallet_account.registered",
+          entityType: "wallet_account",
+          entityId: created.id,
+          // The key itself is never written to the audit log either.
+          after: { label: body.label, network: created.network, asset: created.asset, script_type: created.scriptType },
+        });
+        return reply.status(201).send({
+          ...created,
+          probe_address: created.probeAddress,
+          note: "Check this address appears in your own wallet before taking payments. It is the first address NATIO will derive.",
+        });
+      });
+      m.post<{ Params: { id: string } }>("/wallets/:id/archive", async (req) => {
+        need(req, "wallets.manage");
+        const updated = await archiveWalletAccount(db, merchantId(req), req.params.id);
+        await recordAudit(db, {
+          merchantId: merchantId(req),
+          actor: actorFromRequest(req),
+          action: "wallet_account.archived",
+          entityType: "wallet_account",
+          entityId: updated.id,
+        });
+        return { ok: true };
       });
 
       // ---------------------------------------------------------------- webhooks

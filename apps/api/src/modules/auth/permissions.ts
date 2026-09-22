@@ -30,6 +30,15 @@ export const PERMISSIONS = [
   "reconciliation.manage",
   "analytics.read",
   "audit.read",
+  "wallets.read",
+  /**
+   * Registering a settlement key decides where a merchant's money goes. It is
+   * the most consequential setting on the account — more so than an API key,
+   * which grants access but not a destination — so it stays with owners and
+   * admins. A developer who could register one could point settlements at a
+   * key of their own, and nothing downstream would look wrong.
+   */
+  "wallets.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -46,6 +55,7 @@ const READ_ALL: Permission[] = [
   "reconciliation.read",
   "analytics.read",
   "audit.read",
+  "wallets.read",
 ];
 
 const ROLE_PERMISSIONS: Record<MerchantRole, Permission[]> = {
@@ -65,6 +75,7 @@ const ROLE_PERMISSIONS: Record<MerchantRole, Permission[]> = {
     "payouts.read",
     "transactions.read",
     "analytics.read",
+    "wallets.read",
   ],
   finance: [
     "merchant.read",
@@ -81,10 +92,11 @@ const ROLE_PERMISSIONS: Record<MerchantRole, Permission[]> = {
     "reconciliation.manage",
     "analytics.read",
     "audit.read",
+    "wallets.read",
   ],
-  analyst: ["merchant.read", "projects.read", "payments.read", "payouts.read", "transactions.read", "settlements.read", "reconciliation.read", "analytics.read"],
-  support: ["merchant.read", "projects.read", "payments.read", "payouts.read", "transactions.read", "webhooks.read", "refunds.create"],
-  viewer: ["merchant.read", "projects.read", "payments.read", "transactions.read", "analytics.read"],
+  analyst: ["merchant.read", "projects.read", "payments.read", "payouts.read", "transactions.read", "settlements.read", "reconciliation.read", "analytics.read", "wallets.read"],
+  support: ["merchant.read", "projects.read", "payments.read", "payouts.read", "transactions.read", "webhooks.read", "refunds.create", "wallets.read"],
+  viewer: ["merchant.read", "projects.read", "payments.read", "transactions.read", "analytics.read", "wallets.read"],
 };
 
 export function permissionsForRole(role: MerchantRole): Permission[] {
