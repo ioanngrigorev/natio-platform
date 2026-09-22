@@ -13,7 +13,9 @@ import { assignableRoles, MERCHANT_ROLES, permissionsForRole, type MerchantRole,
 import { listAudit } from "../../modules/audit/service.js";
 import { breakdowns, overview, providerComparison, timeseries } from "../../modules/analytics/service.js";
 import { createProject, listProjects, listUsers, serializeMerchant, serializeProject, serializeUser, updateMerchantProfile, updateProject } from "../../modules/merchants/service.js";
-import { cancelSchema, captureSchema, createPaymentSchema, listPaymentsQuerySchema, refundSchema } from "../../modules/payments/schemas.js";
+import { cancelSchema, captureSchema, createPaymentSchema,
+  createPaymentObject,
+  settlementRule, listPaymentsQuerySchema, refundSchema } from "../../modules/payments/schemas.js";
 import { cancelPayment, capturePayment, createPayment, getPaymentDetail, getPaymentRow, getPaymentTimeline, listPayments } from "../../modules/payments/service.js";
 import { TEST_SCENARIOS } from "../../modules/payments/scenarios.js";
 import { createRefund, listRefundsForPayment, serializeRefund } from "../../modules/refunds/service.js";
@@ -302,7 +304,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       m.post("/payments", async (req, reply) => {
         need(req, "payments.write");
         if (req.dashboardMode !== "test") throw Errors.forbidden("Payments can be created from the dashboard only in test mode. Use the API for live payments.");
-        const body = parse(createPaymentSchema.extend({ project_id: z.string().optional() }), req.body);
+        const body = parse(createPaymentObject.extend({ project_id: z.string().optional() }).superRefine(settlementRule), req.body);
         const project = await projectOf(req, body.project_id);
         const { project_id: _p, ...payload } = body;
         const payment = await createPayment(db, { merchantId: merchantId(req), projectId: project.id, mode: "test" }, payload, { actor: actorFromRequest(req), ip: req.ip });

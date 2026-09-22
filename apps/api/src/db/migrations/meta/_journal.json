@@ -29,6 +29,13 @@
       "when": 1790054581088,
       "tag": "0003_wallets",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790054582088,
+      "tag": "0004_crypto_method",
+      "breakpoints": true
     }
   ]
 }

@@ -285,3 +285,82 @@ export async function settleFromObservations(tx: DbOrTx, walletAddressId: string
 
   return { status, confirmedAmount: confirmed, observedAmount: seen, expectedAmount: addr.expectedAmount };
 }
+
+// ---------------------------------------------------------------------------
+// Bridge to the payments module
+// ---------------------------------------------------------------------------
+
+/** BIP21 for Bitcoin, the widely-honoured TRON/EVM equivalents elsewhere. */
+function paymentUri(network: ChainNetwork, address: string, amountBaseUnits: string, asset: string): string {
+  if (network === "bitcoin") {
+    // BIP21 wants whole BTC, not satoshis, and wants it exact.
+    const padded = amountBaseUnits.padStart(9, "0");
+    const btc = `${padded.slice(0, -8)}.${padded.slice(-8)}`.replace(/0+$/, "").replace(/\.$/, ".0");
+    return `bitcoin:${address}?amount=${btc}`;
+  }
+  // Wallets differ on token URIs; the address plus a displayed amount is the
+  // interoperable subset, so the URI stays deliberately plain.
+  return `${network}:${address}?asset=${encodeURIComponent(asset.toUpperCase())}&amount=${amountBaseUnits}`;
+}
+
+/**
+ * Find the merchant's settlement key for this asset and reserve one address on
+ * it for this payment.
+ *
+ * Deliberately refuses rather than improvises when the merchant has no key
+ * registered: the alternative is inventing a destination, and there is no
+ * destination NATIO could invent that belongs to the merchant.
+ */
+export async function reserveCryptoAddress(
+  db: DbOrTx,
+  input: {
+    merchantId: string;
+    mode: "test" | "live";
+    paymentId: string;
+    settlement: { asset: string; network: string; amount: string; account?: string; expires_in_minutes?: number };
+  },
+) {
+  const { settlement } = input;
+  const network = settlement.network as ChainNetwork;
+  const asset = settlement.asset.toUpperCase();
+
+  const conds = [
+    eq(walletAccounts.merchantId, input.merchantId),
+    eq(walletAccounts.mode, input.mode),
+    eq(walletAccounts.status, "active"),
+  ];
+  if (settlement.account) conds.push(eq(walletAccounts.id, settlement.account));
+  else {
+    conds.push(eq(walletAccounts.network, network));
+    conds.push(eq(walletAccounts.asset, asset));
+  }
+
+  const [account] = await db.select().from(walletAccounts).where(and(...conds)).limit(1);
+  if (!account) {
+    throw new ApiError(
+      422,
+      "invalid_request_error",
+      "no_settlement_account",
+      `No active ${asset} settlement account on ${network} for this merchant. Register an extended public key before taking on-chain payments — NATIO cannot choose a destination on your behalf.`,
+    );
+  }
+  if (account.network !== network || account.asset !== asset) {
+    throw new ApiError(
+      422,
+      "invalid_request_error",
+      "settlement_account_mismatch",
+      `Wallet account ${account.id} settles ${account.asset} on ${account.network}, not ${asset} on ${network}.`,
+    );
+  }
+
+  const expiresAt = new Date(Date.now() + (settlement.expires_in_minutes ?? 30) * 60 * 1000);
+  const reserved = await reserveAddress(db, {
+    walletAccountId: account.id,
+    merchantId: input.merchantId,
+    paymentId: input.paymentId,
+    expectedAmount: settlement.amount,
+    expiresAt,
+  });
+
+  return { ...reserved, uri: paymentUri(network, reserved.address, settlement.amount, asset) };
+}

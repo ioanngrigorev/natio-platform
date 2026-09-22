@@ -37,6 +37,10 @@ export const paymentMethodTypeEnum = pgEnum("payment_method_type", [
   "wallet",
   "instant",
   "local",
+  // Settled on a public chain directly to the merchant's own wallet. Unlike
+  // every other method here it has no provider behind it, so it never enters
+  // routing — there is nobody to route to.
+  "crypto",
 ]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [

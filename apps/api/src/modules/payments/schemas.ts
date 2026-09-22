@@ -14,7 +14,7 @@ export const countrySchema = z
   .regex(/^[A-Za-z]{2}$/)
   .transform((s) => s.toUpperCase());
 
-export const paymentMethodTypeSchema = z.enum(["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"]);
+export const paymentMethodTypeSchema = z.enum(["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local", "crypto"]);
 
 // ---------------------------------------------------------------------------
 // PCI guards. NATIO is never in scope for cardholder data: no endpoint may accept a PAN,
@@ -60,7 +60,7 @@ export const customerInputSchema = z.object({
   country: countrySchema.optional(),
 });
 
-export const createPaymentSchema = z
+export const createPaymentObject = z
   .object({
     amount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
     currency: currencySchema,
@@ -76,6 +76,35 @@ export const createPaymentSchema = z
         id: z.string().max(64).optional(),
       }),
     ]),
+    /**
+     * Where an on-chain payment should settle. Required when the method is
+     * "crypto" and meaningless otherwise — the refinement below enforces both
+     * directions, because silently ignoring a settlement block on a card
+     * payment would hide a merchant's mistake rather than correct it.
+     */
+    settlement: z
+      .object({
+        asset: z.string().min(2).max(12),
+        network: z.enum(["bitcoin", "ethereum", "bsc", "polygon", "tron"]),
+        /**
+         * Exactly what the payer must send, in the asset's base units, as a
+         * decimal string: "1499000000" is 1499 USDT.
+         *
+         * The merchant states this rather than NATIO deriving it from
+         * `amount`, because deriving it needs an exchange rate and NATIO has
+         * no price source. Inventing one — or quietly using a stale one — is
+         * worse than not having it: the payer would be told to send an amount
+         * nobody agreed to, and the discrepancy would surface as an
+         * underpayment days later. The merchant has a rate; NATIO has a
+         * ledger.
+         */
+        amount: z.string().regex(/^\d{1,40}$/, "settlement.amount must be a whole number of the asset's base units"),
+        /** Optional: pick a specific registered wallet account. */
+        account: z.string().max(64).optional(),
+        /** How long the address stays reserved. Default 30 minutes. */
+        expires_in_minutes: z.number().int().min(5).max(1440).optional(),
+      })
+      .optional(),
     capture_method: z.enum(["automatic", "manual"]).optional(),
     country: countrySchema.optional(),
     customer: customerInputSchema.optional(),
@@ -96,7 +125,39 @@ export const createPaymentSchema = z
       .optional(),
   })
   .strict();
+
+/**
+ * The rule that spans two fields, kept apart from the object itself so callers
+ * that need to add a field (the dashboard adds project_id) can still extend
+ * the object — `.superRefine` returns an effect, and effects cannot be
+ * extended.
+ */
+function settlementRule(v: { payment_method: unknown; settlement?: unknown }, ctx: z.RefinementCtx) {
+  {
+    const pm = v.payment_method as string | { type: string };
+    const type = typeof pm === "string" ? pm : pm.type;
+    if (type === "crypto" && !v.settlement) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["settlement"],
+        message: "settlement is required for crypto payments: name the asset and network the payer should send.",
+      });
+    }
+    if (type !== "crypto" && v.settlement) {
+      // Accepting and ignoring it would leave a merchant believing they had
+      // configured something. Say so instead.
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["settlement"],
+        message: `settlement only applies to crypto payments; this one is "${type}".`,
+      });
+    }
+  }
+}
+
+export const createPaymentSchema = createPaymentObject.superRefine(settlementRule);
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export { settlementRule };
 
 export const captureSchema = z.object({ amount: z.number().int().positive().optional() }).strict();
 export const cancelSchema = z.object({ reason: z.string().max(200).optional() }).strict();

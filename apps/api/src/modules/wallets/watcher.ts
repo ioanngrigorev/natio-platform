@@ -20,6 +20,7 @@ import { logger } from "../../lib/logger.js";
 import type { ChainNetwork } from "./derivation.js";
 import { assetSpec, chainClientFor, isObservable, type ChainClientOptions } from "./chains/index.js";
 import { recordObservation } from "./service.js";
+import { markCryptoPaymentSeen, settleCryptoPayment } from "../payments/service.js";
 
 /** Statuses still worth asking a chain about. */
 const WATCHED = ["reserved", "awaiting"] as const;
@@ -55,6 +56,7 @@ export async function runWatchCycle(db: DbOrTx, opts: ChainClientOptions & { lim
       address: walletAddresses.address,
       status: walletAddresses.status,
       expiresAt: walletAddresses.expiresAt,
+      paymentId: walletAddresses.paymentId,
     })
     .from(walletAddresses)
     .where(
@@ -110,7 +112,30 @@ export async function runWatchCycle(db: DbOrTx, opts: ChainClientOptions & { lim
             confirmations: t.confirmations,
             raw: t.raw,
           });
-          if (outcome.status === "settled" && row.status !== "settled") result.settled += 1;
+          if (outcome.status === "awaiting" && row.paymentId) {
+            await markCryptoPaymentSeen(db as never, row.paymentId, {
+              amount: outcome.observedAmount,
+              asset: row.asset,
+              network,
+              confirmations: t.confirmations,
+              confirmationsRequired: 0,
+            });
+          }
+          if (outcome.status === "settled" && row.status !== "settled") {
+            result.settled += 1;
+            // An address reserved for an invoice closes that invoice. One
+            // settlement, one transition: settleCryptoPayment refuses to move
+            // a payment that is no longer pending, so a replayed cycle cannot
+            // emit a second webhook.
+            if (row.paymentId) {
+              await settleCryptoPayment(db as never, row.paymentId, {
+                amount: outcome.confirmedAmount,
+                asset: row.asset,
+                network,
+                confirmations: t.confirmations,
+              });
+            }
+          }
         }
       } catch (err) {
         // One address failing says nothing about the next one. Record it and

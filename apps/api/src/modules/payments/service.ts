@@ -15,6 +15,7 @@ import type { CreatePaymentInput } from "./schemas.js";
 import { serializePayment, type SerializeOpts } from "./serialize.js";
 import { applyTransition } from "./state-machine.js";
 import { computeFee, formatMinor } from "../../lib/money.js";
+import { reserveCryptoAddress } from "../wallets/service.js";
 
 export interface PaymentScope {
   merchantId: string;
@@ -180,6 +181,58 @@ export async function createPayment(
       description: "Payment is on hold until an operator approves or rejects it",
       data: {},
     });
+    return (await getPaymentRow(db, created.payment.id))!;
+  }
+
+  // --- crypto: settled on chain, straight to the merchant's own wallet ------
+  //
+  // This is the one method that does not enter orchestration, because
+  // orchestration routes between providers and there is no provider here. The
+  // payment still gets the same object, the same timeline, the same state
+  // machine and the same webhooks — only the middle is different: an address
+  // is reserved and the chain watcher finishes the job when the money lands.
+  if (method.type === "crypto") {
+    const settlement = input.settlement!;
+    const reserved = await reserveCryptoAddress(db, {
+      merchantId: scope.merchantId,
+      mode: scope.mode,
+      paymentId: created.payment.id,
+      settlement,
+    });
+
+    await applyTransition(db, "payment", created.payment.id, "created", "pending", { reason: "awaiting_settlement", actor });
+    await db
+      .update(payments)
+      .set({
+        nextAction: {
+          type: "display_details",
+          // A wallet scans this; the details are for humans reading a page.
+          qrPayload: reserved.uri,
+          details: {
+            address: reserved.address,
+            asset: settlement.asset.toUpperCase(),
+            network: settlement.network,
+            amount: settlement.amount,
+            confirmations_required: String(reserved.confirmationsRequired),
+          },
+          expiresAt: reserved.expiresAt?.toISOString(),
+        },
+      })
+      .where(eq(payments.id, created.payment.id));
+
+    await addTimeline(db, {
+      paymentId: created.payment.id,
+      type: "settlement.address_reserved",
+      title: "Awaiting on-chain payment",
+      description: `${settlement.asset.toUpperCase()} on ${settlement.network} · ${reserved.address}`,
+      data: {
+        address: reserved.address,
+        derivation_path: reserved.derivationPath,
+        expected_amount: settlement.amount,
+        confirmations_required: reserved.confirmationsRequired,
+      },
+    });
+
     return (await getPaymentRow(db, created.payment.id))!;
   }
 
@@ -447,4 +500,139 @@ export async function reviewPayment(db: Db, payment: PaymentRow, decision: "appr
     return (await getPaymentRow(db, payment.id))!;
   }
   return runOrchestration(db, payment.id, { type: actor.type, id: actor.id });
+}
+
+/**
+ * Close a crypto payment once the chain has settled its address.
+ *
+ * Lives here rather than in the wallets module so that the dependency runs one
+ * way: payments knows how to reserve an address, wallets knows nothing about
+ * payments. The watcher calls this.
+ *
+ * Everything a card payment produces on success is produced here too — the
+ * state transition, the timeline entry, the ledger row and the signed webhook
+ * — because the promise made to merchants is that an on-chain receipt lands in
+ * the same reports as every other method. A shortcut here would make that
+ * promise false in exactly the place a finance team would notice.
+ */
+export async function settleCryptoPayment(
+  db: Db,
+  paymentId: string,
+  observed: { amount: string; asset: string; network: string; confirmations: number },
+): Promise<PaymentRow | null> {
+  const payment = await getPaymentRow(db, paymentId);
+  if (!payment) return null;
+  // Only from the state the reservation left it in. Anything else means this
+  // has already run, or an operator intervened; either way, not again.
+  if (payment.status !== "pending" && payment.status !== "processing") return payment;
+
+  const actor = { type: "system" as const, id: "chain-watcher" };
+  const deliveryIds = await db.transaction(async (tx) => {
+    // The state machine models a crypto payment exactly right: pending is
+    // "waiting for the payer", processing is "the money is on its way",
+    // successful is "confirmed". There is no pending → successful edge, and
+    // there should not be.
+    //
+    // When a poll sees an arrival and its confirmation in the same cycle, the
+    // payment still passed through in-flight — we simply sampled both at once.
+    // Recording both transitions is more truthful than inventing a shortcut
+    // edge, and the two rows carrying the same timestamp say precisely that.
+    let from = payment.status;
+    if (from === "pending") {
+      const stepped = await applyTransition(tx, "payment", paymentId, "pending", "processing", { reason: "chain_seen", actor });
+      if (!stepped) return [] as string[];
+      from = "processing";
+    }
+    const moved = await applyTransition(tx, "payment", paymentId, from, "successful", { reason: "chain_settled", actor });
+    if (!moved) return [] as string[];
+
+    await tx.update(payments).set({ nextAction: null, processedAt: new Date() }).where(eq(payments.id, paymentId));
+
+    await addTimeline(tx, {
+      paymentId,
+      type: "settlement.confirmed",
+      title: "Confirmed on chain",
+      description: `${observed.amount} ${observed.asset} base units · ${observed.confirmations} confirmations on ${observed.network}`,
+      data: observed,
+    });
+
+    await recordTransaction(tx, {
+      merchantId: payment.merchantId,
+      projectId: payment.projectId,
+      mode: payment.mode,
+      type: "payment",
+      status: "successful",
+      entityType: "payment",
+      entityId: paymentId,
+      paymentId,
+      amount: payment.amount,
+      currency: payment.currency,
+      // There is no provider and no provider fee: the payer paid the merchant.
+      // Recording a zero fee against no provider is the honest shape, not a
+      // gap to be filled with something that looks more like the card rows.
+      providerAccountId: null,
+      providerId: null,
+      providerReference: `${paymentId}:chain`,
+      paymentMethodType: payment.paymentMethodType,
+    });
+
+    const fresh = (await tx.select().from(payments).where(eq(payments.id, paymentId)).limit(1))[0]!;
+    const ev = await emitEvent(tx, {
+      merchantId: payment.merchantId,
+      projectId: payment.projectId,
+      mode: payment.mode,
+      type: "payment.successful",
+      entityType: "payment",
+      entityId: paymentId,
+      data: serializePayment(fresh as PaymentRow, {}),
+    });
+    return ev.deliveryIds;
+  });
+
+  // Enqueued after the transaction commits, never inside it: a webhook that
+  // announces a state the database has not committed is a lie in flight.
+  await enqueueDeliveries(deliveryIds);
+  return await getPaymentRow(db, paymentId);
+}
+
+/**
+ * A transfer is visible on chain but not yet final.
+ *
+ * Worth recording rather than waiting silently: the merchant can see the
+ * customer has paid, and the customer stops wondering whether their money
+ * vanished. It is also the honest state — the payment is neither still waiting
+ * nor done.
+ */
+export async function markCryptoPaymentSeen(
+  db: Db,
+  paymentId: string,
+  observed: { amount: string; asset: string; network: string; confirmations: number; confirmationsRequired: number },
+): Promise<void> {
+  const payment = await getPaymentRow(db, paymentId);
+  if (!payment || payment.status !== "pending") return;
+
+  const actor = { type: "system" as const, id: "chain-watcher" };
+  const deliveryIds = await db.transaction(async (tx) => {
+    const moved = await applyTransition(tx, "payment", paymentId, "pending", "processing", { reason: "chain_seen", actor });
+    if (!moved) return [] as string[];
+    await addTimeline(tx, {
+      paymentId,
+      type: "settlement.seen",
+      title: "Seen on chain",
+      description: `${observed.confirmations}/${observed.confirmationsRequired} confirmations on ${observed.network}`,
+      data: observed,
+    });
+    const fresh = (await tx.select().from(payments).where(eq(payments.id, paymentId)).limit(1))[0]!;
+    const ev = await emitEvent(tx, {
+      merchantId: payment.merchantId,
+      projectId: payment.projectId,
+      mode: payment.mode,
+      type: "payment.processing",
+      entityType: "payment",
+      entityId: paymentId,
+      data: serializePayment(fresh as PaymentRow, {}),
+    });
+    return ev.deliveryIds;
+  });
+  await enqueueDeliveries(deliveryIds);
 }
