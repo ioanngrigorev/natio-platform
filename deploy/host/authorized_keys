@@ -1,0 +1,14 @@
+# Public keys allowed to SSH into production as root.
+#
+# Installed on every deploy by the host-access service in
+# docker-compose.prod.yml. Keys are only ever ADDED from here, never removed:
+# taking access away is a deliberate step on the host, so that a bad commit
+# cannot lock every operator out at once.
+#
+# Approved by the owner on 2026-09-29 after console login proved unusable.
+#
+# These are public keys. Publishing them discloses nothing; the private halves
+# never leave their owners' machines.
+
+# ioanngrigorev — as published at https://github.com/ioanngrigorev.keys
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIeLd2qmHXE0Up6+P/dXTbmfuIbEoLpb0PMw/md6XcYK

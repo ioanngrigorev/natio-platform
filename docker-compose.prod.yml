@@ -124,11 +124,38 @@ services:
       options: { max-size: "10m", max-file: "3" }
 
   # --- one-shot jobs (profile: tools) ---------------------------------------
+  # Operator SSH access, provisioned from deploy/host/authorized_keys on every
+  # deploy. The file is the reviewed list of who may log into this host; the
+  # script only ever adds keys and never fails the deploy. Why this lives in
+  # the deploy rather than being done by hand: deploy/host/sync-authorized-keys.sh.
+  #
+  # The image is the one the database already runs on, so nothing extra is
+  # pulled; it only needs a shell.
+  host-access:
+    image: postgres:16-alpine
+    restart: "no"
+    profiles: ["tools"]
+    user: "0:0"
+    network_mode: none
+    entrypoint: ["/bin/sh", "/sync.sh"]
+    volumes:
+      - ${NATIO_HOST_SSH_DIR:-/root/.ssh}:/host-ssh
+      - ./deploy/host/authorized_keys:/keys:ro
+      - ./deploy/host/sync-authorized-keys.sh:/sync.sh:ro
+
   # Migrations run as the schema owner, not as the runtime role.
   migrate:
     <<: *api-base
     restart: "no"
     profiles: ["tools"]
+    # Restated rather than inherited: a YAML merge replaces depends_on whole,
+    # so adding host-access means repeating the two the base already had.
+    # self-update.sh runs `run --rm migrate` on every roll, which is what makes
+    # this the hook that keeps operator access in step with the repository.
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      host-access: { condition: service_completed_successfully }
     environment:
       DATABASE_URL: postgres://natio_migrator:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/natio
     command: ["node", "dist/db/migrate.js"]
