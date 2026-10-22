@@ -13,6 +13,7 @@ import "./http/context.js";
 import { registerV1Routes } from "./http/routes/v1.js";
 import { registerDashboardRoutes } from "./http/routes/dashboard.js";
 import { registerAdminRoutes } from "./http/routes/admin.js";
+import { registerReceiptRoutes } from "./http/routes/receipts.js";
 import { registerPublicRoutes } from "./http/routes/public.js";
 
 export async function buildServer(): Promise<FastifyInstance> {
@@ -103,6 +104,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerV1Routes(app);
   await registerDashboardRoutes(app);
   await registerAdminRoutes(app);
+  await registerReceiptRoutes(app);
 
   app.addHook("onClose", async () => {
     await redis?.quit().catch(() => undefined);

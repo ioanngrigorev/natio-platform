@@ -50,6 +50,13 @@
       "when": 1792634400000,
       "tag": "0006_admin_reporting",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792700000000,
+      "tag": "0007_receipt_review",
+      "breakpoints": true
     }
   ]
 }
