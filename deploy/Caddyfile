@@ -32,8 +32,12 @@
 		reverse_proxy api:4000
 	}
 
-	# Browser calls from the dashboard/admin go to /api/* and are proxied by Next.js
-	# itself (see apps/web/next.config.mjs) so cookies stay first-party.
+	# Strip the browser API prefix at the edge and preserve first-party cookies.
+	# Do not rely on the Next.js rewrite, whose target is frozen at build time.
+	handle_path /api/* {
+		reverse_proxy api:4000
+	}
+
 	handle {
 		reverse_proxy web:3000
 	}
