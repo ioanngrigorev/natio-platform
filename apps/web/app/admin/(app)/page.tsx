@@ -84,7 +84,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
           )}
         </Card>
 
-        <Card title="Volume by currency" description="Successful payment volume and provider fees in the period" padded={false}>
+        <Card title="Volume by currency" description="Successful payment volume and merchant fees in the period" padded={false}>
           {o.payments.volumes.length ? (
             <Table>
               <thead>

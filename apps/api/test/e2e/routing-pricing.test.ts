@@ -18,6 +18,7 @@ import {
   syncAttempt,
 } from "../../src/modules/payments/orchestrator.js";
 import { loadProviderStats } from "../../src/modules/routing/service.js";
+import { providerComparison } from "../../src/modules/analytics/service.js";
 import { closeQueues } from "../../src/lib/queue.js";
 import type { PriceTerms } from "../../src/modules/pricing/engine.js";
 let env: TestEnv,
@@ -274,6 +275,11 @@ describe("routing and pricing integration", () => {
     expect(evidence.json().data[0].captured_pricing.margin).toBe(155);
     expect(p.attempts[0].pricingSnapshot).toBeUndefined();
     expect(p.attempts[0].fee_amount).toBe(260);
+    const scope = { merchantId: env.seed.merchantId, mode: "test" as const, currency: "USD", from: new Date(0), to: new Date() };
+    const merchantCosts = await providerComparison(db(), scope, 200, "merchant");
+    const providerCosts = await providerComparison(db(), scope);
+    expect(merchantCosts.rows.find(r => r.provider_account_id === accountId)?.cost).toBe(260);
+    expect(providerCosts.rows.find(r => r.provider_account_id === accountId)?.cost).toBe(105);
   });
   it("keeps authorization tariff terms when a new version is published before partial capture", async () => {
     const p = await payment({

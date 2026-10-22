@@ -48,7 +48,7 @@ export default async function AdminSettlementDetailPage({ params }: { params: { 
               cols={3}
               items={[
                 { label: "Gross", value: formatMoney(s.gross_amount, s.currency) },
-                { label: "Provider fees", value: formatMoney(-s.fee_amount, s.currency) },
+                { label: "Settlement fees", value: formatMoney(-s.fee_amount, s.currency) },
                 { label: "Net settled", value: <span className="font-medium">{formatMoney(s.net_amount, s.currency)}</span> },
                 { label: "Transactions", value: formatNumber(s.transaction_count) },
                 { label: "Currency", value: s.currency },
