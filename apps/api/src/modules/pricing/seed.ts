@@ -1,5 +1,5 @@
 /** Opt-in synthetic configuration only. Does not create or update financial records. */
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../../db/client.js";
 import {
   pricingPlans,
@@ -8,6 +8,7 @@ import {
   routingRules,
 } from "../../db/schema/index.js";
 import { createRule } from "../routing/service.js";
+import { recordAudit } from "../audit/service.js";
 import { changePrice, createPrice } from "./service.js";
 import type { PriceTerms, PriceTier } from "./engine.js";
 const actor = {
@@ -15,6 +16,35 @@ const actor = {
   id: "synthetic-routing-pricing-demo-v1",
 };
 export async function seedPricingDemo(db: Db) {
+  // Imported demo catalogs can contain only merchant-owned accounts. Reuse existing
+  // mock providers for shared sandbox routes without widening any real integration.
+  const [shared] = await db.select({ id: providerAccounts.id }).from(providerAccounts)
+    .innerJoin(providers, eq(providers.id, providerAccounts.providerId))
+    .where(and(eq(providerAccounts.mode, "test"), isNull(providerAccounts.merchantId),
+      eq(providerAccounts.status, "active"), eq(providers.status, "active"),
+      sql`${providers.supportedMethods} ? 'card'`, sql`${providers.supportedCurrencies} ? 'EUR'`,
+      sql`(${providerAccounts.currencies} = '[]'::jsonb or ${providerAccounts.currencies} ? 'EUR')`)).limit(1);
+  let accountsCreated = 0;
+  if (!shared) {
+    const mockProviders = await db.select().from(providers).where(and(
+      eq(providers.adapterKey, "mock_acquirer"), eq(providers.status, "active"),
+      sql`${providers.supportedMethods} ? 'card'`, sql`${providers.supportedCurrencies} ? 'EUR'`,
+      sql`(${providers.supportedCountries} = '[]'::jsonb or ${providers.supportedCountries} ? 'DE')`,
+    )).orderBy(providers.id).limit(3);
+    for (const [i, provider] of mockProviders.entries()) {
+      const [created] = await db.insert(providerAccounts).values({
+        id: `pa_routing_demo_${provider.id}`, providerId: provider.id, merchantId: null,
+        mode: "test", name: `NATIO ${["Cedar", "Lumen", "Orbit"][i]} · EUR sandbox`,
+        priority: i, currencies: ["EUR"], feePercent: "1.5000", feeFixedMinor: 10,
+        config: { simulation: { latencyMs: 40 + i * 20, technicalErrorRate: 0 } },
+        limits: { minAmount: 1, maxAmount: 100000000 },
+      }).onConflictDoNothing().returning({ id: providerAccounts.id });
+      if (created) {
+        accountsCreated++;
+        await recordAudit(db, { actor, action: "provider_account.demo_created", entityType: "provider_account", entityId: created.id, after: { mode: "test", providerId: provider.id, synthetic: true } });
+      }
+    }
+  }
   const existing = await db
     .select()
     .from(pricingPlans)
@@ -205,6 +235,7 @@ export async function seedPricingDemo(db: Db) {
     mode: "test",
     tariffsCreated: prices,
     rulesCreated: rules,
+    accountsCreated,
     financialRecordsCreated: 0,
   };
 }

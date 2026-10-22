@@ -106,7 +106,9 @@ captured amount. This release prices successful processing; refunds, taxes and F
   not include internal PSP pricing snapshots.
 - `seedPricingDemo()` is opt-in, idempotent by named configuration and always Test Data. It creates synthetic
   tariffs for EUR, USD, GBP, JPY, INR and VND, sample PSP overrides, EUR/USD amount rules and disabled
-  ordered/weighted examples. It does not insert payments, transactions, balances or documents.
+  ordered/weighted examples. If a demo catalog contains only merchant-owned accounts, it adds up to
+  three shared Test Data accounts on existing mock acquirers to demonstrate a safe alternate route.
+  It does not create providers or insert payments, transactions, balances or documents.
 
 ### API and frontend
 
@@ -135,7 +137,7 @@ payment snapshots, not reconstructed current configuration.
 
 ## Regression record
 
-Automated suite: 428 passing checks across 28 unit/integration files, covering existing payments,
+Automated suite: 429 passing checks across 29 unit/integration files, covering existing payments,
 refunds, payouts, wallets, chain watchers, encryption guards, reporting and receipt routes plus new
 routing/pricing cases. API and web type checks passed; Next.js production build passed. Browser checks
 on the isolated local demo confirmed tariff draft/save/publish/retire, calculator/curve, policy
