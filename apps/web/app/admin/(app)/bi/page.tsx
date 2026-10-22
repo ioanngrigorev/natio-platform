@@ -14,7 +14,7 @@ export default async function BiPage({searchParams:q}:{searchParams:Record<strin
   const params=new URLSearchParams({from:q.from||"2025-01-01",to:q.to||"2025-12-31",currency:q.currency||"EUR"});
   for(const key of ["merchant_id","method","status","type","country","provider_account_id"])if(q[key])params.set(key,q[key]!);
   const session=await getAdminSession();
-  const result=await Promise.all([api.get<BiReport>(`/admin/bi?${params}`),api.get<{data:Array<{id:string;name:string}>}>("/admin/merchants?fields=options&limit=200")]).catch(error=>{if(error instanceof ApiRequestError&&error.status===400)return null;throw error;});
+  const result=await Promise.all([api.get<BiReport>(`/admin/bi?${params}`),api.get<{data:Array<{id:string;name:string}>}>("/admin/merchants?fields=options&limit=200")]).catch(error=>{if(error instanceof ApiRequestError&&[400,422].includes(error.status))return null;throw error;});
   if(!result)return <Card title="Check report filters"><p className="mb-4 text-sm text-ink-500">Use valid dates with From on or before To, and valid currency, country and status filters.</p><Link className="text-brand-600" href="/admin/bi">Reset filters and return to BI →</Link></Card>;
   const [r,merchants]=result;
   return <>
