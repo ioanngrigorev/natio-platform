@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ApiRequestError } from "@/lib/api";
 import { BiCharts } from "@/components/admin/bi-charts";
 import { Card, Grid, Kpi, Table } from "@/components/ui";
 import { ReportCenter } from "@/components/admin/report-center";
@@ -13,7 +14,9 @@ export default async function BiPage({searchParams:q}:{searchParams:Record<strin
   const params=new URLSearchParams({from:q.from||"2025-01-01",to:q.to||"2025-12-31",currency:q.currency||"EUR"});
   for(const key of ["merchant_id","method","status","type","country","provider_account_id"])if(q[key])params.set(key,q[key]!);
   const session=await getAdminSession();
-  const [r,merchants]=await Promise.all([api.get<BiReport>(`/admin/bi?${params}`),api.get<{data:Array<{id:string;name:string}>}>("/admin/merchants?fields=options&limit=200")]);
+  const result=await Promise.all([api.get<BiReport>(`/admin/bi?${params}`),api.get<{data:Array<{id:string;name:string}>}>("/admin/merchants?fields=options&limit=200")]).catch(error=>{if(error instanceof ApiRequestError&&error.status===400)return null;throw error;});
+  if(!result)return <Card title="Check report filters"><p className="mb-4 text-sm text-ink-500">Use valid dates with From on or before To, and valid currency, country and status filters.</p><Link className="text-brand-600" href="/admin/bi">Reset filters and return to BI →</Link></Card>;
+  const [r,merchants]=result;
   return <>
     <div className="admin-hero flex flex-wrap items-center justify-between gap-5"><div><p className="admin-eyebrow">NATIO Intelligence · {api.mode==="test"?"Synthetic data":"Live data"}</p><h1 className="mt-2">A complete view of your payments.</h1><p className="mt-2 text-sm text-ink-500">{formatNumber(r.coverage.transactions)} transactions across {formatNumber(r.coverage.merchants)} merchants and {formatNumber(r.coverage.providers)} providers.</p></div><div className="flex flex-wrap gap-2"><a href="#reports" className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm text-white">Open report center ↓</a><a className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm text-white" href={`/api/admin/bi/export.xlsx?${params}&mode=${api.mode}&kind=summary`}>Download Excel report ↓</a><a className="rounded-lg border border-brand-600 px-4 py-2.5 text-sm text-brand-600" href={`/api/admin/bi/export.xlsx?${params}&mode=${api.mode}&kind=transactions&all_currencies=1`}>Full ledger Excel ↓</a></div></div>
     <div className="report-controls mb-3 flex flex-wrap gap-3 text-sm">{[["2025","2025-01-01","2025-12-31"],["Q1","2025-01-01","2025-03-31"],["Q2","2025-04-01","2025-06-30"],["Q3","2025-07-01","2025-09-30"],["Q4","2025-10-01","2025-12-31"]].map(([label,from,to])=><Link key={label} className="text-brand-600" href={`/admin/bi?${new URLSearchParams({...Object.fromEntries(params),from,to})}`}>{label}</Link>)}<Link className="text-ink-500" href="/admin/bi">Reset all filters</Link></div>
