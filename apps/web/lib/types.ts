@@ -293,6 +293,7 @@ export interface Provider {
 }
 
 export interface RoutingRule {
+  policy?: import("@/components/admin/strategy-types").Policy;
   id: string;
   merchantId: string | null;
   projectId: string | null;

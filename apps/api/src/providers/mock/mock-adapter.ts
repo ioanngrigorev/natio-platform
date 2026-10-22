@@ -41,6 +41,8 @@ export const MOCK_PRIMITIVES = [
   "technical_error",
   "timeout",
   "timeout_created",
+  "timeout_unknown",
+  "issuer_unavailable",
   "provider_unavailable",
 ] as const;
 export type MockPrimitive = (typeof MOCK_PRIMITIVES)[number];
@@ -79,11 +81,17 @@ export class MockProviderAdapter implements ProviderAdapter {
 
     switch (sim) {
       case "provider_unavailable":
-        throw new ProviderUnavailableError(`${this.displayName} returned HTTP 503`);
+        throw new ProviderUnavailableError(`${this.displayName} returned HTTP 503 before accepting the operation`, true);
       case "timeout":
+        await db.insert(mockProviderRecords).values({ id: newId("transition"), providerAccountId: ctx.providerAccountId, kind: "payment", externalId, natioReference: input.paymentId, status: "failed", amount: input.amount, currency: input.currency });
         throw new ProviderTimeoutError(`${this.displayName} did not respond within ${ctx.timeoutMs}ms`);
+      case "timeout_unknown":
+        throw new ProviderTimeoutError("Synthetic indeterminate outcome; no conclusive PSP lookup available");
+      case "issuer_unavailable":
+        return { outcome: "soft_decline", chargeState: "not_created", providerCode: "91", providerMessage: "Issuer unavailable", failureCode: "issuer_unavailable", raw };
       case "technical_error":
         return {
+          chargeState: "not_created",
           outcome: "technical_error",
           providerCode: "GW-500",
           providerMessage: "Internal gateway error",
@@ -164,6 +172,7 @@ export class MockProviderAdapter implements ProviderAdapter {
       found: true,
       status: rec.status as ProviderLookupResult["status"],
       amount: rec.amount,
+      currency: rec.currency,
       capturedAmount: rec.capturedAmount,
       providerPaymentId: rec.externalId,
       raw: { status: rec.status },
@@ -178,7 +187,7 @@ export class MockProviderAdapter implements ProviderAdapter {
       .where(and(eq(mockProviderRecords.providerAccountId, ctx.providerAccountId), eq(mockProviderRecords.natioReference, reference), eq(mockProviderRecords.kind, "payment")))
       .limit(1);
     if (!rec) return { found: false };
-    return { found: true, status: rec.status as ProviderLookupResult["status"], amount: rec.amount, capturedAmount: rec.capturedAmount, providerPaymentId: rec.externalId };
+    return { found: true, status: rec.status as ProviderLookupResult["status"], amount: rec.amount, currency: rec.currency, capturedAmount: rec.capturedAmount, providerPaymentId: rec.externalId };
   }
 
   async capturePayment(ctx: ProviderContext, input: { providerPaymentId: string; amount: number; currency: string }): Promise<ProviderOperationResult> {

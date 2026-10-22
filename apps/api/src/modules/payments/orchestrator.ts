@@ -12,11 +12,12 @@
  *  - every state change is logged (state_transitions) and narrated (payment_events timeline);
  *  - domain events are written in the same transaction as the state change (outbox) and delivered after commit.
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { Db } from "../../db/client.js";
 import { customers, paymentAttempts, payments, projects, providerAccounts, providers } from "../../db/schema/index.js";
-import { computeFee } from "../../lib/money.js";
+import { quotePricing } from "../pricing/engine.js";
+import { Errors } from "../../lib/errors.js";
 import { logger } from "../../lib/logger.js";
 import { newId } from "../../lib/ids.js";
 import { getQueue, QUEUE_NAMES } from "../../lib/queue.js";
@@ -42,11 +43,8 @@ import { applyTransition, type TransitionActor } from "./state-machine.js";
 export type PaymentRow = typeof payments.$inferSelect;
 export type AttemptRow = typeof paymentAttempts.$inferSelect;
 
-export interface RetryPolicy {
-  maxAttempts: number;
-  retryOnSoftDecline: boolean;
-  retryOnTimeout: boolean;
-}
+import { shouldRetry, type RetryPolicy, type RetryContext } from "../routing/cascade.js";
+export { shouldRetry, type RetryPolicy } from "../routing/cascade.js";
 
 export function resolveRetryPolicy(project: typeof projects.$inferSelect | null): RetryPolicy {
   const cfg = loadConfig();
@@ -56,34 +54,6 @@ export function resolveRetryPolicy(project: typeof projects.$inferSelect | null)
     retryOnSoftDecline: p.retryOnSoftDecline ?? cfg.DEFAULT_RETRY_ON_SOFT_DECLINE,
     retryOnTimeout: p.retryOnTimeout ?? true,
   };
-}
-
-/** Pure retry decision — unit tested. */
-export function shouldRetry(
-  outcome: ProviderPaymentResult["outcome"] | "unknown",
-  policy: RetryPolicy,
-  attemptsSoFar: number,
-  candidatesRemaining: number,
-  opts: { timeoutResolvedSafe?: boolean } = {},
-): { retry: boolean; reason: string } {
-  if (candidatesRemaining <= 0) return { retry: false, reason: "no_more_candidates" };
-  if (attemptsSoFar >= policy.maxAttempts) return { retry: false, reason: "max_attempts_reached" };
-  switch (outcome) {
-    case "technical_error":
-    case "provider_unavailable":
-      return { retry: true, reason: `${outcome}_is_retryable` };
-    case "soft_decline":
-      return policy.retryOnSoftDecline ? { retry: true, reason: "soft_decline_cascade_enabled" } : { retry: false, reason: "soft_decline_cascade_disabled" };
-    case "timeout":
-      if (!policy.retryOnTimeout) return { retry: false, reason: "timeout_retry_disabled" };
-      return opts.timeoutResolvedSafe ? { retry: true, reason: "provider_confirmed_no_charge" } : { retry: false, reason: "timeout_unresolved" };
-    case "hard_decline":
-      return { retry: false, reason: "hard_decline_never_retried" };
-    case "unknown":
-      return { retry: false, reason: "outcome_unknown" };
-    default:
-      return { retry: false, reason: "not_retryable" };
-  }
 }
 
 async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
@@ -132,7 +102,8 @@ async function finalizeSuccess(
   actor: TransitionActor,
   startedAt: number,
 ) {
-  const fee = computeFee(payment.amount, Number(cand.account.feePercent), cand.account.feeFixedMinor);
+  const pricing = attempt.pricingSnapshot ?? quotePricing([], { amount: payment.amount, currency: payment.currency, mode: payment.mode, merchantId: payment.merchantId, providerAccountId: cand.account.id, paymentMethod: payment.paymentMethodType, at: payment.createdAt }, cand.account);
+  const fee = pricing.merchant.amount;
   const toStatus = result.status === "authorized" ? "authorized" : "successful";
   const processingTime = Date.now() - startedAt;
   const deliveries = await db.transaction(async (tx) => {
@@ -144,7 +115,7 @@ async function finalizeSuccess(
         providerPaymentId: result.providerPaymentId,
         respondedAt: new Date(),
         latencyMs: result.latencyMs,
-        feeAmount: fee,
+        feeAmount: pricing.provider.amount,
         rawResponse: result.raw ?? {},
         updatedAt: new Date(),
       })
@@ -231,6 +202,9 @@ export async function failPayment(
   const info = failureInfo(input.code);
   const from = input.from ?? payment.status;
   const deliveries = await db.transaction(async (tx) => {
+    await tx.select({id:payments.id}).from(payments).where(eq(payments.id,payment.id)).for("update");
+    const unresolved = await tx.select({id:paymentAttempts.id}).from(paymentAttempts).where(and(eq(paymentAttempts.paymentId,payment.id),sql`${paymentAttempts.status} in ('created','processing','unknown')`)).limit(1);
+    if (unresolved.length) throw Errors.conflict("provider_result_pending", "The original PSP operation must be reconciled before marking this payment failed");
     const updated = await applyTransition(tx, "payment", payment.id, from, "failed", {
       reason: input.code,
       actor: input.actor,
@@ -296,6 +270,7 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
   if (!bundle) throw new Error(`payment ${paymentId} not found`);
   let payment = bundle.payment;
   const startedAt = payment.createdAt.getTime();
+  const executionStartedAt = Date.now();
 
   if (payment.status === "created" || payment.status === "pending") {
     // Deliveries are enqueued only after the transaction commits (outbox rule); enqueueing inside the
@@ -319,7 +294,9 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
     return payment;
   }
 
-  const policy = resolveRetryPolicy(bundle.project);
+  let policy = resolveRetryPolicy(bundle.project);
+  const unresolved = await db.select({ id: paymentAttempts.id }).from(paymentAttempts).where(and(eq(paymentAttempts.paymentId, payment.id), sql`${paymentAttempts.status} in ('created','processing','unknown','authorized','succeeded')`)).limit(1);
+  if (unresolved.length) return payment;
   const attempted = await db.select({ id: paymentAttempts.providerAccountId }).from(paymentAttempts).where(eq(paymentAttempts.paymentId, payment.id));
   const excluded = attempted.map((a) => a.id);
 
@@ -333,6 +310,7 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
       amount: payment.amount,
       currency: payment.currency,
       paymentMethod: payment.paymentMethodType,
+      captureMethod: payment.captureMethod,
       country: payment.country,
       customerCountry: bundle.customer?.country ?? null,
       riskScore: payment.riskScore,
@@ -341,6 +319,7 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
     },
     { paymentId: payment.id },
   );
+  policy = { ...policy, ...Object.fromEntries(Object.entries(route.policy).filter(([k]) => ["maxAttempts", "maxElapsedMs", "retryOnSoftDecline", "retryOnTimeout"].includes(k))) };
   await db.update(payments).set({ routingDecisionId: decisionId }).where(eq(payments.id, payment.id));
   await addTimeline(db, {
     paymentId: payment.id,
@@ -364,17 +343,19 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
   let lastFailure: { code: string; message?: string; attemptId: string; providerAccountId: string; providerId: string } | null = null;
 
   for (let i = 0; i < route.ordered.length; i++) {
+    if (attemptsSoFar >= policy.maxAttempts) break;
     const cand = route.ordered[i]!;
     const attemptNumber = attemptsSoFar + 1;
     const attempt = await createAttempt(db, payment, cand, attemptNumber);
+    if (!attempt) return (await loadPaymentBundle(db, payment.id))!.payment;
     attemptsSoFar++;
     const remaining = route.ordered.length - i - 1;
 
     const outcome = await executeAttempt(db, payment, bundle, attempt, cand, attemptNumber - 1, actor, startedAt);
-    if (outcome.kind === "done") return (await loadPaymentBundle(db, payment.id))!.payment;
+    if (outcome.kind === "done" || outcome.outcome === "unknown") return (await loadPaymentBundle(db, payment.id))!.payment;
 
     lastFailure = { code: outcome.code, message: outcome.message, attemptId: attempt.id, providerAccountId: cand.account.id, providerId: cand.provider.id };
-    const decision = shouldRetry(outcome.outcome, policy, attemptsSoFar, remaining, { timeoutResolvedSafe: outcome.timeoutResolvedSafe });
+    const decision = shouldRetry(outcome.outcome, policy, attemptsSoFar, remaining, { ...outcome.retryContext, failureCode: outcome.code, paymentMethod: payment.paymentMethodType, timeoutResolvedSafe: outcome.timeoutResolvedSafe, elapsedMs: Date.now() - executionStartedAt });
     if (!decision.retry) {
       await addTimeline(db, {
         paymentId: payment.id,
@@ -418,8 +399,12 @@ export async function runOrchestration(db: Db, paymentId: string, actor: Transit
   return (await loadPaymentBundle(db, payment.id))!.payment;
 }
 
-async function createAttempt(db: Db, payment: PaymentRow, cand: Candidate, attemptNumber: number): Promise<AttemptRow> {
+async function createAttempt(db: Db, payment: PaymentRow, cand: Candidate, attemptNumber: number): Promise<AttemptRow | null> {
   return db.transaction(async (tx) => {
+    const [current] = await tx.select().from(payments).where(eq(payments.id, payment.id)).for("update");
+    if (!current || current.status !== "processing" || current.attemptCount !== attemptNumber - 1) return null;
+    const inFlight = await tx.select({ id: paymentAttempts.id }).from(paymentAttempts).where(and(eq(paymentAttempts.paymentId, payment.id), sql`${paymentAttempts.status} in ('created','processing','unknown','authorized','succeeded')`)).limit(1);
+    if (inFlight.length) return null;
     const [attempt] = await tx
       .insert(paymentAttempts)
       .values({
@@ -429,6 +414,7 @@ async function createAttempt(db: Db, payment: PaymentRow, cand: Candidate, attem
         providerAccountId: cand.account.id,
         providerId: cand.provider.id,
         status: "processing",
+        pricingSnapshot: cand.pricing ?? null,
       })
       .returning();
     await tx.update(payments).set({ currentAttemptId: attempt!.id, attemptCount: attemptNumber, updatedAt: new Date() }).where(eq(payments.id, payment.id));
@@ -437,7 +423,7 @@ async function createAttempt(db: Db, payment: PaymentRow, cand: Candidate, attem
       attemptId: attempt!.id,
       type: "provider.selected",
       title: `${cand.provider.name} selected`,
-      description: `Attempt ${attemptNumber} · account ${cand.account.name} · fee ${cand.account.feePercent}% + ${cand.account.feeFixedMinor}`,
+      description: `Attempt ${attemptNumber} · account ${cand.account.name} · tariff terms frozen for this attempt`,
       data: { provider_account_id: cand.account.id, provider_id: cand.provider.id, attempt_number: attemptNumber, score: cand.stats ? undefined : null },
     });
     return attempt!;
@@ -446,7 +432,7 @@ async function createAttempt(db: Db, payment: PaymentRow, cand: Candidate, attem
 
 type AttemptOutcome =
   | { kind: "done" }
-  | { kind: "failed"; outcome: ProviderPaymentResult["outcome"] | "unknown"; code: string; message?: string; timeoutResolvedSafe?: boolean };
+  | { kind: "failed"; outcome: ProviderPaymentResult["outcome"] | "unknown"; code: string; message?: string; timeoutResolvedSafe?: boolean; retryContext?: RetryContext };
 
 async function executeAttempt(
   db: Db,
@@ -477,6 +463,7 @@ async function executeAttempt(
   let result: ProviderPaymentResult | null = null;
   let error: "timeout" | "provider_unavailable" | "technical_error" | null = null;
   let errorMessage = "";
+  let finalNoCharge = false;
   try {
     result = await withTimeout(
       adapter.createPayment(ctx, {
@@ -501,6 +488,7 @@ async function executeAttempt(
     if (err instanceof ProviderTimeoutError) error = "timeout";
     else if (err instanceof ProviderUnavailableError) error = "provider_unavailable";
     else error = "technical_error";
+    finalNoCharge = err instanceof ProviderUnavailableError && err.finalNoCharge;
     errorMessage = err instanceof Error ? err.message : String(err);
     if (error === "technical_error") logger.error({ err, paymentId: payment.id, attemptId: attempt.id }, "provider adapter threw");
   }
@@ -508,13 +496,13 @@ async function executeAttempt(
 
   // -------------------------------------------------------------- transport errors
   if (error) {
-    if (error === "timeout") {
+    if (error === "timeout" || !finalNoCharge) {
       await addTimeline(db, {
         paymentId: payment.id,
         attemptId: attempt.id,
         type: "provider.timeout",
-        title: "Provider timeout",
-        description: `${cand.provider.name} did not respond within ${cfg.PROVIDER_TIMEOUT_MS} ms`,
+        title: "Provider result is indeterminate",
+        description: `${cand.provider.name} · ${error} · checking the original operation before any failover`,
         data: { latency_ms: latencyMs },
       });
       await db.update(paymentAttempts).set({ status: "unknown", outcome: "timeout", respondedAt: new Date(), latencyMs, providerMessage: errorMessage, updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
@@ -523,7 +511,7 @@ async function executeAttempt(
       if (resolved.kind === "unknown") {
         return { kind: "failed", outcome: "unknown", code: "timeout", message: "Provider status unknown; sync scheduled" };
       }
-      return { kind: "failed", outcome: "timeout", code: "timeout", message: errorMessage, timeoutResolvedSafe: true };
+      return { kind: "failed", outcome: "timeout", code: "timeout", message: errorMessage, timeoutResolvedSafe: true, retryContext: { chargeState: "not_created" } };
     }
     await db
       .update(paymentAttempts)
@@ -548,11 +536,17 @@ async function executeAttempt(
         data: { payment_id: payment.id, attempt_id: attempt.id },
       });
     }
-    return { kind: "failed", outcome: error, code: error, message: errorMessage };
+    return { kind: "failed", outcome: error, code: error, message: errorMessage, retryContext: { chargeState: "not_created" } };
   }
 
   // -------------------------------------------------------------- provider answered
   const r = result!;
+  if ((r.outcome === "technical_error" || r.outcome === "provider_unavailable" || r.outcome === "timeout") && r.chargeState !== "not_created") {
+    await db.update(paymentAttempts).set({ status: "unknown", outcome: "timeout", providerPaymentId: r.providerPaymentId ?? null, respondedAt: new Date(), latencyMs, updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
+    const resolved = await resolveTimeout(db, ctx, adapter, payment, attempt, cand, actor, startedAt);
+    if (resolved.kind === "done") return { kind: "done" };
+    return resolved.kind === "safe" ? { kind: "failed", outcome: "timeout", code: "timeout", timeoutResolvedSafe: true, retryContext: { advice: r.retryAdvice, chargeState: "not_created" } } : { kind: "failed", outcome: "unknown", code: "timeout" };
+  }
   switch (r.outcome) {
     case "success": {
       await finalizeSuccess(
@@ -589,7 +583,9 @@ async function executeAttempt(
     }
     case "soft_decline":
     case "hard_decline":
-    case "technical_error": {
+    case "technical_error":
+    case "provider_unavailable":
+    case "timeout": {
       const code = r.failureCode ?? (r.outcome === "technical_error" ? "technical_error" : "generic_decline");
       await db
         .update(paymentAttempts)
@@ -614,7 +610,7 @@ async function executeAttempt(
         description: `${cand.provider.name} · ${r.providerCode ?? ""} ${r.providerMessage ?? code}`.trim(),
         data: { failure_code: code, provider_code: r.providerCode ?? null, latency_ms: latencyMs },
       });
-      return { kind: "failed", outcome: r.outcome, code, message: r.providerMessage };
+      return { kind: "failed", outcome: r.outcome, code, message: r.providerMessage, retryContext: { chargeState: r.chargeState ?? (r.outcome === "soft_decline" || r.outcome === "hard_decline" ? "not_created" : "unknown"), advice: r.retryAdvice }, timeoutResolvedSafe: r.outcome === "timeout" && r.chargeState === "not_created" };
     }
     default: {
       await db.update(paymentAttempts).set({ status: "failed", outcome: "technical_error", failureCode: "technical_error", updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
@@ -624,8 +620,8 @@ async function executeAttempt(
 }
 
 /**
- * After a timeout, ask the provider whether the payment exists. Only a confirmed "not found"
- * makes a failover safe. A confirmed charge is adopted (no retry). Anything else → unknown + sync.
+ * After a timeout, ask the provider whether the payment exists. Only a final no-charge guarantee or confirmed terminal failure
+ * makes a failover safe. An eventually-consistent "not found" is not enough. A confirmed charge is adopted (no retry). Anything else → unknown + sync.
  */
 async function resolveTimeout(
   db: Db,
@@ -648,7 +644,7 @@ async function resolveTimeout(
     await scheduleSync(db, payment, attempt, err instanceof Error ? err.message : "lookup failed");
     return { kind: "unknown" };
   }
-  if (!lookup.found) {
+  if (!lookup.found && lookup.finalNoCharge) {
     await db.update(paymentAttempts).set({ status: "failed", failureCode: "timeout", updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
     await addTimeline(db, {
       paymentId: payment.id,
@@ -660,7 +656,7 @@ async function resolveTimeout(
     });
     return { kind: "safe" };
   }
-  if (lookup.status === "captured" || lookup.status === "authorized") {
+  if (lookup.found && lookup.providerPaymentId && lookup.amount === payment.amount && (!lookup.currency || lookup.currency === payment.currency) && (lookup.status === "captured" || lookup.status === "authorized")) {
     await addTimeline(db, {
       paymentId: payment.id,
       attemptId: attempt.id,
@@ -680,7 +676,7 @@ async function resolveTimeout(
     );
     return { kind: "done" };
   }
-  if (lookup.status === "failed" || lookup.status === "cancelled") {
+  if (lookup.found && (lookup.status === "failed" || lookup.status === "cancelled")) {
     await db.update(paymentAttempts).set({ status: "failed", failureCode: "timeout", updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
     await addTimeline(db, {
       paymentId: payment.id,
@@ -728,15 +724,15 @@ export async function syncAttempt(db: Db, job: ProviderSyncJob): Promise<void> {
   let lookup: ProviderLookupResult | null = null;
   try {
     lookup = attempt.providerPaymentId
-      ? await adapter.getPayment(ctx, attempt.providerPaymentId)
+      ? await withTimeout(adapter.getPayment(ctx, attempt.providerPaymentId), loadConfig().PROVIDER_TIMEOUT_MS)
       : adapter.findPaymentByReference
-        ? await adapter.findPaymentByReference(ctx, attempt.paymentId)
+        ? await withTimeout(adapter.findPaymentByReference(ctx, attempt.paymentId), loadConfig().PROVIDER_TIMEOUT_MS)
         : { found: false };
   } catch (err) {
     logger.warn({ err, attemptId: attempt.id }, "provider sync lookup failed");
   }
   const cand = { account, provider };
-  if (lookup?.found && (lookup.status === "captured" || lookup.status === "authorized")) {
+  if (lookup?.found && lookup.providerPaymentId && lookup.amount === bundle.payment.amount && (!lookup.currency || lookup.currency === bundle.payment.currency) && (lookup.status === "captured" || lookup.status === "authorized")) {
     await finalizeSuccess(
       db,
       bundle.payment,
@@ -748,7 +744,7 @@ export async function syncAttempt(db: Db, job: ProviderSyncJob): Promise<void> {
     );
     return;
   }
-  if (lookup && (!lookup.found || lookup.status === "failed" || lookup.status === "cancelled")) {
+  if (lookup && ((!lookup.found && lookup.finalNoCharge) || (lookup.found && (lookup.status === "failed" || lookup.status === "cancelled")))) {
     await db.update(paymentAttempts).set({ status: "failed", failureCode: "timeout", updatedAt: new Date() }).where(eq(paymentAttempts.id, attempt.id));
     await addTimeline(db, {
       paymentId: attempt.paymentId,
@@ -793,6 +789,7 @@ export async function handleProviderPaymentEvent(
   const bundle = await loadPaymentBundle(db, attempt.paymentId);
   if (!bundle) return { handled: false, reason: "payment missing" };
   const payment = bundle.payment;
+  if (payment.currentAttemptId !== attempt.id) return { handled: true, reason: "stale attempt notification; current attempt is unchanged" };
   const { account, provider } = await providerContextFor(db, providerAccountId);
   await addTimeline(db, {
     paymentId: payment.id,

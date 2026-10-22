@@ -8,7 +8,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { loadConfig } from "../../config.js";
 import { getDb, getPool } from "../../db/client.js";
-import { adminUsers, merchantUsers, providerAccounts, providers, projects, refunds, riskDecisions, routingDecisions } from "../../db/schema/index.js";
+import { adminUsers, merchantUsers, paymentAttempts, payments, providerAccounts, providers, projects, refunds, riskDecisions, routingDecisions } from "../../db/schema/index.js";
 import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { hashPassword } from "../../lib/crypto.js";
@@ -22,11 +22,13 @@ import { ADMIN_ROLES, hasAdminPermission, type AdminPermission, type AdminRole }
 import { adminListMerchants, adminSetKyb, adminSetMerchantStatus, listProjects, listUsers, serializeMerchant, serializeProject, serializeUser } from "../../modules/merchants/service.js";
 import { listPaymentsQuerySchema } from "../../modules/payments/schemas.js";
 import { getPaymentDetail, getPaymentRow, getPaymentTimeline, listPayments, reviewPayment } from "../../modules/payments/service.js";
-import { runOrchestration, syncAttempt } from "../../modules/payments/orchestrator.js";
+import { runOrchestration, syncAttempt, resolveRetryPolicy } from "../../modules/payments/orchestrator.js";
 import { serializeRefund } from "../../modules/refunds/service.js";
 import { getPayoutDetail, listPayouts } from "../../modules/payouts/service.js";
 import { listTransactions } from "../../modules/transactions/service.js";
 import { createProviderAccount, serializeAccount, listProvidersWithAccounts, countProviders, providerHealth, recentProviderEvents, runHealthCheck, setProviderStatus, updateProviderAccount } from "../../modules/providers/service.js";
+import { shouldRetry } from "../../modules/routing/cascade.js";
+import { repriceSnapshot } from "../../modules/pricing/engine.js";
 import { createRule, deleteRule, listRulesAdmin, simulateRoute, updateRule } from "../../modules/routing/service.js";
 import { createRiskRule, deleteRiskRule, listRiskRules, updateRiskRule } from "../../modules/risk/service.js";
 import { createSettlementFromProviderReport, getSettlementDetail, listSettlements } from "../../modules/settlements/service.js";
@@ -40,6 +42,9 @@ import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie 
 import { parse, parseQuery } from "../validate.js";
 import { merchants as merchantsTable } from "../../db/schema/index.js";
 
+const policySchema = z.object({
+  profile: z.enum(["balanced", "conversion", "cost", "reliability"]).optional(), maxAttempts: z.number().int().min(1).max(5).optional(), maxElapsedMs: z.number().int().min(1000).max(120000).optional(), retryOnSoftDecline: z.boolean().optional(), retryOnTimeout: z.boolean().optional(), minApprovalRate: z.number().min(0).max(1).optional(), minUptime: z.number().min(0).max(1).optional(), maxLatencyMs: z.number().int().min(1).max(120000).optional(), minSamples: z.number().int().min(5).max(10000).optional(), requireHealthData: z.boolean().optional(), blockNegativeMargin: z.boolean().optional(),
+}).strict();
 const conditionSchema = z.object({ field: z.string().min(1).max(40), op: z.enum(["eq", "neq", "in", "not_in", "gt", "gte", "lt", "lte", "between"]), value: z.union([z.string(), z.number(), z.array(z.union([z.string(), z.number()]))]) });
 
 export async function registerAdminRoutes(app: FastifyInstance) {
@@ -288,6 +293,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         enabled: z.boolean().default(true),
         transaction_type: z.enum(["payment", "payout"]).default("payment"),
         conditions: z.array(conditionSchema).max(20).default([]),
+        policy: policySchema.optional(),
         strategy: z.enum(["ordered", "weighted", "score"]).default("ordered"),
         routes: z.array(z.object({ provider_account_id: z.string(), weight: z.number().int().min(1).max(1000).optional() })).max(10).default([]),
       });
@@ -302,6 +308,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         transactionType: b.transaction_type,
         conditions: b.conditions as never,
         strategy: b.strategy,
+        policy: b.policy,
         routes: b.routes.map((x) => ({ providerAccountId: x.provider_account_id, weight: x.weight })),
       });
       r.get("/routing/rules", async (req) => {
@@ -331,6 +338,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
             ...(body.transaction_type !== undefined ? { transactionType: body.transaction_type } : {}),
             ...(body.conditions !== undefined ? { conditions: body.conditions as never } : {}),
             ...(body.strategy !== undefined ? { strategy: body.strategy } : {}),
+            ...(body.policy !== undefined ? { policy: body.policy } : {}),
             ...(body.routes !== undefined ? { routes: body.routes.map((x) => ({ providerAccountId: x.provider_account_id, weight: x.weight })) } : {}),
           },
           actorFromRequest(req),
@@ -355,11 +363,13 @@ export async function registerAdminRoutes(app: FastifyInstance) {
             project_id: z.string().optional(),
             mode: z.enum(["test", "live"]).default("test"),
             transaction_type: z.enum(["payment", "payout"]).default("payment"),
-            amount: z.number().int().positive(),
+            amount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
             currency: z.string().length(3),
             payment_method: z.string(),
             country: z.string().length(2).optional(),
-            risk_score: z.number().optional(),
+            risk_score: z.number().min(0).max(100).optional(),
+            policy: policySchema.optional(),
+            failure: z.enum(["technical_error", "issuer_unavailable", "insufficient_funds", "stolen_card", "authentication_required", "timeout_unknown", "timeout_safe"]).optional(),
           }),
           req.body,
         );
@@ -368,8 +378,25 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           const [p] = await db.select().from(projects).where(eq(projects.merchantId, body.merchant_id)).limit(1);
           projectId = p?.id ?? "";
         }
-        const result = await simulateRoute(db, { transactionType: body.transaction_type, merchantId: body.merchant_id, projectId, mode: body.mode, amount: body.amount, currency: body.currency.toUpperCase(), paymentMethod: body.payment_method, country: body.country, riskScore: body.risk_score, seed: "simulation" });
-        return { rule: result.rule ? { id: result.rule.id, name: result.rule.name } : null, strategy: result.strategy, reason: result.reason, ordered: result.ordered.map((c) => ({ provider_account_id: c.account.id, provider: c.provider.name, account: c.account.name })), candidates: result.candidates };
+        const result = await simulateRoute(db, { transactionType: body.transaction_type, merchantId: body.merchant_id, projectId, mode: body.mode, amount: body.amount, currency: body.currency.toUpperCase(), paymentMethod: body.payment_method, country: body.country, riskScore: body.risk_score, policyOverride: body.policy, seed: "simulation" });
+        const [project] = await db.select().from(projects).where(and(eq(projects.id, projectId), eq(projects.merchantId, body.merchant_id)));
+        if (!project) throw Errors.validation("Select a merchant and a project belonging to that merchant");
+        const defaults = resolveRetryPolicy(project);
+        const retryPolicy = { maxAttempts: result.policy.maxAttempts ?? defaults.maxAttempts, maxElapsedMs: result.policy.maxElapsedMs ?? 30000, retryOnSoftDecline: result.policy.retryOnSoftDecline ?? defaults.retryOnSoftDecline, retryOnTimeout: result.policy.retryOnTimeout ?? defaults.retryOnTimeout };
+        const failure = body.failure ?? "technical_error";
+        const outcome = failure.startsWith("timeout") ? "timeout" : failure === "stolen_card" ? "hard_decline" : failure === "authentication_required" ? "requires_action" : failure === "technical_error" ? "technical_error" : "soft_decline";
+        const cascade = shouldRetry(outcome, retryPolicy, 1, Math.max(0, result.ordered.length - 1), { chargeState: failure === "timeout_unknown" ? "unknown" : "not_created", timeoutResolvedSafe: failure === "timeout_safe", failureCode: failure, paymentMethod: body.payment_method });
+        const rank = new Map(result.ordered.map((c,i)=>[c.account.id,i]));
+        const evidence = [...result.candidates].sort((a,b)=>(rank.get(a.providerAccountId)??Infinity)-(rank.get(b.providerAccountId)??Infinity) || b.score-a.score);
+        const exclusionReasons:Record<string,number>={};for(const c of result.candidates)for(const reason of c.reasons)exclusionReasons[reason]=(exclusionReasons[reason]??0)+1;
+        return { eligible_candidates: result.ordered.length, exclusion_reasons: exclusionReasons, amount: body.amount, currency: body.currency.toUpperCase(), rule: result.rule ? { id: result.rule.id, name: result.rule.name } : null, strategy: result.strategy, reason: result.reason, policy: result.policy, retry_policy: retryPolicy, preview_override: !!body.policy, cascade: { ...cascade, failure, next_account_id: cascade.retry ? result.ordered[1]?.account.id : null }, total_candidates: result.candidates.length, ordered: result.ordered.slice(0, 100).map((c) => ({ provider_account_id: c.account.id, provider_id: c.provider.id, provider: c.provider.name, account: c.account.name, pricing: c.pricing })), candidates: evidence.slice(0, 200) };
+      });
+
+      r.get<{ Params: { id: string } }>("/payments/:id/pricing", async req => {
+        const [p] = await db.select().from(payments).where(and(eq(payments.id, req.params.id), eq(payments.mode, req.dashboardMode!)));
+        if (!p) throw Errors.notFound("Payment");
+        const attempts = await db.select({ id: paymentAttempts.id, status: paymentAttempts.status, providerCost: paymentAttempts.feeAmount, pricing: paymentAttempts.pricingSnapshot }).from(paymentAttempts).where(eq(paymentAttempts.paymentId, p.id)).orderBy(paymentAttempts.attemptNumber);
+        return { currency: p.currency, merchant_fee: p.feeAmount, data: attempts.map(a => ({ ...a, captured_pricing: a.pricing && p.capturedAmount > 0 && a.id === p.currentAttemptId ? repriceSnapshot(a.pricing, p.capturedAmount) : null })) };
       });
 
       // ---------------------------------------------------------------- risk rules

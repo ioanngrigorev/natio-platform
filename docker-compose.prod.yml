@@ -84,6 +84,12 @@ services:
       DATABASE_URL: postgres://natio_app:${NATIO_APP_DB_PASSWORD:?set in .env}@postgres:5432/natio
       REDIS_URL: redis://redis:6379
       NATIO_PROCESS_ROLE: worker
+    healthcheck:
+      test: ["CMD", "node", "-e", "const fs=require('fs');process.exit(Date.now()-Number(fs.readFileSync('/tmp/natio-worker-heartbeat','utf8'))<60000?0:1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
 
   web:
     build:

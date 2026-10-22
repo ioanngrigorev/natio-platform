@@ -190,10 +190,10 @@ describe("matchesCondition", () => {
     expect(matchesCondition({ field: "currency", op: "regex" as never, value: "USD" }, baseCtx)).toBe(false);
   });
 
-  it("risk_score defaults to 0 when absent", () => {
+  it("missing risk_score cannot qualify as low risk", () => {
     const ctx: RoutingContext = { ...baseCtx, riskScore: null };
-    expect(matchesCondition(cond("risk_score", "eq", 0), ctx)).toBe(true);
-    expect(matchesCondition(cond("risk_score", "lt", 1), ctx)).toBe(true);
+    expect(matchesCondition(cond("risk_score", "eq", 0), ctx)).toBe(false);
+    expect(matchesCondition(cond("risk_score", "lt", 1), ctx)).toBe(false);
   });
 
   it("hour_of_day / day_of_week use ctx.now (UTC)", () => {
@@ -323,10 +323,10 @@ describe("eligibility", () => {
     expect(eligibility(candidate({ supportedCurrencies: [] }), { ...baseCtx, currency: "KZT" })).toEqual([]);
   });
 
-  it("country not supported (only when a country is known)", () => {
+  it("country restrictions require a known supported country", () => {
     expect(eligibility(candidate({ supportedCountries: ["VN", "TH"] }), baseCtx)).toContain("country_not_supported");
     expect(eligibility(candidate({ supportedCountries: ["US"] }), { ...baseCtx, country: "us" })).toEqual([]);
-    expect(eligibility(candidate({ supportedCountries: ["VN"] }), { ...baseCtx, country: null })).toEqual([]);
+    expect(eligibility(candidate({ supportedCountries: ["VN"] }), { ...baseCtx, country: null })).toContain("country_required");
   });
 
   it("min / max amount limits", () => {
@@ -514,14 +514,14 @@ describe("buildRoute", () => {
     expect(res.candidates.map((x) => x.providerAccountId).sort()).toEqual([a.account.id, b.account.id, c.account.id].sort());
   });
 
-  it("falls back to default scoring when the matched rule has no routes", () => {
+  it("fails closed when an ordered rule has no routes", () => {
     const { all } = pool();
     const empty = rule({ name: "empty", strategy: "ordered" }, []);
     const res = buildRoute([empty], all, baseCtx);
     expect(res.rule?.id).toBe(empty.id);
-    expect(res.strategy).toBe("score");
-    expect(res.reason).toBe('rule "empty" matched but has no providers; default scoring used');
-    expect(res.ordered).toHaveLength(3);
+    expect(res.strategy).toBe("ordered");
+    expect(res.reason).toBe('rule "empty" matched');
+    expect(res.ordered).toHaveLength(0);
   });
 
   it("returns an empty ordered list when nothing is eligible", () => {
@@ -537,4 +537,32 @@ describe("buildRoute", () => {
     const res = buildRoute([], all, { ...baseCtx, excludeAccountIds: [a.account.id, c.account.id] });
     expect(res.ordered.map((x) => x.account.id)).toEqual([b.account.id]);
   });
+});
+
+
+describe("routing policy regression", () => {
+ it("requires a country for geographically restricted accounts", () => {
+  const c=candidate({supportedCountries:["US"]});
+  expect(eligibility(c,{...baseCtx,country:null})).toContain("country_required");
+ });
+ it("excludes accounts without manual capture capability", () => {
+  const c=candidate({capabilities:{payments:true,refunds:true,capture:false,payouts:false}});
+  expect(eligibility(c,{...baseCtx,captureMethod:"manual"})).toContain("manual_capture_not_supported");
+ });
+ it("enforces measured health and missing-data controls before ranking", () => {
+  const weak=candidate({}, {}, {approvalRate:.5,uptime:.6,avgLatencyMs:4000,sampleSize:100});
+  const unknown=candidate();
+  const res=buildRoute([], [weak,unknown], {...baseCtx,policyOverride:{minApprovalRate:.8,minUptime:.95,maxLatencyMs:1000,requireHealthData:true,minSamples:20}});
+  expect(res.ordered).toHaveLength(0);
+  expect(res.candidates[0]!.reasons).toEqual(expect.arrayContaining(["approval_below_threshold","uptime_below_threshold","latency_above_threshold"]));
+  expect(res.candidates[1]!.reasons).toContain("insufficient_health_data");
+ });
+ it("cost ranking uses the quote for this amount rather than the static account rate", () => {
+  const cheap=candidate({}, {feePercent:"10"}),expensive=candidate({}, {feePercent:"0"});
+  cheap.pricing={provider:{amount:10},merchant:{amount:100},margin:90,warnings:[]} as any;
+  expensive.pricing={provider:{amount:500},merchant:{amount:100},margin:-400,warnings:[]} as any;
+  const res=buildRoute([], [expensive,cheap], {...baseCtx,policyOverride:{profile:"cost",blockNegativeMargin:true}});
+  expect(res.ordered[0]!.account.id).toBe(cheap.account.id);
+  expect(res.candidates.find(c=>c.providerAccountId===expensive.account.id)!.reasons).toContain("negative_margin");
+ });
 });

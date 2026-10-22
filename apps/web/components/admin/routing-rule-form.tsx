@@ -1,12 +1,15 @@
 "use client";
+import Link from "next/link";
 
+import { RoutingPolicyEditor } from "./routing-policy";
+import type { Policy } from "./strategy-types";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { errorMessage, useSession } from "@/components/session-provider";
 import { Alert, Button, Card, Field, LinkButton, Mono, Tag } from "@/components/ui";
 import { adminCan } from "@/lib/admin-permissions";
 import type { Condition } from "@/components/admin/condition-chips";
-import type { ProviderAccount, RoutingRule } from "@/lib/types";
+import type { Provider, ProviderAccount, RoutingRule } from "@/lib/types";
 
 /** Context fields the routing engine can match on (apps/api/src/modules/routing/engine.ts). */
 export const ROUTING_FIELDS = ["country", "currency", "merchant_id", "project_id", "payment_method", "amount", "transaction_type", "risk_score", "hour_of_day", "day_of_week", "customer_country"] as const;
@@ -82,14 +85,20 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
     merchant_id: rule?.merchantId ?? "",
     strategy: rule?.strategy ?? "ordered",
   });
+  const [policy, setPolicy] = useState<Policy>(rule?.policy ?? { profile: "balanced", maxAttempts: 2, maxElapsedMs: 30000, minSamples: 20, retryOnSoftDecline: true, retryOnTimeout: true });
   const [conditions, setConditions] = useState<ConditionRow[]>(rule ? toRows(rule.conditions) : []);
   const [routes, setRoutes] = useState<RouteRow[]>(rule ? rule.routes.map((r) => ({ provider_account_id: r.provider_account_id, weight: String(r.weight) })) : []);
   const [addAccount, setAddAccount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const modeAccounts = useMemo(() => accounts.filter((a) => a.mode === form.mode), [accounts, form.mode]);
-  const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  const [foundAccounts,setFoundAccounts] = useState<ProviderAccount[]>([]);
+  const [providerSearch,setProviderSearch] = useState("");
+  const [searchBusy,setSearchBusy] = useState(false);
+  const allAccounts=useMemo(()=>[...new Map([...accounts,...foundAccounts].map(a=>[a.id,a])).values()],[accounts,foundAccounts]);
+  const modeAccounts = useMemo(() => allAccounts.filter((a) => a.mode === form.mode && (!a.merchant_id || a.merchant_id === form.merchant_id)), [allAccounts, form.mode, form.merchant_id]);
+  const byId = useMemo(() => new Map(allAccounts.map((a) => [a.id, a])), [allAccounts]);
+  async function searchProviders(){setSearchBusy(true);setError(null);try{const r=await session.api<{data:Provider[]}>(`/admin/providers?limit=50&search=${encodeURIComponent(providerSearch)}`,{mode:form.mode as "test"|"live"});setFoundAccounts(r.data.flatMap(p=>p.accounts));}catch(e){setError(errorMessage(e));}finally{setSearchBusy(false);}}
   const available = modeAccounts.filter((a) => !routes.some((r) => r.provider_account_id === a.id));
 
   function setCondition(i: number, patch: Partial<ConditionRow>) {
@@ -121,7 +130,7 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
       setError("Priority must be a number.");
       return;
     }
-    if (!routes.length) {
+    if (!routes.length && form.strategy !== "score") {
       setError("Add at least one provider account to the route.");
       return;
     }
@@ -135,6 +144,7 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
       transaction_type: form.transaction_type,
       conditions: parsed,
       strategy: form.strategy,
+      policy,
       routes: routes.map((r) => (form.strategy === "weighted" ? { provider_account_id: r.provider_account_id, weight: Number.parseInt(r.weight, 10) || 100 } : { provider_account_id: r.provider_account_id })),
     };
     setLoading(true);
@@ -150,10 +160,12 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
     }
   }
 
-  if (!canManage) return <Alert tone="warn">Your role cannot manage routing rules. Ask an operations or superadmin user to make this change.</Alert>;
+
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-4"><fieldset disabled={!canManage || loading} className="space-y-4">
+      {!canManage && <Alert tone="warn">Read-only access. You can inspect this rule and explore alternatives in Routing studio.</Alert>}
+      <Card title="Ranking & cascade controls"><RoutingPolicyEditor value={policy} onChange={setPolicy}/></Card>
       {error ? <Alert tone="bad">{error}</Alert> : null}
 
       <Card title="Rule" description="Rules are evaluated per transaction, lowest priority number first; the first matching rule decides the provider chain.">
@@ -280,9 +292,9 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
               <div key={r.provider_account_id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
                 <span className="w-6 text-[12px] text-ink-400">{i + 1}.</span>
                 <div className="min-w-[220px] flex-1">
-                  <div className="text-[13px] font-medium">{a ? a.provider_name ?? a.name : r.provider_account_id}</div>
+                  <Link className="text-[13px] font-medium text-brand-600 hover:underline" href={`/admin/provider-accounts/${r.provider_account_id}`}>{a ? a.provider_name ?? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.provider_name ?? r.provider_account_id}</Link>
                   <div className="text-[11px] text-ink-500">
-                    {a ? a.name : "unknown account"} · <Mono className="text-[11px]">{r.provider_account_id}</Mono>
+                    {a ? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.account_name ?? "Account"} · <Mono className="text-[11px]">{r.provider_account_id}</Mono>
                     {a && a.mode !== form.mode ? <Tag tone="bad">{a.mode} account</Tag> : null}
                   </div>
                 </div>
@@ -306,7 +318,8 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
               </div>
             );
           })}
-          {routes.length ? null : <div className="px-4 py-6 text-center text-[13px] text-ink-500">No provider accounts yet — a rule without a chain cannot route.</div>}
+          {routes.length ? null : <div className="px-4 py-6 text-center text-[13px] text-ink-500">{form.strategy === "score" ? "No explicit chain: score all eligible accounts in scope." : "Add at least one provider account to this chain."}</div>}
+          <div className="flex gap-2 px-4 py-3"><input className="input" aria-label="Find provider for chain" placeholder="Search all PSPs by name" value={providerSearch} onChange={e=>setProviderSearch(e.target.value)}/><Button type="button" loading={searchBusy} onClick={()=>void searchProviders()}>Find PSP</Button></div>
           <div className="flex flex-wrap items-end gap-2 bg-ink-50 px-4 py-3">
             <div className="min-w-[280px] flex-1">
               <label className="label" htmlFor="rr-add">
@@ -345,6 +358,6 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
           Cancel
         </LinkButton>
       </div>
-    </form>
+    </fieldset></form>
   );
 }

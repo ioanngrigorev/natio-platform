@@ -413,10 +413,13 @@ describe("NATIO MVP end-to-end flow", () => {
     expectRelativeOrder(types, ["provider.error", "failover.initiated", "provider.error", "retry.stopped", "payment.failed"]);
   });
 
-  it("(j) soft_decline cascades to the next provider; unavailable fails over", async () => {
+  it("(j) insufficient funds stops; eligible issuer outage and unavailable fail over", async () => {
     const soft = await createPayment(cardPayment({ test_scenario: "soft_decline" }));
-    expect(soft.status).toBe("successful");
-    expect(soft.route.attempts).toBe(2);
+    expect(soft.status).toBe("failed");
+    expect(soft.route.attempts).toBe(1);
+    const issuer = await createPayment(cardPayment({ test_scenario: "issuer_unavailable" }));
+    expect(issuer.status).toBe("successful");
+    expect(issuer.route.attempts).toBe(2);
     expect(soft.attempts[0]).toMatchObject({ outcome: "soft_decline" });
     expect(soft.attempts[0].failure.code).toBe("insufficient_funds");
     const unavailable = await createPayment(cardPayment({ test_scenario: "unavailable" }));

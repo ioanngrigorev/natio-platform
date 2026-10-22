@@ -1,3 +1,4 @@
+import type { PricingSnapshot } from "../../modules/pricing/engine.js";
 import { bigint, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import {
   attemptOutcomeEnum,
@@ -109,6 +110,7 @@ export const paymentAttempts = pgTable(
     providerMessage: text("provider_message"),
     failureCode: text("failure_code"),
     feeAmount: money("fee_amount").notNull().default(0),
+    pricingSnapshot: jsonb("pricing_snapshot").$type<PricingSnapshot | null>(),
     requestSentAt: ts("request_sent_at"),
     respondedAt: ts("responded_at"),
     latencyMs: integer("latency_ms"),

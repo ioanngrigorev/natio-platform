@@ -3,16 +3,17 @@ import type { projects } from "../../src/db/schema/index.js";
 import { resolveRetryPolicy, shouldRetry, type RetryPolicy } from "../../src/modules/payments/orchestrator.js";
 import { isTestScenario, primitiveForAttempt, TEST_SCENARIOS } from "../../src/modules/payments/scenarios.js";
 
+const safeContext = { chargeState: "not_created" as const, failureCode: "issuer_unavailable", paymentMethod: "card" };
 const policy = (over: Partial<RetryPolicy> = {}): RetryPolicy => ({ maxAttempts: 3, retryOnSoftDecline: true, retryOnTimeout: true, ...over });
 
 describe("shouldRetry", () => {
   it("technical_error retries when candidates remain and attempts < max", () => {
-    expect(shouldRetry("technical_error", policy(), 1, 2)).toEqual({ retry: true, reason: "technical_error_is_retryable" });
-    expect(shouldRetry("technical_error", policy(), 2, 1)).toEqual({ retry: true, reason: "technical_error_is_retryable" });
+    expect(shouldRetry("technical_error", policy(), 1, 2, safeContext)).toEqual({ retry: true, reason: "technical_error_is_retryable" });
+    expect(shouldRetry("technical_error", policy(), 2, 1, safeContext)).toEqual({ retry: true, reason: "technical_error_is_retryable" });
   });
 
   it("provider_unavailable retries when candidates remain and attempts < max", () => {
-    expect(shouldRetry("provider_unavailable", policy(), 1, 1)).toEqual({ retry: true, reason: "provider_unavailable_is_retryable" });
+    expect(shouldRetry("provider_unavailable", policy(), 1, 1, safeContext)).toEqual({ retry: true, reason: "provider_unavailable_is_retryable" });
   });
 
   it("hard_decline is never retried", () => {
@@ -21,8 +22,8 @@ describe("shouldRetry", () => {
   });
 
   it("soft_decline depends on the policy", () => {
-    expect(shouldRetry("soft_decline", policy({ retryOnSoftDecline: true }), 1, 1)).toEqual({ retry: true, reason: "soft_decline_cascade_enabled" });
-    expect(shouldRetry("soft_decline", policy({ retryOnSoftDecline: false }), 1, 1)).toEqual({ retry: false, reason: "soft_decline_cascade_disabled" });
+    expect(shouldRetry("soft_decline", policy({ retryOnSoftDecline: true }), 1, 1, safeContext)).toEqual({ retry: true, reason: "soft_decline_cascade_enabled" });
+    expect(shouldRetry("soft_decline", policy({ retryOnSoftDecline: false }), 1, 1, safeContext)).toEqual({ retry: false, reason: "soft_decline_cascade_disabled" });
   });
 
   it("timeout retries only when the provider confirmed there is no charge and the policy allows it", () => {
@@ -51,7 +52,7 @@ describe("shouldRetry", () => {
   it("stops when no candidates remain, and that check wins over max attempts", () => {
     expect(shouldRetry("technical_error", policy(), 1, 0)).toEqual({ retry: false, reason: "no_more_candidates" });
     expect(shouldRetry("technical_error", policy({ maxAttempts: 1 }), 1, 0)).toEqual({ retry: false, reason: "no_more_candidates" });
-    expect(shouldRetry("hard_decline", policy(), 1, 0)).toEqual({ retry: false, reason: "no_more_candidates" });
+    expect(shouldRetry("hard_decline", policy(), 1, 0)).toEqual({ retry: false, reason: "hard_decline_never_retried" });
     expect(shouldRetry("technical_error", policy(), 1, -1).retry).toBe(false);
   });
 
@@ -60,7 +61,7 @@ describe("shouldRetry", () => {
     for (const outcome of outcomes) {
       for (let attempts = 1; attempts <= 4; attempts++) {
         for (let remaining = 0; remaining <= 2; remaining++) {
-          const d = shouldRetry(outcome, policy({ maxAttempts: 3 }), attempts, remaining, { timeoutResolvedSafe: true });
+          const d = shouldRetry(outcome, policy({ maxAttempts: 3 }), attempts, remaining, { ...safeContext, timeoutResolvedSafe: true });
           const expected = remaining > 0 && attempts < 3;
           expect(d.retry, `${outcome} attempts=${attempts} remaining=${remaining}`).toBe(expected);
         }
@@ -130,9 +131,9 @@ describe("primitiveForAttempt", () => {
     expect(primitiveForAttempt("unavailable", 1)).toBe("success");
   });
 
-  it("soft_decline: soft_decline then success", () => {
+  it("soft_decline: insufficient funds never automatically cascades", () => {
     expect(primitiveForAttempt("soft_decline", 0)).toBe("soft_decline");
-    expect(primitiveForAttempt("soft_decline", 1)).toBe("success");
+    expect(primitiveForAttempt("soft_decline", 1)).toBe("soft_decline");
   });
 
   it("all_fail is always a technical error", () => {

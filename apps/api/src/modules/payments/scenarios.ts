@@ -7,7 +7,9 @@ export const TEST_SCENARIOS = {
   success: "Payment is approved by the first provider.",
   authorize: "Payment is authorised only; capture it with POST /v1/payments/{id}/capture.",
   requires_action: "Provider requests customer action (hosted page / redirect). Complete it via the sandbox hosted page.",
-  soft_decline: "First provider soft-declines (insufficient funds); NATIO cascades to the next provider.",
+  soft_decline: "Insufficient funds requires customer action; no automatic cascade.",
+  issuer_unavailable: "Issuer temporarily unavailable; an eligible card payment may cascade.",
+  timeout_unknown: "Unknown PSP result stays processing and is reconciled; no alternate charge.",
   hard_decline: "Provider hard-declines (stolen card). No retry; payment fails.",
   technical_error: "First provider returns a technical error; NATIO fails over to the next provider.",
   failover: "Alias of technical_error: Provider A fails technically, Provider B succeeds.",
@@ -36,7 +38,11 @@ export function primitiveForAttempt(scenario: string | null | undefined, attempt
     case "requires_action":
       return "requires_action";
     case "soft_decline":
-      return attemptIndex === 0 ? "soft_decline" : "success";
+      return "soft_decline";
+    case "issuer_unavailable":
+      return attemptIndex === 0 ? "issuer_unavailable" : "success";
+    case "timeout_unknown":
+      return "timeout_unknown";
     case "hard_decline":
       return "hard_decline";
     case "technical_error":
