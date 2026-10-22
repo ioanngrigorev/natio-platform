@@ -112,7 +112,7 @@ export default function ReconciliationPage() {
             Each batch reported by a provider, with its period, gross amount, fees, net amount, status and the transactions it covers.
           </Feature>
           <Feature index={3} title="Fees where they occur">
-            Provider fees are stored per attempt and per settlement, so cost per provider is a fact from your own data rather than an estimate.
+            PSP cost is recorded per attempt. Merchant commissions are recorded in the transaction ledger, with settlement fees shown separately.
           </Feature>
         </FeatureGrid>
       </Section>

@@ -72,7 +72,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: { 
         <Kpi label="Success rate" value={formatPercent(overview.success_rate)} tone={overview.success_rate === null ? "neutral" : overview.success_rate >= 0.9 ? "ok" : overview.success_rate >= 0.75 ? "warn" : "bad"} hint="Share of decided payments that succeeded" />
         <Kpi label="Approval rate" value={formatPercent(overview.approval_rate)} hint="Attempt level, across all providers" />
         <Kpi label="Net revenue" value={cur ? formatMoney(overview.net_revenue, cur) : "—"} hint={`TPV − ${cur ? formatMoney(overview.refunded, cur) : "—"} refunded`} />
-        <Kpi label="Processing cost" value={cur ? formatMoney(overview.processing_cost, cur) : "—"} hint={cur && overview.tpv ? `${formatPercent(overview.processing_cost / overview.tpv, 2)} of TPV in provider fees` : "Provider fees"} />
+        <Kpi label="Processing cost" value={cur ? formatMoney(overview.processing_cost, cur) : "—"} hint={cur && overview.tpv ? `${formatPercent(overview.processing_cost / overview.tpv, 2)} of TPV in processing fees` : "Processing fees"} />
         <Kpi label="Average ticket" value={cur ? formatMoney(overview.average_ticket, cur) : "—"} hint={`Avg processing ${formatMs(overview.avg_processing_ms)}`} />
         <Kpi label="Provider uptime" value={formatPercent(overview.provider_uptime)} tone={overview.provider_uptime === null ? "neutral" : overview.provider_uptime >= 0.99 ? "ok" : overview.provider_uptime >= 0.95 ? "warn" : "bad"} hint="Attempts without technical failure" />
       </Grid>

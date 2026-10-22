@@ -49,7 +49,7 @@ export default async function SettlementsPage({ searchParams }: { searchParams: 
                 <div className="mt-1 text-[22px] font-semibold tabular tracking-tight text-ink-900">{formatMoney(b.processed_net, b.currency)}</div>
                 <div className="mt-2 divide-y divide-ink-100">
                   <BalanceRow label="Processed gross" value={b.processed_gross} currency={b.currency} />
-                  <BalanceRow label="Provider fees" value={-b.fees} currency={b.currency} muted />
+                  <BalanceRow label="Processing fees" value={-b.fees} currency={b.currency} muted />
                   <BalanceRow label="Processed net" value={b.processed_net} currency={b.currency} strong />
                   <BalanceRow label="Settled by providers" value={b.settled_by_providers} currency={b.currency} />
                   <BalanceRow label="Awaiting provider settlement" value={b.awaiting_provider_settlement} currency={b.currency} />

@@ -539,7 +539,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       });
       m.get("/analytics/providers", async (req) => {
         need(req, "analytics.read");
-        return providerComparison(db, scope(req));
+        return providerComparison(db, scope(req), 200, "merchant");
       });
 
       // ---------------------------------------------------------------- providers, routing (read-only), status, audit
