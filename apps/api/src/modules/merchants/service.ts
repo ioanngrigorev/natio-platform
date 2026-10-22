@@ -1,6 +1,6 @@
-import { and, count, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gt, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db, DbOrTx } from "../../db/client.js";
-import { merchantUsers, merchants, payments, projects, type ProjectSettings } from "../../db/schema/index.js";
+import { merchantUsers, merchants, payments, projects, transactions, type ProjectSettings } from "../../db/schema/index.js";
 import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { isIP } from "node:net";
@@ -161,23 +161,34 @@ export async function adminListMerchants(db: DbOrTx, f: { search?: string; statu
   if (f.search) conds.push(or(ilike(merchants.name, `%${f.search}%`), ilike(merchants.id, `%${f.search}%`), ilike(merchants.contactEmail, `%${f.search}%`))!);
   if (f.status) conds.push(eq(merchants.status, f.status as never));
   if (f.kyb) conds.push(eq(merchants.kybStatus, f.kyb as never));
-  const rows = await db
-    .select({
-      m: merchants,
-      transactions: sql<number>`(select count(*) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"})`.mapWith(Number),
-      volume: sql<number>`(select coalesce(sum(t.amount),0) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"} and t.status='successful' and t.type='payment' and t.currency="merchants"."settings"->>'defaultCurrency')`.mapWith(Number),
-      balance: sql<number>`(select coalesce(sum(t.net_amount) filter(where t.settlement_id is null),0) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"} and t.status='successful' and t.currency="merchants"."settings"->>'defaultCurrency')`.mapWith(Number),
-      // Column refs must be table-qualified: drizzle renders `${merchants.id}` as a bare "id" in a
-      // single-table select, which inside the correlated subquery resolves to the inner table's id.
-      users: sql<number>`(select count(*) from merchant_users u where u.merchant_id = "merchants"."id")`.mapWith(Number),
-      payments30d: sql<number>`(select count(*) from payments p where p.merchant_id = "merchants"."id" and p.created_at > now() - interval '30 days')`.mapWith(Number),
-      volume30d: sql<number>`(select coalesce(sum(p.amount),0) from payments p where p.merchant_id = "merchants"."id" and p.status = 'successful' and p.mode = 'live' and p.created_at > now() - interval '30 days')`.mapWith(Number),
-    })
-    .from(merchants)
-    .where(conds.length ? and(...conds) : undefined)
-    .orderBy(desc(merchants.createdAt))
-    .limit(Math.min(f.limit ?? 100, 500));
-  return rows.map((r) => ({ ...serializeMerchant(r.m), users: r.users, transactions: r.transactions, volume: r.volume, balance: r.balance, currency: r.m.settings.defaultCurrency ?? "EUR", payments_30d: r.payments30d, live_volume_30d: r.volume30d }));
+  const selected = await db.select().from(merchants).where(conds.length ? and(...conds) : undefined)
+    .orderBy(desc(merchants.createdAt)).limit(Math.min(f.limit ?? 100, 500));
+  if (!selected.length) return [];
+  const ids = selected.map(m => m.id);
+  // Aggregate the selected merchants in batches instead of rescanning the ledger
+  // three times per merchant (300 correlated scans for the demo's 100 merchants).
+  const [ledger, users, recent] = await Promise.all([
+    db.select({ merchantId: transactions.merchantId, currency: transactions.currency,
+      transactions: sql<number>`count(*)`.mapWith(Number),
+      volume: sql<number>`coalesce(sum(${transactions.amount}) filter (where ${transactions.status}='successful' and ${transactions.type}='payment'),0)`.mapWith(Number),
+      balance: sql<number>`coalesce(sum(${transactions.netAmount}) filter (where ${transactions.status}='successful' and ${transactions.settlementId} is null),0)`.mapWith(Number),
+    }).from(transactions).where(and(inArray(transactions.merchantId, ids), eq(transactions.mode, f.mode ?? "test"))).groupBy(transactions.merchantId, transactions.currency),
+    db.select({ merchantId: merchantUsers.merchantId, total: count() }).from(merchantUsers).where(inArray(merchantUsers.merchantId, ids)).groupBy(merchantUsers.merchantId),
+    db.select({ merchantId: payments.merchantId,
+      payments30d: sql<number>`count(*)`.mapWith(Number),
+      volume30d: sql<number>`coalesce(sum(${payments.amount}) filter (where ${payments.status}='successful' and ${payments.mode}='live'),0)`.mapWith(Number),
+    }).from(payments).where(and(inArray(payments.merchantId, ids), inArray(payments.mode, ["test", "live"]), gt(payments.createdAt, new Date(Date.now() - 30 * 86400_000)))).groupBy(payments.merchantId),
+  ]);
+  const usersByMerchant = new Map(users.map(row => [row.merchantId, row.total]));
+  const recentByMerchant = new Map(recent.map(row => [row.merchantId, row]));
+  return selected.map(m => {
+    const rows = ledger.filter(row => row.merchantId === m.id);
+    const money = rows.find(row => row.currency === m.settings.defaultCurrency);
+    const last30 = recentByMerchant.get(m.id);
+    return { ...serializeMerchant(m), users: usersByMerchant.get(m.id) ?? 0,
+      transactions: rows.reduce((sum, row) => sum + row.transactions, 0), volume: money?.volume ?? 0, balance: money?.balance ?? 0,
+      currency: m.settings.defaultCurrency ?? "EUR", payments_30d: last30?.payments30d ?? 0, live_volume_30d: last30?.volume30d ?? 0 };
+  });
 }
 
 export async function adminSetMerchantStatus(db: Db, merchantId: string, status: "active" | "disabled", actor: Actor, reason?: string) {

@@ -1,0 +1,57 @@
+import { describe, expect, it } from "vitest";
+import { dailyVolume, groupVolume, volumeWindow } from "../../../web/lib/volume-series.js";
+
+function report(from: string, to: string, amounts: Array<[string, number]>) {
+  return { period: { from, to }, daily: amounts.map(([day, volume]) => ({ day, volume, transactions: 2, successful: 1, failed: 1, pending: 0, fees: 0, payouts: 0, ledger_net: 0, settled: 0 })) };
+}
+
+describe("payment volume chart accounting", () => {
+  it("fills calendar gaps with zeros and averages calendar days", () => {
+    const days = dailyVolume(report("2025-01-01", "2025-01-04", [["2025-01-01", 600], ["2025-01-03", 300]]));
+    expect(days.map(p => p.volume)).toEqual([600, 0, 300, 0]);
+    expect(days.map(p => p.trend)).toEqual([600, 300, 300, 225]);
+    expect(days.at(-1)?.trendDays).toBe(4);
+  });
+  it("uses only the last seven days and does not rewrite daily values", () => {
+    const data = report("2025-01-01", "2025-01-08", [["2025-01-01", 700], ["2025-01-08", 1400]]);
+    const before = JSON.stringify(data);
+    const days = dailyVolume(data);
+    expect(days[6].trend).toBe(100);
+    expect(days[7].trend).toBe(200);
+    expect(days[7].volume).toBe(1400);
+    expect(JSON.stringify(data)).toBe(before);
+    expect(groupVolume(days.slice(7), "day")[0].trend).toBe(200);
+  });
+  it("preserves amounts and counts in Monday-based weekly and monthly buckets", () => {
+    const days = dailyVolume(report("2024-12-29", "2025-01-06", [["2024-12-29", 100], ["2024-12-30", 200], ["2025-01-01", 300], ["2025-01-06", 400]]));
+    const weeks = groupVolume(days, "week");
+    expect(weeks.map(p => [p.date, p.endDate, p.volume])).toEqual([
+      ["2024-12-29", "2024-12-29", 100], ["2024-12-30", "2025-01-05", 500], ["2025-01-06", "2025-01-06", 400],
+    ]);
+    expect(groupVolume(days, "month").map(p => p.volume)).toEqual([300, 700]);
+    for (const grain of ["day", "week", "month"] as const) {
+      const result = groupVolume(days, grain);
+      expect(result.reduce((sum, p) => sum + p.volume, 0)).toBe(1000);
+      expect(result.reduce((sum, p) => sum + p.transactions, 0)).toBe(8);
+    }
+  });
+  it("handles leap days, partial months and report boundaries in UTC", () => {
+    const days = dailyVolume(report("2024-02-28", "2024-03-01", [["2024-02-27", 999], ["2024-02-29", 123], ["2024-03-01", 456]]));
+    expect(days.map(p => p.date)).toEqual(["2024-02-28", "2024-02-29", "2024-03-01"]);
+    expect(groupVolume(days, "month").map(p => p.volume)).toEqual([123, 456]);
+  });
+  it("keeps minor currency units intact, including zero-decimal currencies", () => {
+    const days = dailyVolume(report("2025-01-01", "2025-01-02", [["2025-01-01", 101], ["2025-01-02", 102]]));
+    expect(days[1].trend).toBe(101.5);
+    expect(groupVolume(days, "month")[0].volume).toBe(203);
+  });
+  it("anchors zoom presets to the report, handles short ranges and empty data", () => {
+    const days = dailyVolume(report("2025-01-01", "2025-12-31", [["2025-01-01", 1]]));
+    expect(volumeWindow(days, 30)).toEqual({ startIndex: 335, endIndex: 364 });
+    expect(days[335].date).toBe("2025-12-02");
+    expect(volumeWindow(days, 90)).toEqual({ startIndex: 275, endIndex: 364 });
+    expect(volumeWindow(days.slice(0, 1), 30)).toEqual({ startIndex: 0, endIndex: 0 });
+    expect(dailyVolume(report("2025-01-01", "2025-12-31", []))).toEqual([]);
+    expect(groupVolume([], "week")).toEqual([]);
+  });
+});

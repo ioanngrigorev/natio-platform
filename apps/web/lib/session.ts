@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { cache } from "react";
 import { apiServer, ApiRequestError, type Mode } from "./api";
 
 export interface MerchantSession {
@@ -33,14 +34,14 @@ export async function getMerchantSession(): Promise<MerchantSession | null> {
   }
 }
 
-export async function getAdminSession(): Promise<AdminSession | null> {
+export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
   try {
     return await apiServer<AdminSession>("/admin/auth/me", { cookie: cookieHeader(), mode: currentMode() });
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) return null;
     throw err;
   }
-}
+});
 
 /** Fetch helper bound to the current request's cookies and mode. */
 export function serverApi() {

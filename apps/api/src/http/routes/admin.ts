@@ -16,6 +16,7 @@ import { biQuery, businessIntelligence } from "../../modules/analytics/bi.js";
 import { reportPreview, tabularReport } from "../../modules/analytics/reports.js";
 import { excelReport } from "../../modules/analytics/excel.js";
 import { platformOverview, providerComparison } from "../../modules/analytics/service.js";
+import { SnapshotCache } from "../../modules/analytics/snapshot-cache.js";
 import { listAudit, listSystemEvents, recordAudit } from "../../modules/audit/service.js";
 import { loginAdmin, revokeSession } from "../../modules/auth/service.js";
 import { ADMIN_ROLES, hasAdminPermission, type AdminPermission, type AdminRole } from "../../modules/auth/permissions.js";
@@ -50,6 +51,7 @@ const conditionSchema = z.object({ field: z.string().min(1).max(40), op: z.enum(
 export async function registerAdminRoutes(app: FastifyInstance) {
   const cfg = loadConfig();
   const db = getDb();
+  const snapshots = new SnapshotCache();
 
   await app.register(async (a) => {
     const authLimit = { rateLimit: { max: cfg.RATE_LIMIT_AUTH_PER_MINUTE, timeWindow: "1 minute" } };
@@ -72,7 +74,12 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     await a.register(async (r) => {
       r.addHook("preHandler", requireAdmin("admin.read"));
+      r.addHook("onResponse", async (req, reply) => {
+        if (!["GET", "HEAD"].includes(req.method) && reply.statusCode < 400) snapshots.clear();
+      });
       r.addHook("preSerialization", async (req, _reply, payload) => req.dashboardMode === "test" ? demoDisplay(payload) : payload);
+      const snapshot = <T extends object>(req: FastifyRequest, name: string, params: unknown, calculate: () => Promise<T>) =>
+        snapshots.get(JSON.stringify([name, req.dashboardMode, params]), async () => ({ ...await calculate(), analytics_snapshot_at: new Date().toISOString() }));
       const admin = (req: FastifyRequest) => req.admin!.admin;
       const need = (req: FastifyRequest, p: AdminPermission) => {
         if (!hasAdminPermission(admin(req).role, p)) throw Errors.forbidden(`Requires admin permission ${p}`);
@@ -83,6 +90,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       // ---------------------------------------------------------------- overview
       r.get("/overview", async (req) => {
         const { from, to } = periodFromQuery(req.query as Record<string, unknown>, 1);
+        return snapshot(req, "overview", [from.toISOString(), to.toISOString()], async () => {
         const [platform, providers, events, providerCount] = await Promise.all([
           platformOverview(db, req.dashboardMode, from, to),
           listProvidersWithAccounts(db, { mode: req.dashboardMode, limit: 8, from, to }),
@@ -91,9 +99,13 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         ]);
         const [m] = await db.select({ total: sql<number>`count(*)`.mapWith(Number), active: sql<number>`count(*) filter (where status = 'active')`.mapWith(Number), kybPending: sql<number>`count(*) filter (where kyb_status = 'pending')`.mapWith(Number) }).from(merchantsTable);
         return { period: { from, to }, payments: platform, merchants: m, providers, provider_count: providerCount, health: [], recent_events: events };
+        });
       });
 
-      r.get("/bi", async (req) => businessIntelligence(parseQuery(biQuery, req.query), req.dashboardMode));
+      r.get("/bi", async (req) => {
+        const query = parseQuery(biQuery, req.query);
+        return snapshot(req, "bi", query, () => businessIntelligence(query, req.dashboardMode));
+      });
       r.get("/bi/report", async (req) => reportPreview(parseQuery(biQuery, req.query), req.dashboardMode));
       r.get("/bi/export.csv", { config: { rateLimit: { max: 4, timeWindow: "1 minute" } } }, async (req, reply) => {
         const q=parseQuery(biQuery,req.query);
@@ -279,7 +291,8 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       r.get<{ Params: { id: string } }>("/provider-accounts/:id/events", async (req) => ({ data: await recentProviderEvents(db, req.params.id) }));
       r.get("/providers/comparison", async (req) => {
         const { from, to } = periodFromQuery(req.query as Record<string, unknown>, 7);
-        return providerComparison(db, { mode: req.dashboardMode, from, to, currency: (req.query as Record<string, string>).currency }, 20);
+        const currency = (req.query as Record<string, string>).currency;
+        return snapshot(req, "provider-comparison", [from.toISOString(), to.toISOString(), currency], () => providerComparison(db, { mode: req.dashboardMode, from, to, currency }, 20));
       });
 
       // ---------------------------------------------------------------- routing rules

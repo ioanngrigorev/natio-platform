@@ -46,13 +46,28 @@ export const measures = `count(*)::bigint transactions,
 export async function businessIntelligence(q: BiQuery, mode: "test" | "live") {
   const pool = getPool(), f = biWhere(q, mode), all = biWhere(q, mode, false);
   const [report, balances, options, coverage] = await Promise.all([
-    pool.query(`WITH s AS MATERIALIZED (SELECT t.* FROM transactions t WHERE ${f.where})
-      SELECT (SELECT row_to_json(x) FROM (SELECT ${measures} FROM s) x) summary,
-      (SELECT coalesce(json_agg(x ORDER BY "day"),'[]') FROM (SELECT to_char(occurred_at AT TIME ZONE 'UTC','YYYY-MM-DD') AS "day", ${measures} FROM s GROUP BY 1) x) daily,
-      (SELECT coalesce(json_agg(x),'[]') FROM (SELECT payment_method_type label,${measures} FROM s GROUP BY 1 ORDER BY count(*) DESC) x) methods,
-      (SELECT coalesce(json_agg(x),'[]') FROM (SELECT country label,${measures} FROM s GROUP BY 1 ORDER BY count(*) DESC) x) countries,
-      (SELECT coalesce(json_agg(x),'[]') FROM (SELECT m.name label,s.merchant_id,${measures.replaceAll('status=', 's.status=')} FROM s JOIN merchants m ON m.id=s.merchant_id GROUP BY m.name,s.merchant_id ORDER BY count(*) DESC) x) merchants,
-      (SELECT coalesce(json_agg(x),'[]') FROM (SELECT status label,count(*)::bigint transactions FROM s GROUP BY status) x) statuses`, f.values),
+    pool.query(`WITH s AS (
+      SELECT to_char(occurred_at AT TIME ZONE 'UTC','YYYY-MM-DD') AS day,
+        payment_method_type,country,merchant_id,status,type,amount,fee_amount,net_amount,settlement_id
+      FROM transactions t WHERE ${f.where}
+    ), g AS MATERIALIZED (
+      SELECT CASE WHEN grouping(day)=0 THEN 'daily'
+        WHEN grouping(payment_method_type)=0 THEN 'methods'
+        WHEN grouping(country)=0 THEN 'countries'
+        WHEN grouping(merchant_id)=0 THEN 'merchants'
+        WHEN grouping(status)=0 THEN 'statuses' ELSE 'summary' END AS dimension,
+        day,payment_method_type,country,merchant_id,status,${measures}
+      FROM s GROUP BY GROUPING SETS ((),(day),(payment_method_type),(country),(merchant_id),(status))
+    ), shaped AS (
+      SELECT g.*, jsonb_build_object('transactions',transactions,'successful',successful,'failed',failed,'pending',pending,
+        'volume',volume,'fees',fees,'payouts',payouts,'ledger_net',ledger_net,'settled',settled) AS metrics FROM g
+    ) SELECT
+      (SELECT metrics FROM shaped WHERE dimension='summary') summary,
+      (SELECT coalesce(jsonb_agg(metrics || jsonb_build_object('day',day) ORDER BY day),'[]') FROM shaped WHERE dimension='daily') daily,
+      (SELECT coalesce(jsonb_agg(metrics || jsonb_build_object('label',payment_method_type) ORDER BY transactions DESC,payment_method_type),'[]') FROM shaped WHERE dimension='methods') methods,
+      (SELECT coalesce(jsonb_agg(metrics || jsonb_build_object('label',country) ORDER BY transactions DESC,country),'[]') FROM shaped WHERE dimension='countries') countries,
+      (SELECT coalesce(jsonb_agg(metrics || jsonb_build_object('label',m.name,'merchant_id',g.merchant_id) ORDER BY g.transactions DESC,g.merchant_id),'[]') FROM shaped g JOIN merchants m ON m.id=g.merchant_id WHERE dimension='merchants') merchants,
+      (SELECT coalesce(jsonb_agg(jsonb_build_object('label',status,'transactions',transactions) ORDER BY transactions DESC,status),'[]') FROM shaped WHERE dimension='statuses') statuses`, f.values),
     pool.query(`SELECT currency,${measures} FROM transactions t WHERE ${all.where} GROUP BY currency ORDER BY currency`, all.values),
     pool.query(`SELECT
       (SELECT coalesce(json_agg(x ORDER BY x),'[]') FROM (SELECT DISTINCT config->>'method' x FROM provider_accounts WHERE mode=$1 AND config->>'method' IS NOT NULL) a) methods,
