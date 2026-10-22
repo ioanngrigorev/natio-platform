@@ -2,6 +2,7 @@
  * Internal admin API — /admin. Separate admin users, session cookie, CSRF and admin RBAC.
  * Every mutating action is written to the audit log by the underlying service.
  */
+import { demoDisplay } from "../../modules/demo/display.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -12,6 +13,7 @@ import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { hashPassword } from "../../lib/crypto.js";
 import { biQuery, businessIntelligence } from "../../modules/analytics/bi.js";
+import { reportPreview, tabularReport } from "../../modules/analytics/reports.js";
 import { excelReport } from "../../modules/analytics/excel.js";
 import { platformOverview, providerComparison } from "../../modules/analytics/service.js";
 import { listAudit, listSystemEvents, recordAudit } from "../../modules/audit/service.js";
@@ -65,6 +67,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     await a.register(async (r) => {
       r.addHook("preHandler", requireAdmin("admin.read"));
+      r.addHook("preSerialization", async (req, _reply, payload) => req.dashboardMode === "test" ? demoDisplay(payload) : payload);
       const admin = (req: FastifyRequest) => req.admin!.admin;
       const need = (req: FastifyRequest, p: AdminPermission) => {
         if (!hasAdminPermission(admin(req).role, p)) throw Errors.forbidden(`Requires admin permission ${p}`);
@@ -86,9 +89,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       });
 
       r.get("/bi", async (req) => businessIntelligence(parseQuery(biQuery, req.query), req.dashboardMode));
+      r.get("/bi/report", async (req) => reportPreview(parseQuery(biQuery, req.query), req.dashboardMode));
+      r.get("/bi/export.csv", { config: { rateLimit: { max: 4, timeWindow: "1 minute" } } }, async (req, reply) => {
+        const q=parseQuery(biQuery,req.query);
+        reply.header("content-type","text/csv; charset=utf-8");
+        reply.header("content-disposition",`attachment; filename="NATIO-${q.kind}-${q.from}-${q.to}.csv"`);
+        reply.header("cache-control","no-store");
+        return reply.send(tabularReport(q,req.dashboardMode,"csv").stream);
+      });
       r.get("/bi/export.xlsx", { config: { rateLimit: { max: 4, timeWindow: "1 minute" } } }, async (req, reply) => {
         const q = parseQuery(biQuery, req.query);
-        const { stream } = excelReport(q, req.dashboardMode);
+        const { stream } = q.kind === "summary" && q.all_currencies !== "1" ? excelReport(q, req.dashboardMode) : tabularReport(q, req.dashboardMode, "xlsx");
         reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         reply.header("content-disposition", `attachment; filename="NATIO-${q.kind}-${q.from}-${q.to}.xlsx"`);
         reply.header("cache-control", "no-store");

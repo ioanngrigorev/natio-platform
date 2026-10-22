@@ -20,7 +20,7 @@ for row in rows[1:]:
         if 'Europe' in geo or 'EU' in geo: codes = ['DE'] + (['GB'] if 'UK' in geo else [])
         elif geo == 'LATAM': codes = ['BR','MX','CO']
         else: continue
-    # Preserve recognizable payment rails; remove internal commercial qualifiers.
+    # Classify the reference internally; publish fictional demo labels only.
     label = re.sub(r'\s*\([^)]*\)', '', str(method)).strip()
     low = label.lower()
     family = ('qr' if 'qr' in low else 'card' if any(x in low for x in ['card','visa','amex','e-com']) else 'open_banking' if any(x in low for x in ['open banking','klarna','trustly','ideal','eps','fpx']) else 'instant' if any(x in low for x in ['upi','pix','swish','promptpay','paynow','spei']) else 'bank_transfer' if any(x in low for x in ['bank','transfer','sepa','imps','virtual account','havale','eft','interac']) else 'wallet')
@@ -31,5 +31,9 @@ for row in rows[1:]:
             key=(label,currency,code)
             catalog[key] = dict(method=label,family=family,currency=currency,country=code,base_minor=base[currency]*(1 if currency in zero else 100))
 data=list(catalog.values())
+labels=sorted({r["method"] for r in data})
+words=["Aurora","Orbit","Prism","Nova","Pulse","Horizon","Vector","Crest"]
+aliases={name:f"NATIO {words[i%len(words)]} {i+1:03}" for i,name in enumerate(labels)}
+for row in data: row["method"]=aliases[row["method"]]
 Path(__file__).with_name('method-catalog.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
 print(json.dumps(dict(combinations=len(data),methods=len({r['method'] for r in data}),currencies=len({r['currency'] for r in data}),countries=len({r['country'] for r in data}))))

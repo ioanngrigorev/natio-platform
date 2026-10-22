@@ -1,3 +1,4 @@
+import { demoDisplay, demoLabel } from "../demo/display.js";
 import ExcelJS from "exceljs";
 import { PassThrough } from "node:stream";
 import { getPool } from "../../db/client.js";
@@ -23,7 +24,7 @@ export function excelReport(q: BiQuery, mode: "test" | "live") {
     workbook.creator = "NATIO";
     const info = workbook.addWorksheet("Report", { views: [{ state: "frozen", ySplit: 1 }] });
     header(info, ["NATIO report", "Value"]);
-    [["Mode", mode], ["From (UTC)", q.from], ["To (UTC, inclusive)", q.to], ["Currency", q.kind === "transactions" && q.all_currencies === "1" ? "All currencies, separate rows" : q.currency], ["Merchant", q.merchant_id || "All"], ["Method", q.method || "All"], ["Data", mode === "test" ? "Synthetic demo transactions" : "Live transactions"], ["Amounts", "Major currency units; no FX conversion"]].forEach(r => info.addRow(r).commit());
+    [["Mode", mode], ["From (UTC)", q.from], ["To (UTC, inclusive)", q.to], ["Currency", q.kind === "transactions" && q.all_currencies === "1" ? "All currencies, separate rows" : q.currency], ["Merchant", q.merchant_id || "All"], ["Method", q.method ? (mode === "test" ? demoLabel(q.method) : q.method) : "All"], ["Country",q.country||"All"], ["Status",q.status||"All"], ["Type",q.type||"All"], ["Provider account",q.provider_account_id||"All"], ["Data", mode === "test" ? "Synthetic demo transactions" : "Live transactions"], ["Amounts", "Major currency units; no FX conversion"]].forEach(r => info.addRow(r).commit());
     info.commit();
     if (q.kind === "transactions") {
       const client = await getPool().connect();
@@ -41,14 +42,15 @@ export function excelReport(q: BiQuery, mode: "test" | "live") {
           for (const r of rows.rows) {
             if (count && count%1000000===0) { sheet.commit(); sheet=createSheet(); }
             const divisor=moneyDivisor(r.currency);
-            sheet.addRow([r.id,r.merchant,r.channel,new Date(r.occurred_at).toISOString(),r.type,r.status,r.payment_method_type,r.country,r.currency,r.amount/divisor,r.fee_amount/divisor,r.net_amount/divisor,r.provider_reference]).commit(); count++;
+            sheet.addRow([r.id,r.merchant,r.channel,new Date(r.occurred_at).toISOString(),r.type,r.status,mode === "test" ? demoLabel(r.payment_method_type || "") : r.payment_method_type,r.country,r.currency,r.amount/divisor,r.fee_amount/divisor,r.net_amount/divisor,r.provider_reference]).commit(); count++;
           }
         }
         sheet.commit(); await client.query("COMMIT");
       } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
     } else {
-      const r=await businessIntelligence(q,mode);
-      for (const [name,rows,key] of [["Summary",[r.summary],null],["Daily",r.daily,"day"],["Payment methods",r.methods,"label"],["Countries",r.countries,"label"],["Merchants",r.merchants,"label"],["Currency balances",r.balances,"currency"]] as const) {
+      const raw=await businessIntelligence(q,mode);
+      const r=mode === "test" ? demoDisplay(raw) : raw;
+      for (const [name,rows,key] of [["Summary",[r.summary],null],["Daily",r.daily,"day"],["Payment methods",r.methods,"label"],["Countries",r.countries,"label"],["Merchants",r.merchants,"label"],["Currency balances",r.balances.filter((b:{currency:string})=>b.currency===q.currency),"currency"]] as const) {
         const sheet=workbook.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
         header(sheet,[key || "Scope","Currency","Transactions","Successful","Failed","Pending","Pay-in volume","Fees","Payouts","Ledger net","Settled","Unsettled balance"]);
         for(let c=7;c<=12;c++) sheet.getColumn(c).numFmt='#,##0.00';
