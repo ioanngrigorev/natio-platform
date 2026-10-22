@@ -15,7 +15,7 @@ export default async function RiskPage({ searchParams }: { searchParams: { decis
   const api = serverApi();
   const [rules, merchants, decisions] = await Promise.all([
     api.get<{ data: RiskRule[] }>(`/admin/risk/rules?mode=${api.mode}`),
-    api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500"),
+    api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500"),
     api.get<{ data: RiskDecision[] }>(`/admin/risk/decisions${qs({ decision: searchParams.decision })}`),
   ]);
   const merchantList = merchants.data.map((m) => ({ id: m.id, name: m.name }));

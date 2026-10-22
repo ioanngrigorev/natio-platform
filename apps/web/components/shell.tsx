@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { AdminThemeToggle } from "@/components/admin/theme-provider";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cx } from "@/components/ui";
 import { useSession } from "@/components/session-provider";
 
@@ -15,6 +16,8 @@ export interface NavItem {
 
 export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title: string; subtitle?: string }; children: ReactNode }) {
   const pathname = usePathname();
+  const [opening, setOpening] = useState<string | null>(null);
+  useEffect(() => { setOpening(null); }, [pathname]);
   const router = useRouter();
   const session = useSession();
   const base = session.kind === "admin" ? "/admin" : "/dashboard";
@@ -35,10 +38,10 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-[232px] shrink-0 flex-col border-r border-ink-200 bg-white md:flex">
+      <aside className="natio-sidebar hidden w-[232px] shrink-0 flex-col border-r border-ink-200 bg-white md:flex">
         <div className="flex h-14 items-center gap-2 border-b border-ink-100 px-4">
           <Link href={base} className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-ink-900 text-[11px] font-bold text-white">N</span>
+            <span className="natio-logo flex h-6 w-6 items-center justify-center rounded bg-ink-900 text-[11px] font-bold text-white">N</span>
             <span className="text-[14px] font-semibold tracking-tight">NATIO</span>
           </Link>
           <span className="ml-auto rounded bg-ink-100 px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-ink-600">{brand.title}</span>
@@ -50,7 +53,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
               {s.items.map((item) => {
                 const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
-                  <Link key={item.href} href={item.href} className={cx("block rounded-md px-2 py-[6px] text-[13px]", active ? "bg-ink-100 font-medium text-ink-900" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900")}>
+                  <Link prefetch={false} key={item.href} href={item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={active ? "page" : undefined} className={cx("block rounded-md px-2 py-[6px] text-[13px]", active ? "bg-ink-100 font-medium text-ink-900" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900")}>
                     {item.label}
                   </Link>
                 );
@@ -65,19 +68,21 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-3 border-b border-ink-200 bg-white px-4 md:px-6">
+        <header className="natio-topbar flex h-14 items-center gap-3 border-b border-ink-200 bg-white px-4 md:px-6">
           <div className="md:hidden">
-            <Link href={base} className="text-[14px] font-semibold">NATIO</Link>
+            {session.kind === "admin" ? <details className="admin-mobile-nav"><summary>NATIO · Menu</summary><nav>{nav.map((item) => <Link prefetch={false} key={item.href} href={item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}</nav></details> : <Link href={base} className="text-[14px] font-semibold">NATIO</Link>}
           </div>
           <div className="hidden text-[13px] text-ink-500 md:block">{brand.subtitle}</div>
           <div className="ml-auto flex items-center gap-3">
+            {session.kind === "admin" ? <AdminThemeToggle /> : null}
             <ModeToggle />
             <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">
               Sign out
             </button>
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 md:px-6">
+        {opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">Opening {opening}…</div> : null}
+        <main className="natio-workspace flex-1 px-4 py-6 md:px-6">
           <div className="mx-auto max-w-[1280px]">{children}</div>
         </main>
       </div>

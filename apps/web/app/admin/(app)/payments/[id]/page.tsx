@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AttemptSyncButton, PaymentAdminActions } from "@/components/admin/payment-admin-actions";
@@ -107,7 +108,7 @@ export default async function AdminPaymentDetailPage({ params }: { params: { id:
               items={[
                 { label: "Routing rule", value: p.route.rule ? (rd?.routingRuleId ? <Link href={`/admin/routing/${rd.routingRuleId}`} className="text-brand-600 hover:underline">{p.route.rule}</Link> : p.route.rule) : "Default scoring" },
                 { label: "Provider", value: p.route.provider?.name ?? "—" },
-                { label: "Provider account", value: p.route.provider_account_name ?? "—" },
+                { label: "Provider account", value: <EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_account_name}</EntityLink> },
                 { label: "Provider payment id", value: p.route.provider_payment_id ? <Mono>{p.route.provider_payment_id}</Mono> : "—" },
                 { label: "Attempts", value: p.route.attempts },
                 { label: "Routing decision", value: p.route.routing_decision_id ? <Mono>{p.route.routing_decision_id}</Mono> : "—" },

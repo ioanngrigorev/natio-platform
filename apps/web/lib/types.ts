@@ -85,6 +85,13 @@ export interface Refund {
 }
 
 export interface Transaction {
+  merchant_id: string;
+  project_id: string;
+  merchant_name?: string;
+  channel?: string;
+  owner?: string;
+  external_reference?: string;
+  received_amount?: number;
   id: string;
   mode: Mode;
   type: string;

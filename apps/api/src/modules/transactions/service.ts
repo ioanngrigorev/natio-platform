@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import type { DbOrTx } from "../../db/client.js";
-import { providerAccounts, providers, transactions } from "../../db/schema/index.js";
+import { merchantUsers, merchants, projects, payments, payouts, providerAccounts, providers, transactions } from "../../db/schema/index.js";
 import { newId } from "../../lib/ids.js";
 
 export type TransactionRow = typeof transactions.$inferSelect;
@@ -78,10 +78,17 @@ export interface TransactionFilter {
   cursor?: string;
 }
 
-export function serializeTransaction(t: TransactionRow & { providerName?: string | null; providerAccountName?: string | null }) {
+export function serializeTransaction(t: TransactionRow & { providerName?: string | null; providerAccountName?: string | null; merchantName?: string | null; channel?: string | null; externalReference?: string | null; owner?: string | null }) {
   return {
     id: t.id,
     object: "transaction",
+    merchant_id: t.merchantId,
+    project_id: t.projectId,
+    merchant_name: t.merchantName,
+    channel: t.channel,
+    external_reference: t.externalReference,
+    owner: t.owner,
+    received_amount: t.status === "successful" ? Math.abs(t.amount) : 0,
     mode: t.mode,
     type: t.type,
     status: t.status,
@@ -128,20 +135,24 @@ export async function listTransactions(db: DbOrTx, f: TransactionFilter) {
   if (f.cursor) {
     conds.push(
       f.merchantId
-        ? sql`${transactions.occurredAt} < (select occurred_at from transactions where id = ${f.cursor} and merchant_id = ${f.merchantId})`
-        : sql`${transactions.occurredAt} < (select occurred_at from transactions where id = ${f.cursor})`,
+        ? sql`(${transactions.occurredAt}, ${transactions.id}) < (select occurred_at, id from transactions where id = ${f.cursor} and merchant_id = ${f.merchantId})`
+        : sql`(${transactions.occurredAt}, ${transactions.id}) < (select occurred_at, id from transactions where id = ${f.cursor})`,
     );
   }
   const limit = Math.min(f.limit ?? 50, 200);
   const rows = await db
-    .select({ t: transactions, providerName: providers.name, providerAccountName: providerAccounts.name })
+    .select({ t: transactions, providerName: providers.name, providerAccountName: providerAccounts.name, merchantName: merchants.name, channel: projects.name, owner: merchants.contactEmail, externalReference: sql<string>`coalesce(${payments.reference},${payouts.reference})` })
     .from(transactions)
+    .leftJoin(merchants, eq(merchants.id, transactions.merchantId))
+    .leftJoin(projects, eq(projects.id, transactions.projectId))
+    .leftJoin(payments, eq(payments.id, transactions.paymentId))
+    .leftJoin(payouts, eq(payouts.id, transactions.entityId))
     .leftJoin(providers, eq(providers.id, transactions.providerId))
     .leftJoin(providerAccounts, eq(providerAccounts.id, transactions.providerAccountId))
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(transactions.occurredAt), desc(transactions.id))
     .limit(limit + 1);
   const hasMore = rows.length > limit;
-  const data = rows.slice(0, limit).map((r) => serializeTransaction({ ...r.t, providerName: r.providerName, providerAccountName: r.providerAccountName }));
+  const data = rows.slice(0, limit).map((r) => serializeTransaction({ ...r.t, providerName: r.providerName, providerAccountName: r.providerAccountName, merchantName: r.merchantName, channel: r.channel, owner: r.owner, externalReference: r.externalReference }));
   return { data, has_more: hasMore, next_cursor: hasMore ? data[data.length - 1]!.id : null };
 }

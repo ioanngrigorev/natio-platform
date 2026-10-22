@@ -10,7 +10,7 @@ import type { Provider, RoutingRule } from "@/lib/types";
 /** There is no single-rule GET endpoint: the list is filtered server-side by id. */
 export default async function EditRoutingRulePage({ params }: { params: { id: string } }) {
   const api = serverApi();
-  const [rules, providers, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>("/admin/routing/rules"), api.get<{ data: Provider[] }>("/admin/providers"), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [rules, providers, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>("/admin/routing/rules"), api.get<{ data: Provider[] }>("/admin/providers"), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const rule = rules.data.find((r) => r.id === params.id);
   if (!rule) notFound();
   const accounts = providers.data.flatMap((p) => p.accounts);

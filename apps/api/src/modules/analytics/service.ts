@@ -171,7 +171,7 @@ async function declineReasons(db: DbOrTx, s: AnalyticsScope) {
 }
 
 /** Provider comparison table (attempt-level metrics + fees). */
-export async function providerComparison(db: DbOrTx, s: AnalyticsScope) {
+export async function providerComparison(db: DbOrTx, s: AnalyticsScope, limit = 200) {
   const currency = s.currency ?? (await dominantCurrency(db, s));
   const conds: SQL[] = [eq(payments.mode, s.mode), gte(paymentAttempts.createdAt, s.from), lte(paymentAttempts.createdAt, s.to)];
   if (s.merchantId) conds.push(eq(payments.merchantId, s.merchantId));
@@ -184,7 +184,7 @@ export async function providerComparison(db: DbOrTx, s: AnalyticsScope) {
       successes: sql<number>`count(*) filter (where ${paymentAttempts.outcome} in ('success','requires_action'))`.mapWith(Number),
       technical: sql<number>`count(*) filter (where ${paymentAttempts.outcome} in ('technical_error','timeout','provider_unavailable'))`.mapWith(Number),
       avgLatency: sql<number>`avg(${paymentAttempts.latencyMs})`.mapWith(Number),
-      fees: sql<number>`coalesce(sum(${paymentAttempts.feeAmount}), 0)`.mapWith(Number),
+      fees: sql<number>`coalesce(sum(${paymentAttempts.feeAmount}) filter (where ${payments.currency} = ${currency}), 0)`.mapWith(Number),
       volume: currency
         ? sql<number>`coalesce(sum(${payments.amount}) filter (where ${paymentAttempts.outcome} = 'success' and ${payments.currency} = ${currency}), 0)`.mapWith(Number)
         : sql<number>`0`.mapWith(Number),
@@ -195,7 +195,7 @@ export async function providerComparison(db: DbOrTx, s: AnalyticsScope) {
     .innerJoin(providers, eq(providers.id, providerAccounts.providerId))
     .where(and(...conds))
     .groupBy(paymentAttempts.providerAccountId, providers.name, providerAccounts.name)
-    .orderBy(desc(sql`count(*)`));
+    .orderBy(desc(sql`count(*)`)).limit(limit);
   return {
     currency,
     rows: rows.map((r) => ({

@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MerchantActions } from "@/components/admin/merchant-actions";
@@ -78,7 +79,7 @@ export default async function MerchantDetailPage({ params }: { params: { id: str
                   {m.users.map((u) => (
                     <tr key={u.id}>
                       <td>
-                        <div className="font-medium">{u.name}</div>
+                        <EntityLink kind="users" id={u.id}>{u.name}</EntityLink>
                         <div className="text-[11px] text-ink-500">{u.email}</div>
                       </td>
                       <td className="capitalize">{u.role}</td>
@@ -114,7 +115,7 @@ export default async function MerchantDetailPage({ params }: { params: { id: str
                   {m.projects.map((p) => (
                     <tr key={p.id}>
                       <td>
-                        <div className="font-medium">{p.name}</div>
+                        <Link className="font-medium text-brand-600 hover:underline" href={`/admin/transactions?merchant_id=${m.id}&project_id=${p.id}`}>{p.name}</Link>
                         <div className="text-[11px] text-ink-500">
                           <Mono className="text-[11px]">{p.id}</Mono> · {p.slug}
                         </div>

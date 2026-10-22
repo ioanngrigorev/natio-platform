@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, DescriptionList, Mono, PageHeader, StatusBadge } from "@/components/ui";
@@ -70,8 +71,8 @@ export default async function AdminPayoutDetailPage({ params }: { params: { id: 
             <DescriptionList
               cols={3}
               items={[
-                { label: "Provider", value: p.route.provider_name ?? "—" },
-                { label: "Provider account", value: p.route.provider_account_name ?? "—" },
+                { label: "Provider", value: <EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_name}</EntityLink> },
+                { label: "Provider account", value: <EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_account_name}</EntityLink> },
                 { label: "Provider payout id", value: p.route.provider_payout_id ? <Mono>{p.route.provider_payout_id}</Mono> : "—" },
                 { label: "Routing decision", value: p.route.routing_decision_id ? <Mono>{p.route.routing_decision_id}</Mono> : "—" },
               ]}

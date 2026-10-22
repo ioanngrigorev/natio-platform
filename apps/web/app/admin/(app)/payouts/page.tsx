@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { FilterBar } from "@/components/dashboard/filters";
 import { Card, EmptyState, Mono, PageHeader, Pagination, StatusBadge, Table } from "@/components/ui";
@@ -14,7 +15,7 @@ const STATUSES = ["created", "pending", "processing", "successful", "failed", "c
 export default async function AdminPayoutsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const api = serverApi();
   const query = qs({ merchant_id: searchParams.merchant_id, status: searchParams.status, currency: searchParams.currency, search: searchParams.search, cursor: searchParams.cursor, limit: 50 });
-  const [page, merchants] = await Promise.all([api.get<Paginated<Payout>>(`/admin/payouts${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [page, merchants] = await Promise.all([api.get<Paginated<Payout>>(`/admin/payouts${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 
   return (
     <>
@@ -65,8 +66,8 @@ export default async function AdminPayoutsPage({ searchParams }: { searchParams:
                     </div>
                   </td>
                   <td>
-                    {p.route.provider_name ?? <span className="text-ink-400">—</span>}
-                    {p.route.provider_account_name ? <div className="text-[11px] text-ink-500">{p.route.provider_account_name}</div> : null}
+                    <EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_name}</EntityLink>
+                    {p.route.provider_account_name ? <div className="text-[11px] text-ink-500"><EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_account_name}</EntityLink></div> : null}
                   </td>
                   <td>{p.failure ? <Mono className="text-bad">{p.failure.code}</Mono> : <span className="text-ink-400">—</span>}</td>
                   <td className="text-ink-500">{formatDateTime(p.created_at)}</td>

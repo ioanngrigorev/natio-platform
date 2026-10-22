@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { ImportSettlement, type AccountOption } from "@/components/admin/settlement-actions";
 import { FilterBar } from "@/components/dashboard/filters";
@@ -17,7 +18,7 @@ export default async function AdminSettlementsPage({ searchParams }: { searchPar
   const query = qs({ merchant_id: searchParams.merchant_id, provider_account_id: searchParams.provider_account_id, status: searchParams.status, limit: 200 });
   const [settlements, merchants, providers] = await Promise.all([
     api.get<{ data: Settlement[] }>(`/admin/settlements${query}`),
-    api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500"),
+    api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500"),
     api.get<{ data: Provider[] }>("/admin/providers"),
   ]);
   const accounts: AccountOption[] = providers.data.flatMap((p) => p.accounts.map((a) => ({ id: a.id, name: a.name, provider: p.name, mode: a.mode })));
@@ -71,8 +72,8 @@ export default async function AdminSettlementsPage({ searchParams }: { searchPar
                     <div className="text-[11px] text-ink-500">{titleCase(s.source)}</div>
                   </td>
                   <td>
-                    {s.provider_name ?? "—"}
-                    {s.provider_account_name ? <div className="text-[11px] text-ink-500">{s.provider_account_name}</div> : null}
+                    <EntityLink kind="provider-accounts" id={s.provider_account_id}>{s.provider_name}</EntityLink>
+                    {s.provider_account_name ? <div className="text-[11px] text-ink-500"><EntityLink kind="provider-accounts" id={s.provider_account_id}>{s.provider_account_name}</EntityLink></div> : null}
                   </td>
                   <td className="max-w-[220px] truncate text-ink-600">{s.settlement_entity ?? "—"}</td>
                   <td>{s.settlement_reference ? <Mono>{s.settlement_reference}</Mono> : "—"}</td>

@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { FilterBar } from "@/components/dashboard/filters";
 import { Card, EmptyState, Mono, PageHeader, Pagination, StatusBadge, Table } from "@/components/ui";
@@ -14,14 +15,15 @@ const STATUSES = ["successful", "failed", "pending", "cancelled"];
 
 export default async function AdminTransactionsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const api = serverApi();
-  const query = qs({ merchant_id: searchParams.merchant_id, type: searchParams.type, status: searchParams.status, currency: searchParams.currency, search: searchParams.search, from: searchParams.from ? new Date(searchParams.from).toISOString() : undefined, to: searchParams.to ? new Date(searchParams.to).toISOString() : undefined, cursor: searchParams.cursor, limit: 50 });
-  const [page, merchants] = await Promise.all([api.get<Paginated<Transaction>>(`/admin/transactions${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const query = qs({ provider_account_id: searchParams.provider_account_id, project_id: searchParams.project_id, merchant_id: searchParams.merchant_id, type: searchParams.type, status: searchParams.status, currency: searchParams.currency, search: searchParams.search, from: searchParams.from ? new Date(searchParams.from).toISOString() : undefined, to: searchParams.to ? new Date(searchParams.to).toISOString() : undefined, cursor: searchParams.cursor, limit: 50 });
+  const [page, merchants] = await Promise.all([api.get<Paginated<Transaction>>(`/admin/transactions${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 
   return (
     <>
       <PageHeader title="Transactions" subtitle={`Ledger of processed payments, refunds and payouts across merchants in ${api.mode} mode. Funds are held and settled by licensed providers.`} />
       <FilterBar
         filters={[
+          { name: "provider_account_id", label: "Provider account", type: "text", placeholder: "Account ID" },
           { name: "merchant_id", label: "Merchant", type: "select", options: merchants.data.map((m) => ({ value: m.id, label: m.name })) },
           { name: "search", label: "Search", type: "text", placeholder: "txn_…, pay_…, provider ref" },
           { name: "type", label: "Type", type: "select", options: TYPES.map((t) => ({ value: t, label: t })) },
@@ -36,10 +38,12 @@ export default async function AdminTransactionsPage({ searchParams }: { searchPa
           <Table>
             <thead>
               <tr>
-                <th>Transaction</th>
+                <th>Transaction / External ID</th>
+                <th>Merchant / Channel</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th className="num">Amount</th>
+                <th className="num">Received</th>
                 <th className="num">Fee</th>
                 <th className="num">Net</th>
                 <th>Provider</th>
@@ -54,7 +58,7 @@ export default async function AdminTransactionsPage({ searchParams }: { searchPa
               {page.data.map((t) => (
                 <tr key={t.id}>
                   <td>
-                    <Mono>{shortId(t.id, 10)}</Mono>
+                    <Link className="text-brand-600 hover:underline" href={t.payment_id ? `/admin/payments/${t.payment_id}` : t.entity_type === "payout" ? `/admin/payouts/${t.entity_id}` : `/admin/transactions?search=${t.id}`}><Mono>{t.id}</Mono></Link><div className="text-[11px] text-ink-500">{t.external_reference}</div>
                     <div className="text-[11px] text-ink-500">
                       {t.payment_id ? (
                         <Link href={`/admin/payments/${t.payment_id}`} className="text-brand-600 hover:underline">
@@ -69,16 +73,18 @@ export default async function AdminTransactionsPage({ searchParams }: { searchPa
                       )}
                     </div>
                   </td>
+                  <td><EntityLink kind="merchants" id={t.merchant_id}>{t.merchant_name}</EntityLink><div className="text-xs text-ink-500">{t.channel}</div></td>
                   <td>{titleCase(t.type)}</td>
                   <td>
                     <StatusBadge status={t.status} />
                   </td>
                   <td className="num font-medium">{formatMoney(t.amount, t.currency, { sign: true })}</td>
+                  <td className="num">{formatMoney(t.received_amount,t.currency)}</td>
                   <td className="num text-ink-500">{formatMoney(t.fee_amount, t.currency)}</td>
                   <td className="num">{formatMoney(t.net_amount, t.currency, { sign: true })}</td>
                   <td>
-                    {t.provider_name ?? <span className="text-ink-400">—</span>}
-                    {t.provider_account_name ? <div className="text-[11px] text-ink-500">{t.provider_account_name}</div> : null}
+                    <EntityLink kind="providers" id={t.provider_id}>{t.provider_name}</EntityLink><div className="text-[11px] text-ink-400">{t.provider_reference}</div>
+                    {t.provider_account_name ? <div className="text-[11px] text-ink-500"><EntityLink kind="provider-accounts" id={t.provider_account_id}>{t.provider_account_name}</EntityLink></div> : null}
                   </td>
                   <td>{t.payment_method ? titleCase(t.payment_method) : "—"}</td>
                   <td>{t.country ?? "—"}</td>

@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert, Card, DescriptionList, EmptyState, Mono, PageHeader, StatusBadge, Table } from "@/components/ui";
@@ -115,8 +116,8 @@ export default async function AdminSettlementDetailPage({ params }: { params: { 
             <DescriptionList
               cols={1}
               items={[
-                { label: "Provider", value: s.provider_name ?? "—" },
-                { label: "Provider account", value: s.provider_account_name ?? "—" },
+                { label: "Provider", value: <EntityLink kind="provider-accounts" id={s.provider_account_id}>{s.provider_name}</EntityLink> },
+                { label: "Provider account", value: <EntityLink kind="provider-accounts" id={s.provider_account_id}>{s.provider_account_name}</EntityLink> },
                 { label: "Provider account id", value: <Mono>{s.provider_account_id}</Mono> },
                 { label: "Settlement entity", value: s.settlement_entity ?? "—" },
               ]}

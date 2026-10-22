@@ -7,8 +7,8 @@ export default async function AdminAuthLayout({ children }: { children: React.Re
   const session = await getAdminSession();
   if (session) redirect("/admin");
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ink-900 px-4 py-10">
-      <div className="mb-6 flex items-center gap-2 text-white">
+    <div className="admin-auth flex min-h-screen flex-col items-center justify-center bg-ink-900 px-4 py-10">
+      <div className="admin-auth-logo mb-6 flex items-center gap-2 text-white">
         <span className="flex h-7 w-7 items-center justify-center rounded bg-white text-[12px] font-bold text-ink-900">N</span>
         <span className="text-[16px] font-semibold tracking-tight">NATIO</span>
         <span className="ml-1 rounded bg-ink-700 px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-ink-200">Admin</span>

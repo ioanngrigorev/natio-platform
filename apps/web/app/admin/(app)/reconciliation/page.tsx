@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { RunSandboxReconciliation, UploadProviderCsv, type AccountOption } from "@/components/admin/reconciliation-actions";
 import { FilterBar } from "@/components/dashboard/filters";
@@ -15,7 +16,7 @@ export default async function AdminReconciliationPage({ searchParams }: { search
   const api = serverApi();
   const [batches, merchants, providers] = await Promise.all([
     api.get<{ data: ReconBatch[] }>(`/admin/reconciliation/batches${qs({ merchant_id: searchParams.merchant_id })}`),
-    api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500"),
+    api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500"),
     api.get<{ data: Provider[] }>("/admin/providers"),
   ]);
   const merchantList = merchants.data.map((m) => ({ id: m.id, name: m.name }));
@@ -72,8 +73,8 @@ export default async function AdminReconciliationPage({ searchParams }: { search
                     )}
                   </td>
                   <td>
-                    {b.provider_name ?? "—"}
-                    {b.provider_account_name ? <div className="text-[11px] text-ink-500">{b.provider_account_name}</div> : null}
+                    <EntityLink kind="provider-accounts" id={b.provider_account_id}>{b.provider_name}</EntityLink>
+                    {b.provider_account_name ? <div className="text-[11px] text-ink-500"><EntityLink kind="provider-accounts" id={b.provider_account_id}>{b.provider_account_name}</EntityLink></div> : null}
                   </td>
                   <td>{titleCase(b.source)}</td>
                   <td className="max-w-[180px] truncate text-ink-600">{b.file_name ?? "—"}</td>

@@ -21,6 +21,10 @@ export interface AdminMerchant {
   created_at: string;
   updated_at: string;
   users: number;
+  transactions: number;
+  volume: number;
+  balance: number;
+  currency: string;
   payments_30d: number;
   live_volume_30d: number;
 }
@@ -77,6 +81,7 @@ export interface AdminOverview {
     volumes: Array<{ currency: string; tpv: number; fees: number }>;
   };
   merchants: { total: number; active: number; kybPending: number };
+  provider_count: number;
   providers: Provider[];
   health: Array<ProviderAccount["health"]>;
   recent_events: SystemEvent[];

@@ -1,0 +1,13 @@
+import Link from "next/link";
+import catalog from "@/lib/demo-catalog.json";
+import { Card, Grid, Kpi, PageHeader, Table } from "@/components/ui";
+export const metadata={title:"Payment catalog"};
+export default function CatalogPage({searchParams:q}:{searchParams:Record<string,string|undefined>}) {
+ const currencies=[...new Set(catalog.map(c=>c.currency))].sort(),countries=[...new Set(catalog.map(c=>c.country))].sort();
+ const names=new Intl.DisplayNames(["en"],{type:"region"});
+ const rows=catalog.filter(c=>(!q.currency||c.currency===q.currency)&&(!q.country||c.country===q.country)&&(!q.method||c.method===q.method||c.family===q.method)&&(!q.search||`${c.method} ${c.family} ${names.of(c.country)}`.toLowerCase().includes(q.search.toLowerCase())));
+ return <><PageHeader title="Payment catalog" subtitle="Demo payment methods, currencies and markets. Provider names are fictional; production availability depends on connected integrations."/>
+ <Grid cols={4} className="mb-5"><Kpi label="Payment methods" value={new Set(catalog.map(c=>c.method)).size}/><Kpi label="Currencies" value={currencies.length}/><Kpi label="Countries" value={countries.length}/><Kpi label="Market combinations" value={catalog.length}/></Grid>
+ <form className="mb-5 flex flex-wrap gap-3"><input name="search" className="input max-w-xs" defaultValue={q.search} placeholder="Method or country"/><select name="currency" className="input !w-auto" defaultValue={q.currency||""}><option value="">All currencies</option>{currencies.map(c=><option key={c}>{c}</option>)}</select><select name="country" className="input !w-auto" defaultValue={q.country||""}><option value="">All countries</option>{countries.map(c=><option value={c} key={c}>{names.of(c)}</option>)}</select><button className="rounded-md bg-brand-600 px-4 py-2 text-sm text-white">Search catalog</button></form>
+ <Card padded={false} title={`${rows.length} matching combinations`}><Table><thead><tr><th>Payment method</th><th>Family</th><th>Country</th><th>Currency</th><th>Explore</th></tr></thead><tbody>{rows.map((c,i)=><tr key={i}><td className="font-medium"><Link className="text-brand-600" href={`/admin/bi?currency=${c.currency}&method=${encodeURIComponent(c.method)}`}>{c.method}</Link></td><td>{c.family.replaceAll("_"," ")}</td><td>{names.of(c.country)} <span className="text-xs text-ink-400">{c.country}</span></td><td className="font-semibold text-brand-600"><Link href={`/admin/bi?currency=${c.currency}`}>{c.currency}</Link></td><td><Link className="text-brand-600" href={`/admin/bi?currency=${c.currency}&method=${encodeURIComponent(c.method)}`}>View transactions & volume →</Link></td></tr>)}</tbody></Table></Card></>;
+}

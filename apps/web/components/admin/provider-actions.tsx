@@ -1,4 +1,5 @@
 "use client";
+import { EntityLink } from "@/components/admin/entity-link";
 
 import { useRouter } from "next/navigation";
 import { Fragment, useState, type FormEvent } from "react";
@@ -188,7 +189,7 @@ export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
             <th className="num">Fee</th>
             <th>Limits</th>
             <th>Currencies</th>
-            <th>Health 24h</th>
+            <th>Health</th>
             <th>Simulation</th>
             {canManage ? <th></th> : null}
           </tr>
@@ -201,7 +202,7 @@ export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
               <Fragment key={a.id}>
                 <tr className={cx(expanded === a.id && "bg-ink-50")}>
                   <td>
-                    <div className="font-medium">{a.name}</div>
+                    <EntityLink kind="provider-accounts" id={a.id}>{a.name} →</EntityLink>
                     <div className="text-[11px] text-ink-500">
                       <Mono className="text-[11px]">{a.id}</Mono>
                       {a.merchant_id ? ` · dedicated to ${a.merchant_id}` : " · shared"}
