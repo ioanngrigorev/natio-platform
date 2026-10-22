@@ -4,11 +4,11 @@ Updated: 22 October 2026. Historical dataset: 1 January–31 December 2025 (UTC)
 
 ## Agreed scope
 
-- Admin area only: white surfaces, violet #1d17f3 and its tints. Retain NATIO identity. No Big Idea or Softler logos.
+- Admin area: Light (white/violet), Dark (violet), and Mint (dark green, #00da9c / #81fdda). Retain NATIO identity. No Big Idea or Softler logos.
 - 100 fictional merchants, 100 merchant owner users, 10,000 fictional payment providers.
 - Exactly 10,000 ledger transactions per merchant/user, 1,000,000 total, with varied amounts, fees and statuses.
 - Test mode only. Existing investor administrator remains read-only. No payment credentials or real outbound webhook jobs.
-- Payment methods, currencies and geography based on the supplied All metods.xlsx. Provider/company names are invented. The cleaned catalog has 203 combinations, 116 method labels, 43 currencies and 54 countries.
+- Payment methods, currencies and geography based on the supplied All metods.xlsx. Provider/company and payment-method labels are invented. The cleaned catalog has 203 combinations, 116 method labels, 43 currencies and 54 countries.
 - Transaction presentation follows the supplied processing-admin reference: merchant, channel, external reference, gateway reference, type, amount, received, fee, status, method, geography and dates.
 - Populate payments, payouts, provider accounts, routing, risk, settlements, reconciliation, webhook history and operational events.
 - Balances are calculated by currency from successful ledger entries and settlement records. Do not combine currencies without an explicit conversion model.
@@ -21,7 +21,7 @@ The user stopped further data loading on 22 October 2026. The retained dataset h
 
 ## Additional UI requirements
 
-- Light / Dark controls in the admin header, with preference stored for subsequent visits. Instant switching without a server round trip.
+- Light / Dark / Mint controls in the admin header, with preference stored for subsequent visits. Instant switching without a server round trip.
 - Provider, provider-account and user detail pages; links from overview, provider cards, operations lists and merchant profiles.
 - Account details show financial totals separately by currency and link to filtered payments, transactions, settlements and reconciliation.
 - Navigation shows a loading state. Filter dropdowns fetch only merchant names/IDs, avoiding unnecessary financial aggregation.
@@ -44,3 +44,17 @@ Before import: production contained zero merchants and zero transactions. Import
 Local validation: API and web TypeScript/build checks; 257 unit tests pass, including a streamed Excel workbook round-trip that verifies numeric amounts and frozen headers. Export rendering failure from assigning WorksheetWriter.views was fixed by setting views during worksheet creation.
 
 Production verification: provider, account and user profiles return 200; provider-account transaction filter verified; Light and Dark clicked successfully. Excel summary and 10,000-row ledger download return 200; workbook opens, numeric amounts and 2025 dates verified, EUR summary matches ledger rows. Provider/account/user pages measured approximately 1–1.6 seconds after switching merchant dropdowns to compact options.
+
+## BI report center and Mint release
+
+- Third theme, Mint, uses the reference site's green/mint palette with the NATIO identity. Header switching is immediate and survives reload/navigation via a theme cookie.
+- Animated area, bar, line and outcome charts; monthly/daily detail, replay and animation on/off. Initial motion respects the operating system's reduced-motion preference.
+- Eight report templates: executive summary, transaction ledger, daily activity, merchants, provider accounts, methods, geography and currency balances.
+- Shared date, currency, merchant, payment method, country, status, operation and provider-account filters. Calendar-year and quarter shortcuts.
+- Paginated report preview (25 rows), sorting, exact totals, links to merchant/account profiles. Excel and CSV export every matching row, independent of preview pagination. All-currency reports group by currency; no implicit FX conversion.
+- Download progress, cancellation and failure feedback. Frozen/filterable Excel headers and numeric monetary cells. CSV formula neutralization for text values.
+- Named report views saved per admin and data mode in the current browser. Print/PDF uses the browser's current page print dialog.
+- All 116 payment-method display labels are fictional NATIO labels, including catalog, JSON responses, provider accounts, charts and exports. Original immutable history remains untouched; server-side aliases also resolve filters. Real/live integrations are unchanged.
+- No database migration, import restart or additional synthetic rows.
+
+Validation: API and web production builds pass. Nine new unit tests cover aliases, filter binding, currency separation, preview/export boundaries, CSV escaping, spreadsheet numeric types and stream failure cleanup. Production checks cover all eight templates, disjoint pagination, alias/status/type filtering, a 10,000-row Excel/CSV round-trip and summary reconciliation (EUR 500,448.75 for merchant 001). Coverage remains 670,000 transactions, 100 merchants, 100 users and 10,000 providers.

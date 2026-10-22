@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "mint";
 const ThemeContext = createContext<{ theme: Theme; setTheme: (theme: Theme) => void }>({ theme: "light", setTheme: () => {} });
 
 export function AdminThemeProvider({ initialTheme, children }: { initialTheme: Theme; children: ReactNode }) {
@@ -16,5 +16,5 @@ export function AdminThemeProvider({ initialTheme, children }: { initialTheme: T
 
 export function AdminThemeToggle() {
   const { theme, setTheme } = useContext(ThemeContext);
-  return <div className="admin-theme-toggle" role="group" aria-label="Color theme">{(["light", "dark"] as const).map(t => <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)} title={`${t === "light" ? "Light" : "Dark"} theme`}>{t === "light" ? "☀ Light" : "☾ Dark"}</button>)}</div>;
+  return <div className="admin-theme-toggle" role="group" aria-label="Color theme">{(["light", "dark", "mint"] as const).map(t => <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)} title={`${t === "light" ? "Light" : t === "dark" ? "Dark" : "Mint"} theme`}>{t === "light" ? "☀ Light" : t === "dark" ? "☾ Dark" : "◈ Mint"}</button>)}</div>;
 }

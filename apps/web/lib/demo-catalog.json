@@ -1,1420 +1,1420 @@
 [
   {
-    "method": "EPS",
+    "method": "NATIO Pulse 021",
     "family": "open_banking",
     "currency": "EUR",
     "country": "AT",
     "base_minor": 7500
   },
   {
-    "method": "EPS",
+    "method": "NATIO Pulse 021",
     "family": "open_banking",
     "currency": "USD",
     "country": "AT",
     "base_minor": 8500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "EUR",
     "country": "AT",
     "base_minor": 7500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "EUR",
     "country": "BE",
     "base_minor": 7500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "EUR",
     "country": "NL",
     "base_minor": 7500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "EUR",
     "country": "ES",
     "base_minor": 7500
   },
   {
-    "method": "Bancontact",
+    "method": "NATIO Horizon 006",
     "family": "wallet",
     "currency": "EUR",
     "country": "BE",
     "base_minor": 7500
   },
   {
-    "method": "Bancontact",
+    "method": "NATIO Horizon 006",
     "family": "wallet",
     "currency": "USD",
     "country": "BE",
     "base_minor": 8500
   },
   {
-    "method": "Payconiq",
+    "method": "NATIO Nova 076",
     "family": "wallet",
     "currency": "EUR",
     "country": "BE",
     "base_minor": 7500
   },
   {
-    "method": "Payconiq",
+    "method": "NATIO Nova 076",
     "family": "wallet",
     "currency": "USD",
     "country": "BE",
     "base_minor": 8500
   },
   {
-    "method": "Payconiq",
+    "method": "NATIO Nova 076",
     "family": "wallet",
     "currency": "EUR",
     "country": "LU",
     "base_minor": 7500
   },
   {
-    "method": "Payconiq",
+    "method": "NATIO Nova 076",
     "family": "wallet",
     "currency": "USD",
     "country": "LU",
     "base_minor": 8500
   },
   {
-    "method": "ePay.bg",
+    "method": "NATIO Orbit 114",
     "family": "wallet",
     "currency": "EUR",
     "country": "BG",
     "base_minor": 7500
   },
   {
-    "method": "ePay.bg",
+    "method": "NATIO Orbit 114",
     "family": "wallet",
     "currency": "USD",
     "country": "BG",
     "base_minor": 8500
   },
   {
-    "method": "ePay.bg",
+    "method": "NATIO Orbit 114",
     "family": "wallet",
     "currency": "BGN",
     "country": "BG",
     "base_minor": 14500
   },
   {
-    "method": "Open Banking",
+    "method": "NATIO Prism 059",
     "family": "open_banking",
     "currency": "GBP",
     "country": "GB",
     "base_minor": 6500
   },
   {
-    "method": "SEPA",
+    "method": "NATIO Aurora 089",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "GB",
     "base_minor": 7500
   },
   {
-    "method": "Klarna",
+    "method": "NATIO Nova 036",
     "family": "open_banking",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "Neteller",
+    "method": "NATIO Vector 055",
     "family": "wallet",
     "currency": "GBP",
     "country": "DE",
     "base_minor": 6500
   },
   {
-    "method": "Neteller",
+    "method": "NATIO Vector 055",
     "family": "wallet",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Open Banking / Sofort Uber / Revolut",
+    "method": "NATIO Nova 060",
     "family": "open_banking",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Paysafecard",
+    "method": "NATIO Horizon 078",
     "family": "card",
     "currency": "GBP",
     "country": "DE",
     "base_minor": 6500
   },
   {
-    "method": "Paysafecard",
+    "method": "NATIO Horizon 078",
     "family": "card",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Paysafecash",
+    "method": "NATIO Vector 079",
     "family": "wallet",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Paysafecash",
+    "method": "NATIO Vector 079",
     "family": "wallet",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "Rapid Transfer",
+    "method": "NATIO Vector 087",
     "family": "bank_transfer",
     "currency": "GBP",
     "country": "DE",
     "base_minor": 6500
   },
   {
-    "method": "Rapid Transfer",
+    "method": "NATIO Vector 087",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Rapid Transfer",
+    "method": "NATIO Vector 087",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "Skrill Digital Wallet",
+    "method": "NATIO Pulse 093",
     "family": "wallet",
     "currency": "GBP",
     "country": "DE",
     "base_minor": 6500
   },
   {
-    "method": "Skrill Digital Wallet",
+    "method": "NATIO Pulse 093",
     "family": "wallet",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Trustly",
+    "method": "NATIO Prism 099",
     "family": "open_banking",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Trustly",
+    "method": "NATIO Prism 099",
     "family": "open_banking",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "Open Banking",
+    "method": "NATIO Prism 059",
     "family": "open_banking",
     "currency": "EUR",
     "country": "DE",
     "base_minor": 7500
   },
   {
-    "method": "Neteller",
+    "method": "NATIO Vector 055",
     "family": "wallet",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "Skrill Digital Wallet",
+    "method": "NATIO Pulse 093",
     "family": "wallet",
     "currency": "USD",
     "country": "DE",
     "base_minor": 8500
   },
   {
-    "method": "MyBank",
+    "method": "NATIO Crest 048",
     "family": "bank_transfer",
     "currency": "GBP",
     "country": "IT",
     "base_minor": 6500
   },
   {
-    "method": "MyBank",
+    "method": "NATIO Crest 048",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "IT",
     "base_minor": 7500
   },
   {
-    "method": "iDEAL",
+    "method": "NATIO Nova 116",
     "family": "open_banking",
     "currency": "EUR",
     "country": "NL",
     "base_minor": 7500
   },
   {
-    "method": "iDEAL",
+    "method": "NATIO Nova 116",
     "family": "open_banking",
     "currency": "USD",
     "country": "NL",
     "base_minor": 8500
   },
   {
-    "method": "Vipps",
+    "method": "NATIO Aurora 105",
     "family": "wallet",
     "currency": "EUR",
     "country": "NO",
     "base_minor": 7500
   },
   {
-    "method": "Blik",
+    "method": "NATIO Aurora 009",
     "family": "wallet",
     "currency": "PLN",
     "country": "PL",
     "base_minor": 32000
   },
   {
-    "method": "Blik",
+    "method": "NATIO Aurora 009",
     "family": "wallet",
     "currency": "EUR",
     "country": "PL",
     "base_minor": 7500
   },
   {
-    "method": "Przelewy24",
+    "method": "NATIO Aurora 081",
     "family": "wallet",
     "currency": "EUR",
     "country": "PL",
     "base_minor": 7500
   },
   {
-    "method": "MB Way",
+    "method": "NATIO Crest 040",
     "family": "wallet",
     "currency": "EUR",
     "country": "PT",
     "base_minor": 7500
   },
   {
-    "method": "MB Way",
+    "method": "NATIO Crest 040",
     "family": "wallet",
     "currency": "USD",
     "country": "PT",
     "base_minor": 8500
   },
   {
-    "method": "Multibanco",
+    "method": "NATIO Vector 047",
     "family": "wallet",
     "currency": "EUR",
     "country": "PT",
     "base_minor": 7500
   },
   {
-    "method": "Multibanco",
+    "method": "NATIO Vector 047",
     "family": "wallet",
     "currency": "USD",
     "country": "PT",
     "base_minor": 8500
   },
   {
-    "method": "Swish",
+    "method": "NATIO Horizon 094",
     "family": "instant",
     "currency": "EUR",
     "country": "SE",
     "base_minor": 7500
   },
   {
-    "method": "Twint",
+    "method": "NATIO Nova 100",
     "family": "wallet",
     "currency": "EUR",
     "country": "CH",
     "base_minor": 7500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Bank Transfer / Mercado Pago / Naranja X",
+    "method": "NATIO Crest 008",
     "family": "bank_transfer",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Mercado Pago",
+    "method": "NATIO Orbit 042",
     "family": "wallet",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Mercado Pago + Bank Transfer",
+    "method": "NATIO Prism 043",
     "family": "bank_transfer",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Mercado Pago QR",
+    "method": "NATIO Nova 044",
     "family": "qr",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Naranja X",
+    "method": "NATIO Orbit 050",
     "family": "wallet",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "P2P Bank Transfer",
+    "method": "NATIO Horizon 062",
     "family": "bank_transfer",
     "currency": "ARS",
     "country": "AR",
     "base_minor": 8500000
   },
   {
-    "method": "Simple",
+    "method": "NATIO Nova 092",
     "family": "wallet",
     "currency": "BOB",
     "country": "BO",
     "base_minor": 52000
   },
   {
-    "method": "Tigo",
+    "method": "NATIO Vector 095",
     "family": "wallet",
     "currency": "BOB",
     "country": "BO",
     "base_minor": 52000
   },
   {
-    "method": "Yape",
+    "method": "NATIO Vector 111",
     "family": "wallet",
     "currency": "BOB",
     "country": "BO",
     "base_minor": 52000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "BRL",
     "country": "BR",
     "base_minor": 38000
   },
   {
-    "method": "Boleto",
+    "method": "NATIO Orbit 010",
     "family": "wallet",
     "currency": "BRL",
     "country": "BR",
     "base_minor": 38000
   },
   {
-    "method": "Boleto Bancário",
+    "method": "NATIO Prism 011",
     "family": "wallet",
     "currency": "EUR",
     "country": "BR",
     "base_minor": 7500
   },
   {
-    "method": "Boleto Bancário",
+    "method": "NATIO Prism 011",
     "family": "wallet",
     "currency": "USD",
     "country": "BR",
     "base_minor": 8500
   },
   {
-    "method": "PIX",
+    "method": "NATIO Orbit 066",
     "family": "instant",
     "currency": "EUR",
     "country": "BR",
     "base_minor": 7500
   },
   {
-    "method": "PIX",
+    "method": "NATIO Orbit 066",
     "family": "instant",
     "currency": "USD",
     "country": "BR",
     "base_minor": 8500
   },
   {
-    "method": "PIX",
+    "method": "NATIO Orbit 066",
     "family": "instant",
     "currency": "BRL",
     "country": "BR",
     "base_minor": 38000
   },
   {
-    "method": "PIX P2P",
+    "method": "NATIO Prism 067",
     "family": "instant",
     "currency": "BRL",
     "country": "BR",
     "base_minor": 38000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Cards",
+    "method": "NATIO Pulse 013",
     "family": "card",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Khipu",
+    "method": "NATIO Prism 035",
     "family": "wallet",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Khipu",
+    "method": "NATIO Prism 035",
     "family": "wallet",
     "currency": "EUR",
     "country": "CL",
     "base_minor": 7500
   },
   {
-    "method": "Khipu",
+    "method": "NATIO Prism 035",
     "family": "wallet",
     "currency": "USD",
     "country": "CL",
     "base_minor": 8500
   },
   {
-    "method": "MACH",
+    "method": "NATIO Vector 039",
     "family": "wallet",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "MACH",
+    "method": "NATIO Vector 039",
     "family": "wallet",
     "currency": "EUR",
     "country": "CL",
     "base_minor": 7500
   },
   {
-    "method": "MACH",
+    "method": "NATIO Vector 039",
     "family": "wallet",
     "currency": "USD",
     "country": "CL",
     "base_minor": 8500
   },
   {
-    "method": "Visa / MC",
+    "method": "NATIO Prism 107",
     "family": "card",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Webpay",
+    "method": "NATIO Horizon 110",
     "family": "wallet",
     "currency": "CLP",
     "country": "CL",
     "base_minor": 72000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Bre-B",
+    "method": "NATIO Nova 012",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Cards",
+    "method": "NATIO Pulse 013",
     "family": "card",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Efecty",
+    "method": "NATIO Vector 023",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Nequi",
+    "method": "NATIO Nova 052",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Nequi / Daviplata",
+    "method": "NATIO Pulse 053",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Nequi / Daviplata / Tpaga",
+    "method": "NATIO Horizon 054",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "PSE",
+    "method": "NATIO Nova 068",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "PSE",
+    "method": "NATIO Nova 068",
     "family": "wallet",
     "currency": "EUR",
     "country": "CO",
     "base_minor": 7500
   },
   {
-    "method": "PSE",
+    "method": "NATIO Nova 068",
     "family": "wallet",
     "currency": "USD",
     "country": "CO",
     "base_minor": 8500
   },
   {
-    "method": "PSE / Bre-B",
+    "method": "NATIO Pulse 069",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "PSE / Nequi",
+    "method": "NATIO Horizon 070",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "PSE / Nequi / Bancolombia / Daviplata",
+    "method": "NATIO Vector 071",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Transfiya",
+    "method": "NATIO Aurora 097",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Transfiya / Nequi / Daviplata / Tpaga",
+    "method": "NATIO Orbit 098",
     "family": "wallet",
     "currency": "COP",
     "country": "CO",
     "base_minor": 32000000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "CRC",
     "country": "CR",
     "base_minor": 4000000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "Cards",
+    "method": "NATIO Pulse 013",
     "family": "card",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "Deuna QR",
+    "method": "NATIO Crest 016",
     "family": "qr",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "PagoEfectivo",
+    "method": "NATIO Crest 072",
     "family": "wallet",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "Payphone",
+    "method": "NATIO Pulse 077",
     "family": "wallet",
     "currency": "USD",
     "country": "EC",
     "base_minor": 8500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "GTQ",
     "country": "GT",
     "base_minor": 60000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "HNL",
     "country": "HN",
     "base_minor": 200000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "BR",
     "base_minor": 7500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "BR",
     "base_minor": 8500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "MX",
     "base_minor": 7500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "MX",
     "base_minor": 8500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "CO",
     "base_minor": 7500
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "CO",
     "base_minor": 8500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "EUR",
     "country": "BR",
     "base_minor": 7500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "USD",
     "country": "BR",
     "base_minor": 8500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "EUR",
     "country": "MX",
     "base_minor": 7500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "USD",
     "country": "MX",
     "base_minor": 8500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "EUR",
     "country": "CO",
     "base_minor": 7500
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "USD",
     "country": "CO",
     "base_minor": 8500
   },
   {
-    "method": "AMEX",
+    "method": "NATIO Aurora 001",
     "family": "card",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Cards",
+    "method": "NATIO Pulse 013",
     "family": "card",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "OXXO",
+    "method": "NATIO Aurora 057",
     "family": "wallet",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "OXXO Pay",
+    "method": "NATIO Orbit 058",
     "family": "wallet",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "SPEI",
+    "method": "NATIO Orbit 090",
     "family": "instant",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "SPEI / CoDi",
+    "method": "NATIO Prism 091",
     "family": "instant",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Visa / MC",
+    "method": "NATIO Prism 107",
     "family": "card",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Wallet",
+    "method": "NATIO Nova 108",
     "family": "wallet",
     "currency": "MXN",
     "country": "MX",
     "base_minor": 150000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "USD",
     "country": "PA",
     "base_minor": 8500
   },
   {
-    "method": "BCP",
+    "method": "NATIO Pulse 005",
     "family": "wallet",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Cards",
+    "method": "NATIO Pulse 013",
     "family": "card",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Cash",
+    "method": "NATIO Horizon 014",
     "family": "wallet",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "PagoEfectivo",
+    "method": "NATIO Crest 072",
     "family": "wallet",
     "currency": "EUR",
     "country": "PE",
     "base_minor": 7500
   },
   {
-    "method": "PagoEfectivo",
+    "method": "NATIO Crest 072",
     "family": "wallet",
     "currency": "USD",
     "country": "PE",
     "base_minor": 8500
   },
   {
-    "method": "PagoEfectivo",
+    "method": "NATIO Crest 072",
     "family": "wallet",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Visa / MC",
+    "method": "NATIO Prism 107",
     "family": "card",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Yape",
+    "method": "NATIO Vector 111",
     "family": "wallet",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "Yape / Plin",
+    "method": "NATIO Crest 112",
     "family": "wallet",
     "currency": "PEN",
     "country": "PE",
     "base_minor": 29000
   },
   {
-    "method": "PagoMóvil",
+    "method": "NATIO Aurora 073",
     "family": "wallet",
     "currency": "VES",
     "country": "VE",
     "base_minor": 650000
   },
   {
-    "method": "Nagad",
+    "method": "NATIO Aurora 049",
     "family": "wallet",
     "currency": "BDT",
     "country": "BD",
     "base_minor": 900000
   },
   {
-    "method": "Native Intent",
+    "method": "NATIO Prism 051",
     "family": "wallet",
     "currency": "BDT",
     "country": "BD",
     "base_minor": 900000
   },
   {
-    "method": "Rocket",
+    "method": "NATIO Crest 088",
     "family": "wallet",
     "currency": "BDT",
     "country": "BD",
     "base_minor": 900000
   },
   {
-    "method": "bKash",
+    "method": "NATIO Aurora 113",
     "family": "wallet",
     "currency": "BDT",
     "country": "BD",
     "base_minor": 900000
   },
   {
-    "method": "IMPS/NEFT",
+    "method": "NATIO Vector 031",
     "family": "bank_transfer",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "P2P",
+    "method": "NATIO Pulse 061",
     "family": "wallet",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "P2P UPI / UPI Intent",
+    "method": "NATIO Vector 063",
     "family": "instant",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "UPI",
+    "method": "NATIO Pulse 101",
     "family": "instant",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "UPI Intent",
+    "method": "NATIO Horizon 102",
     "family": "instant",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "UPI QR",
+    "method": "NATIO Vector 103",
     "family": "qr",
     "currency": "INR",
     "country": "IN",
     "base_minor": 650000
   },
   {
-    "method": "BCA Transfer",
+    "method": "NATIO Nova 004",
     "family": "bank_transfer",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "DANA",
+    "method": "NATIO Vector 015",
     "family": "wallet",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "E-Wallet",
+    "method": "NATIO Orbit 018",
     "family": "wallet",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "GoPay",
+    "method": "NATIO Pulse 029",
     "family": "wallet",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "OVO",
+    "method": "NATIO Crest 056",
     "family": "wallet",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "QR / P2P",
+    "method": "NATIO Prism 083",
     "family": "qr",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "QRIS",
+    "method": "NATIO Pulse 085",
     "family": "qr",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "Virtual Account",
+    "method": "NATIO Orbit 106",
     "family": "bank_transfer",
     "currency": "IDR",
     "country": "ID",
     "base_minor": 125000000
   },
   {
-    "method": "Alipay",
+    "method": "NATIO Prism 003",
     "family": "wallet",
     "currency": "JPY",
     "country": "JP",
     "base_minor": 11000
   },
   {
-    "method": "DuitNow QR",
+    "method": "NATIO Aurora 017",
     "family": "qr",
     "currency": "MYR",
     "country": "MY",
     "base_minor": 35000
   },
   {
-    "method": "FPX",
+    "method": "NATIO Crest 024",
     "family": "open_banking",
     "currency": "MYR",
     "country": "MY",
     "base_minor": 35000
   },
   {
-    "method": "Touch 'n Go",
+    "method": "NATIO Crest 096",
     "family": "wallet",
     "currency": "MYR",
     "country": "MY",
     "base_minor": 35000
   },
   {
-    "method": "Fonepay",
+    "method": "NATIO Orbit 026",
     "family": "wallet",
     "currency": "NPR",
     "country": "NP",
     "base_minor": 1050000
   },
   {
-    "method": "eSewa",
+    "method": "NATIO Prism 115",
     "family": "wallet",
     "currency": "NPR",
     "country": "NP",
     "base_minor": 1050000
   },
   {
-    "method": "EasyPaisa",
+    "method": "NATIO Horizon 022",
     "family": "wallet",
     "currency": "PKR",
     "country": "PK",
     "base_minor": 2200000
   },
   {
-    "method": "JazzCash",
+    "method": "NATIO Orbit 034",
     "family": "wallet",
     "currency": "PKR",
     "country": "PK",
     "base_minor": 2200000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "PHP",
     "country": "PH",
     "base_minor": 450000
   },
   {
-    "method": "GCash",
+    "method": "NATIO Prism 027",
     "family": "wallet",
     "currency": "PHP",
     "country": "PH",
     "base_minor": 450000
   },
   {
-    "method": "GCash / Maya",
+    "method": "NATIO Nova 028",
     "family": "wallet",
     "currency": "PHP",
     "country": "PH",
     "base_minor": 450000
   },
   {
-    "method": "Maya",
+    "method": "NATIO Aurora 041",
     "family": "wallet",
     "currency": "PHP",
     "country": "PH",
     "base_minor": 450000
   },
   {
-    "method": "Bank Transfer",
-    "family": "bank_transfer",
-    "currency": "SGD",
-    "country": "SG",
-    "base_minor": 10500
-  },
-  {
-    "method": "Internet Banking",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "SGD",
     "country": "SG",
     "base_minor": 10500
   },
   {
-    "method": "PayNow QR",
+    "method": "NATIO Aurora 033",
+    "family": "bank_transfer",
+    "currency": "SGD",
+    "country": "SG",
+    "base_minor": 10500
+  },
+  {
+    "method": "NATIO Prism 075",
     "family": "qr",
     "currency": "SGD",
     "country": "SG",
     "base_minor": 10500
   },
   {
-    "method": "Local wallets",
+    "method": "NATIO Pulse 037",
     "family": "wallet",
     "currency": "KRW",
     "country": "KR",
     "base_minor": 105000
   },
   {
-    "method": "P2P Bank Transfer",
+    "method": "NATIO Horizon 062",
     "family": "bank_transfer",
     "currency": "KRW",
     "country": "KR",
     "base_minor": 105000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "THB",
     "country": "TH",
     "base_minor": 280000
   },
   {
-    "method": "PromptPay QR",
+    "method": "NATIO Crest 080",
     "family": "qr",
     "currency": "THB",
     "country": "TH",
     "base_minor": 280000
   },
   {
-    "method": "QR / P2P",
+    "method": "NATIO Prism 083",
     "family": "qr",
     "currency": "THB",
     "country": "TH",
     "base_minor": 280000
   },
   {
-    "method": "QR30",
+    "method": "NATIO Nova 084",
     "family": "qr",
     "currency": "THB",
     "country": "TH",
     "base_minor": 280000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "VND",
     "country": "VN",
     "base_minor": 2000000
   },
   {
-    "method": "QR / P2C",
+    "method": "NATIO Orbit 082",
     "family": "qr",
     "currency": "VND",
     "country": "VN",
     "base_minor": 2000000
   },
   {
-    "method": "VietQR",
+    "method": "NATIO Crest 104",
     "family": "qr",
     "currency": "VND",
     "country": "VN",
     "base_minor": 2000000
   },
   {
-    "method": "Havale",
+    "method": "NATIO Horizon 030",
     "family": "bank_transfer",
     "currency": "TRY",
     "country": "TR",
     "base_minor": 300000
   },
   {
-    "method": "P2P",
+    "method": "NATIO Pulse 061",
     "family": "wallet",
     "currency": "AZN",
     "country": "AZ",
     "base_minor": 13000
   },
   {
-    "method": "Quasi e-com",
+    "method": "NATIO Horizon 086",
     "family": "card",
     "currency": "AZN",
     "country": "AZ",
     "base_minor": 13000
   },
   {
-    "method": "P2P",
+    "method": "NATIO Pulse 061",
     "family": "wallet",
     "currency": "KZT",
     "country": "KZ",
     "base_minor": 3800000
   },
   {
-    "method": "P2P cross",
+    "method": "NATIO Crest 064",
     "family": "wallet",
     "currency": "KZT",
     "country": "KZ",
     "base_minor": 3800000
   },
   {
-    "method": "P2P local",
+    "method": "NATIO Aurora 065",
     "family": "wallet",
     "currency": "KZT",
     "country": "KZ",
     "base_minor": 3800000
   },
   {
-    "method": "E-com",
+    "method": "NATIO Prism 019",
     "family": "card",
     "currency": "UZS",
     "country": "UZ",
     "base_minor": 100000000
   },
   {
-    "method": "P2P",
+    "method": "NATIO Pulse 061",
     "family": "wallet",
     "currency": "UZS",
     "country": "UZ",
     "base_minor": 100000000
   },
   {
-    "method": "Interac",
+    "method": "NATIO Crest 032",
     "family": "bank_transfer",
     "currency": "CAD",
     "country": "CA",
     "base_minor": 11500
   },
   {
-    "method": "Interac",
+    "method": "NATIO Crest 032",
     "family": "bank_transfer",
     "currency": "EUR",
     "country": "CA",
     "base_minor": 7500
   },
   {
-    "method": "Interac",
+    "method": "NATIO Crest 032",
     "family": "bank_transfer",
     "currency": "USD",
     "country": "CA",
     "base_minor": 8500
   },
   {
-    "method": "Fawry",
+    "method": "NATIO Aurora 025",
     "family": "wallet",
     "currency": "EGP",
     "country": "EG",
     "base_minor": 380000
   },
   {
-    "method": "Mobile Money / Digital",
+    "method": "NATIO Horizon 046",
     "family": "wallet",
     "currency": "GMD",
     "country": "GM",
     "base_minor": 550000
   },
   {
-    "method": "Mobile Money",
+    "method": "NATIO Pulse 045",
     "family": "wallet",
     "currency": "GHS",
     "country": "GH",
     "base_minor": 95000
   },
   {
-    "method": "M-Pesa / Airtel",
+    "method": "NATIO Horizon 038",
     "family": "wallet",
     "currency": "KES",
     "country": "KE",
     "base_minor": 1000000
   },
   {
-    "method": "Mobile Money",
+    "method": "NATIO Pulse 045",
     "family": "wallet",
     "currency": "KES",
     "country": "KE",
     "base_minor": 1000000
   },
   {
-    "method": "Bank Transfer",
+    "method": "NATIO Vector 007",
     "family": "bank_transfer",
     "currency": "MAD",
     "country": "MA",
     "base_minor": 76000
   },
   {
-    "method": "Mobile Money",
+    "method": "NATIO Pulse 045",
     "family": "wallet",
     "currency": "NGN",
     "country": "NG",
     "base_minor": 12000000
   },
   {
-    "method": "Wave",
+    "method": "NATIO Pulse 109",
     "family": "wallet",
     "currency": "XOF",
     "country": "SN",
     "base_minor": 48000
   },
   {
-    "method": "EFT",
+    "method": "NATIO Nova 020",
     "family": "bank_transfer",
     "currency": "ZAR",
     "country": "ZA",
     "base_minor": 145000
   },
   {
-    "method": "Airtel / MTN",
+    "method": "NATIO Orbit 002",
     "family": "wallet",
     "currency": "ZMW",
     "country": "ZM",
     "base_minor": 200000
   },
   {
-    "method": "PayID",
+    "method": "NATIO Orbit 074",
     "family": "wallet",
     "currency": "AUD",
     "country": "AU",
