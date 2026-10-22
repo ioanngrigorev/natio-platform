@@ -14,7 +14,7 @@ RUN pnpm --filter @natio/api --prod deploy --legacy /out
 
 # ---------- runtime ----------
 FROM node:22-alpine AS runtime
-RUN apk add --no-cache tini curl && addgroup -g 1001 natio && adduser -u 1001 -G natio -s /bin/sh -D natio
+RUN apk add --no-cache tini curl font-liberation poppler-utils tesseract-ocr tesseract-ocr-data-eng && addgroup -g 1001 natio && adduser -u 1001 -G natio -s /bin/sh -D natio
 WORKDIR /app
 # Stamped by the deploy so /health can report which commit is serving.
 ARG NATIO_GIT_SHA=unknown
@@ -24,6 +24,7 @@ ENV NODE_ENV=production
 COPY --from=build --chown=natio:natio /out/node_modules ./node_modules
 COPY --from=build --chown=natio:natio /repo/apps/api/dist ./dist
 COPY --from=build --chown=natio:natio /repo/apps/api/package.json ./package.json
+COPY --from=build --chown=natio:natio /repo/apps/api/src/modules/receipts/fixtures ./dist/modules/receipts/fixtures
 # Migrations and the OpenAPI document are read at runtime.
 COPY --from=build --chown=natio:natio /repo/apps/api/src/db/migrations ./dist/db/migrations
 COPY --from=build --chown=natio:natio /repo/apps/api/openapi ./openapi

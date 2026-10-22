@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
   { href: "/admin/providers", label: "Providers", section: "Infrastructure" },
   { href: "/admin/routing", label: "Routing rules", section: "Infrastructure" },
   { href: "/admin/risk", label: "Risk rules", section: "Infrastructure" },
+  { href: "/admin/receipts", label: "Receipt review", section: "Finance" },
   { href: "/admin/settlements", label: "Settlements", section: "Finance" },
   { href: "/admin/reconciliation", label: "Reconciliation", section: "Finance" },
   { href: "/admin/system-events", label: "System events", section: "Platform" },

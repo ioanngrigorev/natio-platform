@@ -8,6 +8,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard/payments", label: "Payments", section: "Payments" },
   { href: "/dashboard/transactions", label: "Transactions", section: "Payments" },
   { href: "/dashboard/payouts", label: "Payouts", section: "Payments" },
+  { href: "/dashboard/receipts", label: "Receipt review", section: "Finance" },
   { href: "/dashboard/settlements", label: "Settlements", section: "Finance" },
   { href: "/dashboard/wallets", label: "Settlement keys", section: "Finance" },
   { href: "/dashboard/reconciliation", label: "Reconciliation", section: "Finance" },
