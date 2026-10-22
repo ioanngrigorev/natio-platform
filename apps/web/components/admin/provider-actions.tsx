@@ -189,7 +189,7 @@ export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
             <th className="num">Fee</th>
             <th>Limits</th>
             <th>Currencies</th>
-            <th>Health 24h</th>
+            <th>Health</th>
             <th>Simulation</th>
             {canManage ? <th></th> : null}
           </tr>
