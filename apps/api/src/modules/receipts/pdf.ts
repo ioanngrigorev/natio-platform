@@ -18,7 +18,7 @@ export async function parseReceiptPdf(pdf: Buffer): Promise<ParsedPdf> {
     dir = await mkdtemp(join(tmpdir(), "natio-receipt-"));
     const file = join(dir, "receipt.pdf");
     await writeFile(file, pdf, { mode: 0o600 });
-    const options = { timeout: 10000, maxBuffer: 1024 * 1024, env: { ...process.env, OMP_THREAD_LIMIT: "1" } };
+    const options = { timeout: 10000, maxBuffer: 1024 * 1024, env: { PATH: process.env.PATH, LANG: "C.UTF-8", OMP_THREAD_LIMIT: "1" } };
     const { stdout: info } = await exec("pdfinfo", [file], options);
     const pages = Number(info.match(/^Pages:\s+(\d+)/m)?.[1]);
     if (!pages || pages > 3 || /^Encrypted:\s+yes/m.test(info)) throw Errors.validation("Use an unencrypted PDF with 1–3 pages.");
