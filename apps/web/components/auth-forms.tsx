@@ -20,6 +20,7 @@ export function LoginForm({ kind }: { kind: "merchant" | "admin" }) {
     setError(null);
     try {
       await apiClient(`${base}/auth/login`, { body: { email, password } });
+      if (kind === "admin") document.cookie = "natio_mode=test; path=/; max-age=31536000; samesite=lax";
       router.push(base);
       router.refresh();
     } catch (err) {

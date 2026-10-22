@@ -156,7 +156,7 @@ export async function listUsers(db: DbOrTx, merchantId: string) {
 // ---------------------------------------------------------------------------
 // Admin
 // ---------------------------------------------------------------------------
-export async function adminListMerchants(db: DbOrTx, f: { search?: string; status?: string; kyb?: string; limit?: number }) {
+export async function adminListMerchants(db: DbOrTx, f: { search?: string; status?: string; kyb?: string; limit?: number; mode?: "test" | "live" }) {
   const conds: SQL[] = [];
   if (f.search) conds.push(or(ilike(merchants.name, `%${f.search}%`), ilike(merchants.id, `%${f.search}%`), ilike(merchants.contactEmail, `%${f.search}%`))!);
   if (f.status) conds.push(eq(merchants.status, f.status as never));
@@ -164,6 +164,9 @@ export async function adminListMerchants(db: DbOrTx, f: { search?: string; statu
   const rows = await db
     .select({
       m: merchants,
+      transactions: sql<number>`(select count(*) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"})`.mapWith(Number),
+      volume: sql<number>`(select coalesce(sum(t.amount),0) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"} and t.status='successful' and t.type='payment' and t.currency="merchants"."settings"->>'defaultCurrency')`.mapWith(Number),
+      balance: sql<number>`(select coalesce(sum(t.net_amount) filter(where t.settlement_id is null),0) from transactions t where t.merchant_id="merchants"."id" and t.mode=${f.mode ?? "test"} and t.status='successful' and t.currency="merchants"."settings"->>'defaultCurrency')`.mapWith(Number),
       // Column refs must be table-qualified: drizzle renders `${merchants.id}` as a bare "id" in a
       // single-table select, which inside the correlated subquery resolves to the inner table's id.
       users: sql<number>`(select count(*) from merchant_users u where u.merchant_id = "merchants"."id")`.mapWith(Number),
@@ -174,7 +177,7 @@ export async function adminListMerchants(db: DbOrTx, f: { search?: string; statu
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(merchants.createdAt))
     .limit(Math.min(f.limit ?? 100, 500));
-  return rows.map((r) => ({ ...serializeMerchant(r.m), users: r.users, payments_30d: r.payments30d, live_volume_30d: r.volume30d }));
+  return rows.map((r) => ({ ...serializeMerchant(r.m), users: r.users, transactions: r.transactions, volume: r.volume, balance: r.balance, currency: r.m.settings.defaultCurrency ?? "EUR", payments_30d: r.payments30d, live_volume_30d: r.volume30d }));
 }
 
 export async function adminSetMerchantStatus(db: Db, merchantId: string, status: "active" | "disabled", actor: Actor, reason?: string) {

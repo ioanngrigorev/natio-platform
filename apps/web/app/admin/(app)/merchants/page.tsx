@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FilterBar } from "@/components/dashboard/filters";
 import { Card, EmptyState, Mono, PageHeader, StatusBadge, Table } from "@/components/ui";
 import { qs } from "@/lib/api";
-import { formatDateTime, formatNumber, shortId } from "@/lib/format";
+import { formatDateTime, formatMoney, formatNumber, shortId } from "@/lib/format";
 import { serverApi } from "@/lib/session";
 import type { AdminMerchant } from "@/lib/admin-types";
 
@@ -32,9 +32,9 @@ export default async function MerchantsPage({ searchParams }: { searchParams: Re
                 <th>KYB</th>
                 <th>Status</th>
                 <th className="num">Users</th>
-                <th className="num">Payments 30d</th>
-                <th className="num">Live volume 30d</th>
-                <th>Created</th>
+                <th className="num">Transactions</th>
+                <th className="num">Pay-in volume</th>
+                <th className="num">Unsettled balance</th><th>Created</th>
               </tr>
             </thead>
             <tbody>
@@ -57,8 +57,9 @@ export default async function MerchantsPage({ searchParams }: { searchParams: Re
                     <StatusBadge status={m.status} />
                   </td>
                   <td className="num">{formatNumber(m.users)}</td>
-                  <td className="num">{formatNumber(m.payments_30d)}</td>
-                  <td className="num">{m.live_volume_30d ? formatNumber(m.live_volume_30d) : <span className="text-ink-400">—</span>}</td>
+                  <td className="num">{formatNumber(m.transactions)}</td>
+                  <td className="num">{formatMoney(m.volume,m.currency)}</td>
+                  <td className="num">{formatMoney(m.balance,m.currency)}</td>
                   <td className="text-ink-500">{formatDateTime(m.created_at)}</td>
                 </tr>
               ))}
@@ -68,7 +69,7 @@ export default async function MerchantsPage({ searchParams }: { searchParams: Re
           <EmptyState title="No merchants match" description="Adjust the filters or wait for new registrations." />
         )}
       </Card>
-      <p className="mt-2 text-[11px] text-ink-400">Live volume is the sum of successful live-mode payment amounts in minor units across all currencies (scale indicator only).</p>
+      <p className="mt-2 text-[11px] text-ink-400">Volumes and unsettled balances are shown in each merchant’s default currency. Open BI for all currencies.</p>
     </>
   );
 }

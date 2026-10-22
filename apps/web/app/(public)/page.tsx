@@ -89,14 +89,20 @@ export default function HomePage() {
         <MetricRow
           items={[
             { value: "1", label: "REST API, one contract" },
-            { value: "7", label: "Payment method types", tone: "iris" },
-            { value: "0", label: "Merchant funds held", tone: "lime" },
-            { value: "100%", label: "Decisions recorded", tone: "aqua" },
+            { value: "116", label: "Methods in demo catalog", tone: "iris" },
+            { value: "43", label: "Demo currencies", tone: "iris" },
+            { value: "54", label: "Countries in demo catalog", tone: "iris" },
           ]}
           className="border-b-0"
         />
       </section>
 
+      <Section eyebrow="Explore the demo" title="Global payment methods. Local market detail." lead="Explore a synthetic 2025 dataset across 100 merchants and 10,000 fictional providers. Methods and market combinations are a demonstration catalog; production availability depends on connected providers.">
+        <div className="grid gap-8 md:grid-cols-3">
+          {[{title:"Payment methods",items:["Visa / MC","PIX","UPI","QRIS","SEPA","iDEAL","Bancontact","Blik","SPEI","GCash","M-Pesa","VietQR","PromptPay QR","Interac","EPS","FPX","PayNow QR","DuitNow QR"]},{title:"Currencies",items:["EUR","USD","GBP","BRL","INR","IDR","MXN","PLN","VND","THB","MYR","SGD","JPY","KRW","CAD","AUD","ZAR","KES","NGN","ARS"]},{title:"Geography",items:["Europe","Latin America","Southeast Asia","South Asia","Africa","Canada","Australia","Japan","South Korea"]}].map(g=><div key={g.title}><h3 className="mb-4 text-[15px] font-medium text-mist-50">{g.title}</h3><div className="flex flex-wrap gap-2">{g.items.map(v=><Chip key={v}>{v}</Chip>)}</div></div>)}
+        </div>
+        <Link href="/admin/login" className="mt-8 inline-block text-iris hover:underline">Open the investor demo →</Link>
+      </Section>
       {/* Flow diagram */}
       <Section tone="raised" eyebrow="How it works" title="One infrastructure layer between your platform and the payment providers." lead="Your systems talk to NATIO. NATIO talks to acquirers, banks, PSPs and local payment methods, decides where each payment goes, retries safely when a provider fails, and reports what happened.">
         <FlowDiagram />

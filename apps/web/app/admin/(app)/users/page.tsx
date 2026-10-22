@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { AdminUserControls, CreateAdminUser } from "@/components/admin/user-actions";
 import { FilterBar } from "@/components/dashboard/filters";
@@ -11,7 +12,7 @@ export const metadata = { title: "Users" };
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { merchant_id?: string } }) {
   const api = serverApi();
-  const [users, merchants] = await Promise.all([api.get<AdminUsersResponse>(`/admin/users${qs({ merchant_id: searchParams.merchant_id })}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [users, merchants] = await Promise.all([api.get<AdminUsersResponse>(`/admin/users${qs({ merchant_id: searchParams.merchant_id })}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 
   return (
     <>
@@ -33,7 +34,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
               {users.admins.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    <div className="font-medium">{u.name}</div>
+                    <EntityLink kind="users" id={u.id}>{u.name}</EntityLink>
                     <div className="text-[11px] text-ink-500">{u.email}</div>
                   </td>
                   <td>
@@ -75,7 +76,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
             <tbody>
               {users.merchant_users.map((u) => (
                 <tr key={u.id}>
-                  <td className="font-medium">{u.name}</td>
+                  <td className="font-medium"><EntityLink kind="users" id={u.id}>{u.name}</EntityLink></td>
                   <td className="text-ink-600">{u.email}</td>
                   <td>
                     <Link href={`/admin/merchants/${u.merchant_id}`} className="text-brand-600 hover:underline">

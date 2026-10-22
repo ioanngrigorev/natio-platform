@@ -71,8 +71,9 @@ export function formatMs(v: number | null | undefined): string {
 export function shortId(id: string | null | undefined, keep = 8): string {
   if (!id) return "—";
   if (id.length <= keep + 6) return id;
-  const [prefix, rest] = id.split("_", 2);
-  return rest ? `${prefix}_${rest.slice(0, keep)}…` : `${id.slice(0, keep)}…`;
+  const split = id.indexOf("_");
+  const prefix = id.slice(0,split), rest = split < 0 ? "" : id.slice(split+1);
+  return rest ? `${prefix}_${rest.slice(0, Math.max(4,keep-4))}…${rest.slice(-4)}` : `${id.slice(0, keep)}…`;
 }
 
 export function titleCase(s: string | null | undefined): string {

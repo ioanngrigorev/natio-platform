@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { Db, DbOrTx } from "../../db/client.js";
 import { paymentAttempts, providerAccounts, providers, systemEvents, type ProviderAccountConfig } from "../../db/schema/index.js";
@@ -70,8 +70,9 @@ export interface HealthStats {
   last_error_at: Date | null;
 }
 
-export async function providerHealth(db: DbOrTx, windowHours = 24): Promise<HealthStats[]> {
-  const since = new Date(Date.now() - windowHours * 3600 * 1000);
+export async function providerHealth(db: DbOrTx, windowHours = 24, accountIds?: string[], period?: { from?: Date; to?: Date }): Promise<HealthStats[]> {
+  if (accountIds && !accountIds.length) return [];
+  const since = period?.from ?? new Date(Date.now() - windowHours * 3600 * 1000);
   const rows = await db
     .select({
       id: paymentAttempts.providerAccountId,
@@ -84,7 +85,7 @@ export async function providerHealth(db: DbOrTx, windowHours = 24): Promise<Heal
       lastError: sql<Date | null>`max(${paymentAttempts.createdAt}) filter (where ${paymentAttempts.outcome} in ('technical_error','timeout','provider_unavailable'))`,
     })
     .from(paymentAttempts)
-    .where(gte(paymentAttempts.createdAt, since))
+    .where(and(gte(paymentAttempts.createdAt, since), period?.to ? lte(paymentAttempts.createdAt, period.to) : undefined, accountIds ? inArray(paymentAttempts.providerAccountId, accountIds) : undefined))
     .groupBy(paymentAttempts.providerAccountId);
   return rows.map((r) => ({
     provider_account_id: r.id,
@@ -101,16 +102,28 @@ export async function providerHealth(db: DbOrTx, windowHours = 24): Promise<Heal
   }));
 }
 
-export async function listProvidersWithAccounts(db: DbOrTx, f: { mode?: "test" | "live"; merchantId?: string } = {}) {
-  const provs = await db.select().from(providers).orderBy(providers.name);
+export async function countProviders(db: DbOrTx, f: { mode?: "test" | "live"; search?: string }) {
+  const [r] = await db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(providers).where(and(
+    f.search ? or(ilike(providers.name, `%${f.search}%`),ilike(providers.code, `%${f.search}%`), ilike(providers.description, `%${f.search}%`)) : undefined,
+    f.mode ? sql`exists (select 1 from provider_accounts pa where pa.provider_id = ${providers.id} and pa.mode = ${f.mode})` : undefined,
+  ));
+  return r.total;
+}
+
+export async function listProvidersWithAccounts(db: DbOrTx, f: { id?: string; mode?: "test" | "live"; merchantId?: string; limit?: number; offset?: number; search?: string; from?: Date; to?: Date } = {}) {
+  const search = f.search ? or(ilike(providers.name, `%${f.search}%`), ilike(providers.code, `%${f.search}%`), ilike(providers.description, `%${f.search}%`)) : undefined;
+  const modeFilter = f.mode ? sql`exists (select 1 from provider_accounts pa where pa.provider_id = ${providers.id} and pa.mode = ${f.mode})` : undefined;
+  const provs = await db.select().from(providers).where(and(search, modeFilter, f.id ? eq(providers.id, f.id) : undefined)).orderBy(providers.name, providers.id).limit(Math.min(Math.max(f.limit ?? 200, 1), 200)).offset(Math.max(f.offset ?? 0, 0));
+  if (!provs.length) return [];
   const conds = [];
+  conds.push(inArray(providerAccounts.providerId, provs.map((p) => p.id)));
   if (f.mode) conds.push(eq(providerAccounts.mode, f.mode));
   const accounts = await db
     .select()
     .from(providerAccounts)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(providerAccounts.priority);
-  const health = await providerHealth(db);
+  const health = await providerHealth(db, 24, accounts.map((a) => a.id), f);
   const hmap = new Map(health.map((h) => [h.provider_account_id, h]));
   const adapters = new Set(listAdapters().map((a) => a.key));
   return provs.map((p) => ({

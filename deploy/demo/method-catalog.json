@@ -1,0 +1,1423 @@
+[
+  {
+    "method": "EPS",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "AT",
+    "base_minor": 7500
+  },
+  {
+    "method": "EPS",
+    "family": "open_banking",
+    "currency": "USD",
+    "country": "AT",
+    "base_minor": 8500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "AT",
+    "base_minor": 7500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "BE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "NL",
+    "base_minor": 7500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "ES",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bancontact",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "BE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bancontact",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "BE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Payconiq",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "BE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Payconiq",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "BE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Payconiq",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "LU",
+    "base_minor": 7500
+  },
+  {
+    "method": "Payconiq",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "LU",
+    "base_minor": 8500
+  },
+  {
+    "method": "ePay.bg",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "BG",
+    "base_minor": 7500
+  },
+  {
+    "method": "ePay.bg",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "BG",
+    "base_minor": 8500
+  },
+  {
+    "method": "ePay.bg",
+    "family": "wallet",
+    "currency": "BGN",
+    "country": "BG",
+    "base_minor": 14500
+  },
+  {
+    "method": "Open Banking",
+    "family": "open_banking",
+    "currency": "GBP",
+    "country": "GB",
+    "base_minor": 6500
+  },
+  {
+    "method": "SEPA",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "GB",
+    "base_minor": 7500
+  },
+  {
+    "method": "Klarna",
+    "family": "open_banking",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Neteller",
+    "family": "wallet",
+    "currency": "GBP",
+    "country": "DE",
+    "base_minor": 6500
+  },
+  {
+    "method": "Neteller",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Open Banking / Sofort Uber / Revolut",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Paysafecard",
+    "family": "card",
+    "currency": "GBP",
+    "country": "DE",
+    "base_minor": 6500
+  },
+  {
+    "method": "Paysafecard",
+    "family": "card",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Paysafecash",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Paysafecash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Rapid Transfer",
+    "family": "bank_transfer",
+    "currency": "GBP",
+    "country": "DE",
+    "base_minor": 6500
+  },
+  {
+    "method": "Rapid Transfer",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Rapid Transfer",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Skrill Digital Wallet",
+    "family": "wallet",
+    "currency": "GBP",
+    "country": "DE",
+    "base_minor": 6500
+  },
+  {
+    "method": "Skrill Digital Wallet",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Trustly",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Trustly",
+    "family": "open_banking",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Open Banking",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "DE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Neteller",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "Skrill Digital Wallet",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "DE",
+    "base_minor": 8500
+  },
+  {
+    "method": "MyBank",
+    "family": "bank_transfer",
+    "currency": "GBP",
+    "country": "IT",
+    "base_minor": 6500
+  },
+  {
+    "method": "MyBank",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "IT",
+    "base_minor": 7500
+  },
+  {
+    "method": "iDEAL",
+    "family": "open_banking",
+    "currency": "EUR",
+    "country": "NL",
+    "base_minor": 7500
+  },
+  {
+    "method": "iDEAL",
+    "family": "open_banking",
+    "currency": "USD",
+    "country": "NL",
+    "base_minor": 8500
+  },
+  {
+    "method": "Vipps",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "NO",
+    "base_minor": 7500
+  },
+  {
+    "method": "Blik",
+    "family": "wallet",
+    "currency": "PLN",
+    "country": "PL",
+    "base_minor": 32000
+  },
+  {
+    "method": "Blik",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "PL",
+    "base_minor": 7500
+  },
+  {
+    "method": "Przelewy24",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "PL",
+    "base_minor": 7500
+  },
+  {
+    "method": "MB Way",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "PT",
+    "base_minor": 7500
+  },
+  {
+    "method": "MB Way",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "PT",
+    "base_minor": 8500
+  },
+  {
+    "method": "Multibanco",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "PT",
+    "base_minor": 7500
+  },
+  {
+    "method": "Multibanco",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "PT",
+    "base_minor": 8500
+  },
+  {
+    "method": "Swish",
+    "family": "instant",
+    "currency": "EUR",
+    "country": "SE",
+    "base_minor": 7500
+  },
+  {
+    "method": "Twint",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "CH",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Bank Transfer / Mercado Pago / Naranja X",
+    "family": "bank_transfer",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Mercado Pago",
+    "family": "wallet",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Mercado Pago + Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Mercado Pago QR",
+    "family": "qr",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Naranja X",
+    "family": "wallet",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "P2P Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "ARS",
+    "country": "AR",
+    "base_minor": 8500000
+  },
+  {
+    "method": "Simple",
+    "family": "wallet",
+    "currency": "BOB",
+    "country": "BO",
+    "base_minor": 52000
+  },
+  {
+    "method": "Tigo",
+    "family": "wallet",
+    "currency": "BOB",
+    "country": "BO",
+    "base_minor": 52000
+  },
+  {
+    "method": "Yape",
+    "family": "wallet",
+    "currency": "BOB",
+    "country": "BO",
+    "base_minor": 52000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "BRL",
+    "country": "BR",
+    "base_minor": 38000
+  },
+  {
+    "method": "Boleto",
+    "family": "wallet",
+    "currency": "BRL",
+    "country": "BR",
+    "base_minor": 38000
+  },
+  {
+    "method": "Boleto Bancário",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "BR",
+    "base_minor": 7500
+  },
+  {
+    "method": "Boleto Bancário",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "BR",
+    "base_minor": 8500
+  },
+  {
+    "method": "PIX",
+    "family": "instant",
+    "currency": "EUR",
+    "country": "BR",
+    "base_minor": 7500
+  },
+  {
+    "method": "PIX",
+    "family": "instant",
+    "currency": "USD",
+    "country": "BR",
+    "base_minor": 8500
+  },
+  {
+    "method": "PIX",
+    "family": "instant",
+    "currency": "BRL",
+    "country": "BR",
+    "base_minor": 38000
+  },
+  {
+    "method": "PIX P2P",
+    "family": "instant",
+    "currency": "BRL",
+    "country": "BR",
+    "base_minor": 38000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Cards",
+    "family": "card",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Khipu",
+    "family": "wallet",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Khipu",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "CL",
+    "base_minor": 7500
+  },
+  {
+    "method": "Khipu",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "CL",
+    "base_minor": 8500
+  },
+  {
+    "method": "MACH",
+    "family": "wallet",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "MACH",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "CL",
+    "base_minor": 7500
+  },
+  {
+    "method": "MACH",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "CL",
+    "base_minor": 8500
+  },
+  {
+    "method": "Visa / MC",
+    "family": "card",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Webpay",
+    "family": "wallet",
+    "currency": "CLP",
+    "country": "CL",
+    "base_minor": 72000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Bre-B",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Cards",
+    "family": "card",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Efecty",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Nequi",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Nequi / Daviplata",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Nequi / Daviplata / Tpaga",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "PSE",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "PSE",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "CO",
+    "base_minor": 7500
+  },
+  {
+    "method": "PSE",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "CO",
+    "base_minor": 8500
+  },
+  {
+    "method": "PSE / Bre-B",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "PSE / Nequi",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "PSE / Nequi / Bancolombia / Daviplata",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Transfiya",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Transfiya / Nequi / Daviplata / Tpaga",
+    "family": "wallet",
+    "currency": "COP",
+    "country": "CO",
+    "base_minor": 32000000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "CRC",
+    "country": "CR",
+    "base_minor": 4000000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cards",
+    "family": "card",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "Deuna QR",
+    "family": "qr",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "PagoEfectivo",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "Payphone",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "EC",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "GTQ",
+    "country": "GT",
+    "base_minor": 60000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "HNL",
+    "country": "HN",
+    "base_minor": 200000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "BR",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "BR",
+    "base_minor": 8500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "MX",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "MX",
+    "base_minor": 8500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "CO",
+    "base_minor": 7500
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "CO",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "BR",
+    "base_minor": 7500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "BR",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "MX",
+    "base_minor": 7500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "MX",
+    "base_minor": 8500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "CO",
+    "base_minor": 7500
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "CO",
+    "base_minor": 8500
+  },
+  {
+    "method": "AMEX",
+    "family": "card",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Cards",
+    "family": "card",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "OXXO",
+    "family": "wallet",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "OXXO Pay",
+    "family": "wallet",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "SPEI",
+    "family": "instant",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "SPEI / CoDi",
+    "family": "instant",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Visa / MC",
+    "family": "card",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Wallet",
+    "family": "wallet",
+    "currency": "MXN",
+    "country": "MX",
+    "base_minor": 150000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "PA",
+    "base_minor": 8500
+  },
+  {
+    "method": "BCP",
+    "family": "wallet",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Cards",
+    "family": "card",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Cash",
+    "family": "wallet",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "PagoEfectivo",
+    "family": "wallet",
+    "currency": "EUR",
+    "country": "PE",
+    "base_minor": 7500
+  },
+  {
+    "method": "PagoEfectivo",
+    "family": "wallet",
+    "currency": "USD",
+    "country": "PE",
+    "base_minor": 8500
+  },
+  {
+    "method": "PagoEfectivo",
+    "family": "wallet",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Visa / MC",
+    "family": "card",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Yape",
+    "family": "wallet",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "Yape / Plin",
+    "family": "wallet",
+    "currency": "PEN",
+    "country": "PE",
+    "base_minor": 29000
+  },
+  {
+    "method": "PagoMóvil",
+    "family": "wallet",
+    "currency": "VES",
+    "country": "VE",
+    "base_minor": 650000
+  },
+  {
+    "method": "Nagad",
+    "family": "wallet",
+    "currency": "BDT",
+    "country": "BD",
+    "base_minor": 900000
+  },
+  {
+    "method": "Native Intent",
+    "family": "wallet",
+    "currency": "BDT",
+    "country": "BD",
+    "base_minor": 900000
+  },
+  {
+    "method": "Rocket",
+    "family": "wallet",
+    "currency": "BDT",
+    "country": "BD",
+    "base_minor": 900000
+  },
+  {
+    "method": "bKash",
+    "family": "wallet",
+    "currency": "BDT",
+    "country": "BD",
+    "base_minor": 900000
+  },
+  {
+    "method": "IMPS/NEFT",
+    "family": "bank_transfer",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "P2P",
+    "family": "wallet",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "P2P UPI / UPI Intent",
+    "family": "instant",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "UPI",
+    "family": "instant",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "UPI Intent",
+    "family": "instant",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "UPI QR",
+    "family": "qr",
+    "currency": "INR",
+    "country": "IN",
+    "base_minor": 650000
+  },
+  {
+    "method": "BCA Transfer",
+    "family": "bank_transfer",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "DANA",
+    "family": "wallet",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "E-Wallet",
+    "family": "wallet",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "GoPay",
+    "family": "wallet",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "OVO",
+    "family": "wallet",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "QR / P2P",
+    "family": "qr",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "QRIS",
+    "family": "qr",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "Virtual Account",
+    "family": "bank_transfer",
+    "currency": "IDR",
+    "country": "ID",
+    "base_minor": 125000000
+  },
+  {
+    "method": "Alipay",
+    "family": "wallet",
+    "currency": "JPY",
+    "country": "JP",
+    "base_minor": 11000
+  },
+  {
+    "method": "DuitNow QR",
+    "family": "qr",
+    "currency": "MYR",
+    "country": "MY",
+    "base_minor": 35000
+  },
+  {
+    "method": "FPX",
+    "family": "open_banking",
+    "currency": "MYR",
+    "country": "MY",
+    "base_minor": 35000
+  },
+  {
+    "method": "Touch 'n Go",
+    "family": "wallet",
+    "currency": "MYR",
+    "country": "MY",
+    "base_minor": 35000
+  },
+  {
+    "method": "Fonepay",
+    "family": "wallet",
+    "currency": "NPR",
+    "country": "NP",
+    "base_minor": 1050000
+  },
+  {
+    "method": "eSewa",
+    "family": "wallet",
+    "currency": "NPR",
+    "country": "NP",
+    "base_minor": 1050000
+  },
+  {
+    "method": "EasyPaisa",
+    "family": "wallet",
+    "currency": "PKR",
+    "country": "PK",
+    "base_minor": 2200000
+  },
+  {
+    "method": "JazzCash",
+    "family": "wallet",
+    "currency": "PKR",
+    "country": "PK",
+    "base_minor": 2200000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "PHP",
+    "country": "PH",
+    "base_minor": 450000
+  },
+  {
+    "method": "GCash",
+    "family": "wallet",
+    "currency": "PHP",
+    "country": "PH",
+    "base_minor": 450000
+  },
+  {
+    "method": "GCash / Maya",
+    "family": "wallet",
+    "currency": "PHP",
+    "country": "PH",
+    "base_minor": 450000
+  },
+  {
+    "method": "Maya",
+    "family": "wallet",
+    "currency": "PHP",
+    "country": "PH",
+    "base_minor": 450000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "SGD",
+    "country": "SG",
+    "base_minor": 10500
+  },
+  {
+    "method": "Internet Banking",
+    "family": "bank_transfer",
+    "currency": "SGD",
+    "country": "SG",
+    "base_minor": 10500
+  },
+  {
+    "method": "PayNow QR",
+    "family": "qr",
+    "currency": "SGD",
+    "country": "SG",
+    "base_minor": 10500
+  },
+  {
+    "method": "Local wallets",
+    "family": "wallet",
+    "currency": "KRW",
+    "country": "KR",
+    "base_minor": 105000
+  },
+  {
+    "method": "P2P Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "KRW",
+    "country": "KR",
+    "base_minor": 105000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "THB",
+    "country": "TH",
+    "base_minor": 280000
+  },
+  {
+    "method": "PromptPay QR",
+    "family": "qr",
+    "currency": "THB",
+    "country": "TH",
+    "base_minor": 280000
+  },
+  {
+    "method": "QR / P2P",
+    "family": "qr",
+    "currency": "THB",
+    "country": "TH",
+    "base_minor": 280000
+  },
+  {
+    "method": "QR30",
+    "family": "qr",
+    "currency": "THB",
+    "country": "TH",
+    "base_minor": 280000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "VND",
+    "country": "VN",
+    "base_minor": 2000000
+  },
+  {
+    "method": "QR / P2C",
+    "family": "qr",
+    "currency": "VND",
+    "country": "VN",
+    "base_minor": 2000000
+  },
+  {
+    "method": "VietQR",
+    "family": "qr",
+    "currency": "VND",
+    "country": "VN",
+    "base_minor": 2000000
+  },
+  {
+    "method": "Havale",
+    "family": "bank_transfer",
+    "currency": "TRY",
+    "country": "TR",
+    "base_minor": 300000
+  },
+  {
+    "method": "P2P",
+    "family": "wallet",
+    "currency": "AZN",
+    "country": "AZ",
+    "base_minor": 13000
+  },
+  {
+    "method": "Quasi e-com",
+    "family": "card",
+    "currency": "AZN",
+    "country": "AZ",
+    "base_minor": 13000
+  },
+  {
+    "method": "P2P",
+    "family": "wallet",
+    "currency": "KZT",
+    "country": "KZ",
+    "base_minor": 3800000
+  },
+  {
+    "method": "P2P cross",
+    "family": "wallet",
+    "currency": "KZT",
+    "country": "KZ",
+    "base_minor": 3800000
+  },
+  {
+    "method": "P2P local",
+    "family": "wallet",
+    "currency": "KZT",
+    "country": "KZ",
+    "base_minor": 3800000
+  },
+  {
+    "method": "E-com",
+    "family": "card",
+    "currency": "UZS",
+    "country": "UZ",
+    "base_minor": 100000000
+  },
+  {
+    "method": "P2P",
+    "family": "wallet",
+    "currency": "UZS",
+    "country": "UZ",
+    "base_minor": 100000000
+  },
+  {
+    "method": "Interac",
+    "family": "bank_transfer",
+    "currency": "CAD",
+    "country": "CA",
+    "base_minor": 11500
+  },
+  {
+    "method": "Interac",
+    "family": "bank_transfer",
+    "currency": "EUR",
+    "country": "CA",
+    "base_minor": 7500
+  },
+  {
+    "method": "Interac",
+    "family": "bank_transfer",
+    "currency": "USD",
+    "country": "CA",
+    "base_minor": 8500
+  },
+  {
+    "method": "Fawry",
+    "family": "wallet",
+    "currency": "EGP",
+    "country": "EG",
+    "base_minor": 380000
+  },
+  {
+    "method": "Mobile Money / Digital",
+    "family": "wallet",
+    "currency": "GMD",
+    "country": "GM",
+    "base_minor": 550000
+  },
+  {
+    "method": "Mobile Money",
+    "family": "wallet",
+    "currency": "GHS",
+    "country": "GH",
+    "base_minor": 95000
+  },
+  {
+    "method": "M-Pesa / Airtel",
+    "family": "wallet",
+    "currency": "KES",
+    "country": "KE",
+    "base_minor": 1000000
+  },
+  {
+    "method": "Mobile Money",
+    "family": "wallet",
+    "currency": "KES",
+    "country": "KE",
+    "base_minor": 1000000
+  },
+  {
+    "method": "Bank Transfer",
+    "family": "bank_transfer",
+    "currency": "MAD",
+    "country": "MA",
+    "base_minor": 76000
+  },
+  {
+    "method": "Mobile Money",
+    "family": "wallet",
+    "currency": "NGN",
+    "country": "NG",
+    "base_minor": 12000000
+  },
+  {
+    "method": "Wave",
+    "family": "wallet",
+    "currency": "XOF",
+    "country": "SN",
+    "base_minor": 48000
+  },
+  {
+    "method": "EFT",
+    "family": "bank_transfer",
+    "currency": "ZAR",
+    "country": "ZA",
+    "base_minor": 145000
+  },
+  {
+    "method": "Airtel / MTN",
+    "family": "wallet",
+    "currency": "ZMW",
+    "country": "ZM",
+    "base_minor": 200000
+  },
+  {
+    "method": "PayID",
+    "family": "wallet",
+    "currency": "AUD",
+    "country": "AU",
+    "base_minor": 12000
+  }
+]

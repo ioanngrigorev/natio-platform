@@ -14,6 +14,7 @@ const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "insta
 export default async function AdminPaymentsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const api = serverApi();
   const query = qs({
+    provider_account_id: searchParams.provider_account_id,
     merchant_id: searchParams.merchant_id,
     status: searchParams.status,
     currency: searchParams.currency,
@@ -25,7 +26,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
     cursor: searchParams.cursor,
     limit: 50,
   });
-  const [page, merchants] = await Promise.all([api.get<Paginated<Payment>>(`/admin/payments${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [page, merchants] = await Promise.all([api.get<Paginated<Payment>>(`/admin/payments${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const merchantName = merchants.data.find((m) => m.id === searchParams.merchant_id)?.name;
 
   return (
@@ -33,6 +34,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       <PageHeader title={searchParams.status === "pending" ? "Payments · review queue" : "Payments"} subtitle={merchantName ? `Payments of ${merchantName} in ${api.mode} mode.` : `All payments across merchants in ${api.mode} mode. Pending payments are waiting for a manual risk review.`} />
       <FilterBar
         filters={[
+          { name: "provider_account_id", label: "Provider account", type: "text", placeholder: "Account ID" },
           { name: "merchant_id", label: "Merchant", type: "select", options: merchants.data.map((m) => ({ value: m.id, label: m.name })) },
           { name: "search", label: "Search", type: "text", placeholder: "pay_…, reference, provider id" },
           { name: "status", label: "Status", type: "select", options: STATUSES.map((s) => ({ value: s, label: s.replace(/_/g, " ") })) },

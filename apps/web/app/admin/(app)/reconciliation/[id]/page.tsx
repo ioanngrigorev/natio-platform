@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ResolveReconItem } from "@/components/admin/reconciliation-actions";
@@ -65,8 +66,8 @@ export default async function AdminReconciliationBatchPage({ params, searchParam
                   "All merchants"
                 ),
               },
-              { label: "Provider", value: b.provider_name ?? "—" },
-              { label: "Provider account", value: `${b.provider_account_name ?? "—"} · ${b.provider_account_id}` },
+              { label: "Provider", value: <EntityLink kind="provider-accounts" id={b.provider_account_id}>{b.provider_name}</EntityLink> },
+              { label: "Provider account", value: `$<EntityLink kind="provider-accounts" id={b.provider_account_id}>{b.provider_account_name}</EntityLink> · ${b.provider_account_id}` },
               { label: "Source", value: titleCase(b.source) },
               { label: "File", value: b.file_name ?? "—" },
               { label: "Period", value: b.period_start || b.period_end ? `${formatDateTimeFull(b.period_start)} – ${formatDateTimeFull(b.period_end)}` : "All time" },

@@ -6,11 +6,13 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { loadConfig } from "../../config.js";
-import { getDb } from "../../db/client.js";
-import { adminUsers, merchantUsers, projects, refunds, riskDecisions, routingDecisions } from "../../db/schema/index.js";
+import { getDb, getPool } from "../../db/client.js";
+import { adminUsers, merchantUsers, providerAccounts, providers, projects, refunds, riskDecisions, routingDecisions } from "../../db/schema/index.js";
 import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { hashPassword } from "../../lib/crypto.js";
+import { biQuery, businessIntelligence } from "../../modules/analytics/bi.js";
+import { excelReport } from "../../modules/analytics/excel.js";
 import { platformOverview, providerComparison } from "../../modules/analytics/service.js";
 import { listAudit, listSystemEvents, recordAudit } from "../../modules/audit/service.js";
 import { loginAdmin, revokeSession } from "../../modules/auth/service.js";
@@ -22,7 +24,7 @@ import { runOrchestration, syncAttempt } from "../../modules/payments/orchestrat
 import { serializeRefund } from "../../modules/refunds/service.js";
 import { getPayoutDetail, listPayouts } from "../../modules/payouts/service.js";
 import { listTransactions } from "../../modules/transactions/service.js";
-import { createProviderAccount, listProvidersWithAccounts, providerHealth, recentProviderEvents, runHealthCheck, setProviderStatus, updateProviderAccount } from "../../modules/providers/service.js";
+import { createProviderAccount, serializeAccount, listProvidersWithAccounts, countProviders, providerHealth, recentProviderEvents, runHealthCheck, setProviderStatus, updateProviderAccount } from "../../modules/providers/service.js";
 import { createRule, deleteRule, listRulesAdmin, simulateRoute, updateRule } from "../../modules/routing/service.js";
 import { createRiskRule, deleteRiskRule, listRiskRules, updateRiskRule } from "../../modules/risk/service.js";
 import { createSettlementFromProviderReport, getSettlementDetail, listSettlements } from "../../modules/settlements/service.js";
@@ -73,20 +75,31 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       // ---------------------------------------------------------------- overview
       r.get("/overview", async (req) => {
         const { from, to } = periodFromQuery(req.query as Record<string, unknown>, 1);
-        const [platform, providers, health, events] = await Promise.all([
+        const [platform, providers, events, providerCount] = await Promise.all([
           platformOverview(db, req.dashboardMode, from, to),
-          listProvidersWithAccounts(db, { mode: req.dashboardMode }),
-          providerHealth(db, 24),
+          listProvidersWithAccounts(db, { mode: req.dashboardMode, limit: 8, from, to }),
           listSystemEvents(db, { limit: 10 }),
+          countProviders(db, { mode: req.dashboardMode }),
         ]);
         const [m] = await db.select({ total: sql<number>`count(*)`.mapWith(Number), active: sql<number>`count(*) filter (where status = 'active')`.mapWith(Number), kybPending: sql<number>`count(*) filter (where kyb_status = 'pending')`.mapWith(Number) }).from(merchantsTable);
-        return { period: { from, to }, payments: platform, merchants: m, providers, health, recent_events: events };
+        return { period: { from, to }, payments: platform, merchants: m, providers, provider_count: providerCount, health: [], recent_events: events };
+      });
+
+      r.get("/bi", async (req) => businessIntelligence(parseQuery(biQuery, req.query), req.dashboardMode));
+      r.get("/bi/export.xlsx", { config: { rateLimit: { max: 4, timeWindow: "1 minute" } } }, async (req, reply) => {
+        const q = parseQuery(biQuery, req.query);
+        const { stream } = excelReport(q, req.dashboardMode);
+        reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        reply.header("content-disposition", `attachment; filename="NATIO-${q.kind}-${q.from}-${q.to}.xlsx"`);
+        reply.header("cache-control", "no-store");
+        return reply.send(stream);
       });
 
       // ---------------------------------------------------------------- merchants
       r.get("/merchants", async (req) => {
         const q = req.query as Record<string, string | undefined>;
-        return { data: await adminListMerchants(db, { search: q.search, status: q.status, kyb: q.kyb, limit: q.limit ? Number(q.limit) : undefined }) };
+        if (q.fields === "options") return { data: await db.select({ id: merchantsTable.id, name: merchantsTable.name }).from(merchantsTable).orderBy(merchantsTable.name).limit(500) };
+        return { data: await adminListMerchants(db, { search: q.search, status: q.status, kyb: q.kyb, limit: q.limit ? Number(q.limit) : undefined, mode: req.dashboardMode }) };
       });
       r.get<{ Params: { id: string } }>("/merchants/:id", async (req) => {
         const [m] = await db.select().from(merchantsTable).where(eq(merchantsTable.id, req.params.id)).limit(1);
@@ -150,7 +163,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       });
       r.get("/transactions", async (req) => {
         const q = req.query as Record<string, string | undefined>;
-        return listTransactions(db, { merchantId: q.merchant_id, mode: req.dashboardMode, type: q.type, status: q.status, currency: q.currency, providerAccountId: q.provider_account_id, search: q.search, from: dateOrUndefined(q.from), to: dateOrUndefined(q.to), limit: q.limit ? Number(q.limit) : undefined, cursor: q.cursor });
+        return listTransactions(db, { projectId: q.project_id, merchantId: q.merchant_id, mode: req.dashboardMode, type: q.type, status: q.status, currency: q.currency, providerAccountId: q.provider_account_id, search: q.search, from: dateOrUndefined(q.from), to: dateOrUndefined(q.to), limit: q.limit ? Number(q.limit) : undefined, cursor: q.cursor });
       });
       r.get("/payouts", async (req) => {
         const q = req.query as Record<string, string | undefined>;
@@ -183,7 +196,34 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       });
 
       // ---------------------------------------------------------------- providers
-      r.get("/providers", async (req) => ({ data: await listProvidersWithAccounts(db, { mode: (req.query as Record<string, string>).mode as never }) }));
+      r.get("/providers", async (req) => {
+        const q = parseQuery(z.object({ search: z.string().max(100).optional(), limit: z.coerce.number().int().min(1).max(200).default(20), offset: z.coerce.number().int().min(0).max(1000000).default(0), from: z.string().datetime().optional(), to: z.string().datetime().optional() }), req.query);
+        const f = { mode: req.dashboardMode, search: q.search, from: q.from ? new Date(q.from) : undefined, to: q.to ? new Date(q.to) : undefined };
+        const [data, total] = await Promise.all([listProvidersWithAccounts(db, { ...f, limit: q.limit, offset: q.offset }),countProviders(db, f)]);
+        return { data,total,limit:q.limit,offset:q.offset,has_more:q.offset+data.length<total };
+      });
+      const accountPeriod = (mode: string) => mode === "test" ? { from: new Date("2025-01-01T00:00:00Z"), to: new Date("2025-12-31T23:59:59.999Z") } : {};
+      r.get<{ Params: { id: string } }>("/providers/:id", async (req) => {
+        const data = await listProvidersWithAccounts(db, { id: req.params.id, mode: req.dashboardMode, ...accountPeriod(req.dashboardMode) });
+        if (!data[0]) throw Errors.notFound("Provider", req.params.id);
+        return data[0];
+      });
+      r.get<{ Params: { id: string } }>("/provider-accounts/:id", async (req) => {
+        const [row] = await db.select({ account: providerAccounts, provider: providers }).from(providerAccounts).innerJoin(providers, eq(providers.id, providerAccounts.providerId)).where(and(eq(providerAccounts.id, req.params.id), eq(providerAccounts.mode, req.dashboardMode))).limit(1);
+        if (!row) throw Errors.notFound("Provider account", req.params.id);
+        const period = accountPeriod(req.dashboardMode);
+        const [health, totals] = await Promise.all([
+          providerHealth(db, 24, [row.account.id], period),
+          getPool().query(`SELECT currency,count(*) transactions,
+            coalesce(sum(amount) filter(where type='payment' and status='successful'),0) volume,
+            coalesce(sum(fee_amount) filter(where status='successful'),0) fees,
+            coalesce(sum(net_amount) filter(where status='successful' and settlement_id is null),0) balance
+            FROM transactions WHERE provider_account_id=$1 AND mode=$2
+            AND ($3::timestamptz IS NULL OR occurred_at >= $3) AND ($4::timestamptz IS NULL OR occurred_at <= $4)
+            GROUP BY currency ORDER BY currency`, [row.account.id, req.dashboardMode, period.from ?? null, period.to ?? null]),
+        ]);
+        return { ...serializeAccount(row.account, row.provider), health: health[0] ?? null, balances: totals.rows };
+      });
       r.post<{ Params: { id: string } }>("/providers/:id/status", async (req) => {
         need(req, "providers.manage");
         const body = parse(z.object({ status: z.enum(["active", "disabled"]), reason: z.string().max(300).optional() }), req.body);
@@ -223,7 +263,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       r.get<{ Params: { id: string } }>("/provider-accounts/:id/events", async (req) => ({ data: await recentProviderEvents(db, req.params.id) }));
       r.get("/providers/comparison", async (req) => {
         const { from, to } = periodFromQuery(req.query as Record<string, unknown>, 7);
-        return providerComparison(db, { mode: req.dashboardMode, from, to, currency: (req.query as Record<string, string>).currency });
+        return providerComparison(db, { mode: req.dashboardMode, from, to, currency: (req.query as Record<string, string>).currency }, 20);
       });
 
       // ---------------------------------------------------------------- routing rules

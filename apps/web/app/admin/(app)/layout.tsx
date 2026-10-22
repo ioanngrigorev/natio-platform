@@ -5,6 +5,9 @@ import { getAdminSession } from "@/lib/session";
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Overview", exact: true },
+  { href: "/admin/bi", label: "BI & Reports" },
+  { href: "/admin/balances", label: "Balances" },
+  { href: "/admin/catalog", label: "Payment catalog" },
   { href: "/admin/merchants", label: "Merchants", section: "Customers" },
   { href: "/admin/users", label: "Users", section: "Customers" },
   { href: "/admin/payments", label: "Payments", section: "Operations" },
@@ -27,7 +30,7 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   if (!session) redirect("/admin/login");
   return (
     <SessionProvider session={{ kind: "admin", csrf: session.csrf_token, mode: session.mode, permissions: [], user: session.admin }}>
-      <Shell nav={NAV} brand={{ title: "Admin", subtitle: "NATIO internal operations" }}>
+      <Shell nav={NAV} brand={{ title: "Admin", subtitle: session.mode === "test" ? "Investor demo · 2025" : "NATIO internal operations" }}>
         {children}
       </Shell>
     </SessionProvider>

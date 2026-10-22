@@ -30,7 +30,7 @@ function groupRules(rules: RoutingRule[]): Group[] {
 
 export default async function RoutingRulesPage({ searchParams }: { searchParams: { merchant_id?: string } }) {
   const api = serverApi();
-  const [rules, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>(`/admin/routing/rules?mode=${api.mode}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [rules, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>(`/admin/routing/rules?mode=${api.mode}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const merchantName = new Map(merchants.data.map((m) => [m.id, m.name]));
   const scoped = searchParams.merchant_id ? rules.data.filter((r) => r.merchantId === searchParams.merchant_id || r.merchantId === null) : rules.data;
   const groups = groupRules(scoped);

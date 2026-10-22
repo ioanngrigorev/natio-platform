@@ -1,4 +1,7 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
+import { BiCharts } from "@/components/admin/bi-charts";
+import type { BiReport } from "@/lib/bi-types";
 import { LevelTag } from "@/components/admin/condition-chips";
 import { PeriodPicker } from "@/components/dashboard/filters";
 import { Card, Grid, Kpi, Mono, PageHeader, StatusBadge, Table } from "@/components/ui";
@@ -10,15 +13,16 @@ export const metadata = { title: "Admin overview" };
 
 export default async function AdminOverviewPage({ searchParams }: { searchParams: { days?: string } }) {
   const api = serverApi();
-  const days = searchParams.days ?? "1";
-  const from = isoDaysAgo(Number(days) || 1);
-  const o = await api.get<AdminOverview>(`/admin/overview?from=${from}`);
+  const days = searchParams.days ?? (api.mode === "test" ? "2025" : "1");
+  const from = days === "2025" ? "2025-01-01T00:00:00.000Z" : isoDaysAgo(Number(days) || 1);
+  const to = days === "2025" ? "2025-12-31T23:59:59.999Z" : new Date().toISOString();
+  const [o,bi] = await Promise.all([api.get<AdminOverview>(`/admin/overview?from=${from}&to=${to}`),api.get<BiReport>(`/admin/bi?from=${from.slice(0,10)}&to=${to.slice(0,10)}&currency=EUR`)]);
   const accounts = o.providers.flatMap((p) => p.accounts.map((a) => ({ ...a, provider: p })));
   const successRate = o.payments.successful + o.payments.failed ? o.payments.successful / (o.payments.successful + o.payments.failed) : null;
 
   return (
     <>
-      <PageHeader title={days === "1" ? "Platform · last 24h" : `Platform · last ${days} days`} subtitle={`${api.mode === "test" ? "Sandbox" : "Live"} data across all merchants. Funds are held and settled by licensed providers; NATIO reports processing data only.`} actions={<PeriodPicker current={days} />} />
+      <div className="admin-hero"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="admin-eyebrow">NATIO · {api.mode === "test" ? "Investor demo" : "Operations"}</p><h1 className="mt-2">Payments, in perspective.</h1><p className="mt-2 text-sm text-ink-500">{days === "2025" ? "1 January — 31 December 2025" : `Last ${days} days`} · {api.mode === "test" ? "Synthetic transaction history" : "Live processing"}</p></div><div className="flex items-center gap-3"><Link href="/admin?days=2025" className="rounded-md bg-brand-600 px-3 py-1 text-xs text-white">2025</Link><PeriodPicker current={days}/></div></div><div className="mt-6 grid grid-cols-2 gap-5 md:grid-cols-4">{[{value:bi.coverage.transactions,label:"Transactions",href:"/admin/transactions"},{value:bi.coverage.merchants,label:"Merchants",href:"/admin/merchants"},{value:bi.coverage.providers,label:"Payment providers",href:"/admin/providers"},{value:bi.coverage.users,label:"Merchant users",href:"/admin/users"}].map(m=><Link className="admin-metric" key={m.label} href={m.href}><strong>{formatNumber(m.value)}</strong><span>{m.label} →</span></Link>)}</div></div>
 
       <Grid cols={4}>
         <Kpi label="Merchants" value={formatNumber(o.merchants.total)} hint={`${formatNumber(o.merchants.active)} active · ${formatNumber(o.payments.merchants)} transacting in period`} />
@@ -30,11 +34,13 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
         <Kpi label="Pending review" value={formatNumber(o.payments.pending)} tone={o.payments.pending ? "warn" : "neutral"} hint={<Link href="/admin/payments?status=pending" className="text-brand-600 hover:underline">Open review queue</Link>} />
         <Kpi label="Processing" value={formatNumber(o.payments.processing)} hint={<Link href="/admin/payments?status=processing" className="text-brand-600 hover:underline">In-flight payments</Link>} />
         <Kpi label="Failed" value={formatNumber(o.payments.failed)} tone={o.payments.failed ? "bad" : "neutral"} hint={<Link href="/admin/payments?status=failed" className="text-brand-600 hover:underline">Failed payments</Link>} />
-        <Kpi label="Provider accounts" value={formatNumber(accounts.length)} hint={`${formatNumber(accounts.filter((a) => a.status === "active").length)} active in ${api.mode} mode`} />
+        <Kpi label="Provider accounts" value={formatNumber(o.provider_count)} hint={`Payment providers in ${api.mode} mode`} />
       </Grid>
 
+      <div className="my-5"><BiCharts report={bi} overview /></div>
+      <div className="mb-5 flex justify-end"><Link href="/admin/bi" className="text-sm font-medium text-brand-600">Explore BI, balances and Excel reports →</Link></div>
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card title="Provider accounts" description="Attempt-level health over the last 24 hours" className="xl:col-span-2" padded={false} actions={<Link href="/admin/providers" className="text-[12px] font-medium text-brand-600 hover:underline">Manage providers</Link>}>
+        <Card title="Provider accounts" description="Sample of providers · performance in selected period" className="xl:col-span-2" padded={false} actions={<Link href="/admin/providers" className="text-[12px] font-medium text-brand-600 hover:underline">Manage providers</Link>}>
           {accounts.length ? (
             <Table>
               <thead>
@@ -52,9 +58,9 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                 {accounts.map((a) => (
                   <tr key={a.id}>
                     <td>
-                      <div className="font-medium">{a.provider.name}</div>
+                      <EntityLink kind="providers" id={a.provider.id}>{a.provider.name}</EntityLink>
                       <div className="text-[11px] text-ink-500">
-                        {a.name} · <Mono className="text-[11px]">{a.provider.adapter_key}</Mono>
+                        <EntityLink kind="provider-accounts" id={a.id}>{a.name}</EntityLink> · <Mono className="text-[11px]">{a.provider.adapter_key}</Mono>
                       </div>
                     </td>
                     <td>
@@ -89,7 +95,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                 </tr>
               </thead>
               <tbody>
-                {o.payments.volumes.map((v) => (
+                {o.payments.volumes.slice(0,10).map((v) => (
                   <tr key={v.currency}>
                     <td className="font-medium">{v.currency}</td>
                     <td className="num">{formatMoney(v.tpv, v.currency)}</td>

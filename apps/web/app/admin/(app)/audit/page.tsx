@@ -13,7 +13,7 @@ const ACTOR_TYPES = ["admin_user", "merchant_user", "api_key", "system"];
 export default async function AuditPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const api = serverApi();
   const query = qs({ merchant_id: searchParams.merchant_id, actor_type: searchParams.actor_type, action: searchParams.action, entity_id: searchParams.entity_id, limit: 200 });
-  const [audit, merchants] = await Promise.all([api.get<{ data: AuditEntry[] }>(`/admin/audit${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?limit=500")]);
+  const [audit, merchants] = await Promise.all([api.get<{ data: AuditEntry[] }>(`/admin/audit${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const merchantName = new Map(merchants.data.map((m) => [m.id, m.name]));
 
   return (

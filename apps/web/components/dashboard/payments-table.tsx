@@ -1,3 +1,4 @@
+import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { EmptyState, Mono, StatusBadge, Table } from "@/components/ui";
 import { formatDateTime, formatMoney, formatMs, shortId, titleCase } from "@/lib/format";
@@ -37,8 +38,8 @@ export function PaymentsTable({ payments, hrefBase, showMerchant }: { payments: 
             <td>{titleCase(p.payment_method.type)}</td>
             <td>{p.country ?? "—"}</td>
             <td>
-              {p.route.provider?.name ?? <span className="text-ink-400">—</span>}
-              {p.route.provider_account_name ? <div className="text-[11px] text-ink-500">{p.route.provider_account_name}</div> : null}
+              {hrefBase.startsWith("/admin") ? <EntityLink kind="providers" id={p.route.provider?.id}>{p.route.provider?.name}</EntityLink> : p.route.provider?.name ?? "—"}
+              {p.route.provider_account_name ? <div className="text-[11px] text-ink-500">{hrefBase.startsWith("/admin") ? <EntityLink kind="provider-accounts" id={p.route.provider_account_id}>{p.route.provider_account_name}</EntityLink> : p.route.provider_account_name}</div> : null}
             </td>
             <td className="num">{p.route.attempts}</td>
             <td className="num">{formatMs(p.processing_time_ms)}</td>
