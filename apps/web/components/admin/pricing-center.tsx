@@ -12,6 +12,9 @@ type Account = {
   providerId: string;
   label: string;
   currencies: string[];
+  merchant_id: string | null;
+  methods: string[];
+  countries: string[];
 };
 const fresh = (): Terms => ({
   name: "New amount tariff",
@@ -107,14 +110,21 @@ export function PricingCenter({
     [accounts, setAccounts] = useState(initialAccounts),
     [search, setSearch] = useState("");
   const [form, setForm] = useState({
-    merchantId: merchants[0]?.id ?? "",
+    merchantId: initialAccounts[0]?.merchant_id ?? merchants[0]?.id ?? "",
     providerAccountId: initialAccounts[0]?.id ?? "",
     amount: "10000",
-    currency: "EUR",
-    paymentMethod: "card",
-    country: "",
+    currency: initialAccounts[0]?.currencies[0] ?? "EUR",
+    paymentMethod: initialAccounts[0]?.methods[0] ?? "card",
+    country: initialAccounts[0]?.countries[0] ?? "",
     at: new Date().toISOString().slice(0, 10),
   });
+  function withAccount(current: typeof form, account?: Account) {
+    return { ...current, providerAccountId: account?.id ?? "",
+      merchantId: account?.merchant_id ?? current.merchantId,
+      currency: account?.currencies[0] ?? current.currency,
+      paymentMethod: account?.methods[0] ?? current.paymentMethod,
+      country: account?.countries[0] ?? "" };
+  }
   useEffect(() => {
     if (editor)
       document
@@ -211,23 +221,23 @@ export function PricingCenter({
         data: {
           id: string;
           name: string;
-          accounts: { id: string; name: string; currencies: string[] }[];
+          supported_methods: string[];
+          supported_countries: string[];
+          accounts: { id: string; name: string; currencies: string[]; merchant_id: string | null }[];
         }[];
       }>(`/admin/providers?limit=50&search=${encodeURIComponent(search)}`);
       const matches = r.data.flatMap((p) =>
         p.accounts.map((a) => ({
           ...a,
           providerId: p.id,
+          methods: p.supported_methods,
+          countries: p.supported_countries,
           label: `${p.name} · ${a.name}`,
         })),
       );
       setAccounts(matches);
-      setForm((f) => ({
-        ...f,
-        providerAccountId: matches.some((a) => a.id === f.providerAccountId)
-          ? f.providerAccountId
-          : (matches[0]?.id ?? ""),
-      }));
+      setForm((f) => withAccount(f, matches.find((a) => a.id === f.providerAccountId) ?? matches[0]));
+      setQuote(null); setCurve([]);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -745,7 +755,12 @@ export function PricingCenter({
               id="quote-merchant"
               className="input"
               value={form.merchantId}
-              onChange={(e) => setForm({ ...form, merchantId: e.target.value })}
+              onChange={(e) => {
+                const merchantId = e.target.value;
+                const compatible = accounts.filter(a => !a.merchant_id || a.merchant_id === merchantId);
+                setForm(withAccount({ ...form, merchantId }, compatible.find(a => a.id === form.providerAccountId) ?? compatible[0]));
+                setQuote(null); setCurve([]);
+              }}
             >
               {merchants.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -760,11 +775,11 @@ export function PricingCenter({
               className="input"
               value={form.providerAccountId}
               onChange={(e) =>
-                setForm({ ...form, providerAccountId: e.target.value })
+                setForm(withAccount(form, accounts.find(a => a.id === e.target.value)))
               }
             >
               <option value="">Choose account</option>
-              {accounts.map((a) => (
+              {accounts.filter(a => !a.merchant_id || a.merchant_id === form.merchantId).map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.label}
                 </option>

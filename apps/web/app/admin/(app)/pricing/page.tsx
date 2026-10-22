@@ -14,7 +14,9 @@ export default async function PricingPage() {
       data: {
         id: string;
         name: string;
-        accounts: { id: string; name: string; currencies: string[] }[];
+        supported_methods: string[];
+        supported_countries: string[];
+        accounts: { id: string; name: string; currencies: string[]; merchant_id: string | null }[];
       }[];
     }>("/admin/providers?limit=30"),
   ]);
@@ -31,6 +33,8 @@ export default async function PricingPage() {
           p.accounts.map((a) => ({
             ...a,
             providerId: p.id,
+            methods: p.supported_methods,
+            countries: p.supported_countries,
             label: `${p.name} · ${a.name}`,
           })),
         )}
