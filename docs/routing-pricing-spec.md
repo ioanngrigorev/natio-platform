@@ -1,6 +1,6 @@
 # Routing, cascading and dynamic pricing
 
-Status: implementation complete; release validation in progress. Production receipt review is available separately under Finance.
+Status: released and regression-tested on 23 October 2026. See the [verification report](verification/routing-pricing-2026-10-23.md). Production receipt review is available separately under Finance.
 
 ## Product scope
 
