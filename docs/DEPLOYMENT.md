@@ -66,13 +66,14 @@ Single domain (works immediately, no extra DNS):
 ```
 natio.me/            website, /dashboard, /admin, /docs   → web:3000
 natio.me/v1/*        Universal Payment API                 → api:4000
+natio.me/api/*       Browser API (strip /api prefix)       → api:4000
 natio.me/health      health probe                          → api:4000
 natio.me/openapi.json, /providers/webhooks/*, /sandbox/*   → api:4000
 ```
 
 Subdomains (preferred once DNS is in place): point `natio.me`, `app.natio.me` and `docs.natio.me` at the `web` container and `api.natio.me` at the `api` container, then set `CORS_ORIGINS=https://natio.me,https://app.natio.me` and `COOKIE_DOMAIN=.natio.me`.
 
-One routing detail matters. The dashboard and admin UIs call the API through `/api/*` on their **own** origin; `apps/web/next.config.mjs` rewrites that to `API_INTERNAL_URL` server-side. This keeps session cookies first-party and means the browser never needs a cross-origin credentialed request. Do not "simplify" this by pointing the browser directly at `api.natio.me` — you would then need `SameSite=None` cookies and a wider CORS policy.
+One routing detail matters. The dashboard and admin UIs call the API through `/api/*` on their **own** origin. Caddy strips `/api` and proxies to `api:4000` on both `natio.me` and `app.natio.me`. This keeps session cookies first-party without a cross-origin credentialed request. Next.js also has a rewrite for development without Caddy, but its destination is frozen during the web build: setting `API_INTERNAL_URL` only at runtime does not change that rewrite. Production browser requests therefore go directly through Caddy; server components still use `API_INTERNAL_URL` at runtime. Do not point the browser directly at `api.natio.me`, which would require `SameSite=None` cookies and a wider CORS policy.
 
 ## First deployment
 

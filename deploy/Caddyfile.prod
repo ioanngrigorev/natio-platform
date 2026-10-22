@@ -29,9 +29,19 @@
 	encode zstd gzip
 }
 
+# Keep browser API requests on the same origin. Next.js freezes rewrite targets
+# at build time, so a runtime API_INTERNAL_URL cannot repair an image built with
+# the localhost fallback. Resolve the Docker service at the edge instead.
+(browser_api) {
+	handle_path /api/* {
+		reverse_proxy api:4000
+	}
+}
+
 # --- Public site, dashboard, admin, docs -----------------------------------
 {$SITE_DOMAIN} {
 	import hardening
+	import browser_api
 
 	# API-owned paths served from the same origin, so a single domain works even
 	# before the subdomains are in DNS.
@@ -59,9 +69,8 @@ api.{$SITE_DOMAIN} {
 # --- Dashboard host --------------------------------------------------------
 app.{$SITE_DOMAIN} {
 	import hardening
+	import browser_api
 
-	# Browser calls from the dashboard go to /api/* on this same origin and are
-	# proxied by Next.js to the API, which keeps session cookies first-party.
 	handle {
 		reverse_proxy web:3000
 	}
