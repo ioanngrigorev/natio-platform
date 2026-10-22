@@ -1,3 +1,4 @@
+import { repriceSnapshot } from "../pricing/engine.js";
 import type { customers, paymentAttempts, payments, providerAccounts, providers } from "../../db/schema/index.js";
 import { failureInfo } from "../../providers/failure-codes.js";
 
@@ -49,14 +50,14 @@ export function serializePayment(p: PaymentRow, opts: SerializeOpts = {}) {
     fee: { amount: p.feeAmount, currency: p.currency },
     processing_time_ms: p.processingTimeMs,
     test_scenario: p.mode === "test" ? p.testScenario : undefined,
-    attempts: opts.attempts?.map(serializeAttempt),
+    attempts: opts.attempts?.map(a => serializeAttempt(a, a.id === p.currentAttemptId ? p.capturedAmount : undefined)),
     created_at: p.createdAt,
     updated_at: p.updatedAt,
     processed_at: p.processedAt,
   };
 }
 
-export function serializeAttempt(a: AttemptRow & { providerName?: string | null; accountName?: string | null }) {
+export function serializeAttempt(a: AttemptRow & { providerName?: string | null; accountName?: string | null }, capturedAmount?: number) {
   const failure = a.failureCode ? failureInfo(a.failureCode) : null;
   return {
     id: a.id,
@@ -71,7 +72,7 @@ export function serializeAttempt(a: AttemptRow & { providerName?: string | null;
     provider_code: a.providerCode,
     provider_message: a.providerMessage,
     failure: failure ? { code: failure.code, category: failure.category, message: failure.message } : null,
-    fee_amount: a.feeAmount,
+    fee_amount: a.pricingSnapshot ? (capturedAmount ? repriceSnapshot(a.pricingSnapshot, capturedAmount).merchant.amount : a.pricingSnapshot.merchant.amount) : a.feeAmount,
     latency_ms: a.latencyMs,
     request_sent_at: a.requestSentAt,
     responded_at: a.respondedAt,

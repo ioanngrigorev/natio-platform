@@ -1,3 +1,4 @@
+import { PaymentPricing } from "@/components/admin/payment-pricing";
 import { EntityLink } from "@/components/admin/entity-link";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -67,6 +68,7 @@ export default async function AdminPaymentDetailPage({ params }: { params: { id:
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
+          <PaymentPricing id={p.id}/>
           <Card title="Payment">
             <DescriptionList
               cols={3}
@@ -75,7 +77,7 @@ export default async function AdminPaymentDetailPage({ params }: { params: { id:
                 { label: "Amount", value: <span className="font-medium">{formatMoney(p.amount, p.currency)}</span> },
                 { label: "Captured", value: formatMoney(p.captured_amount, p.currency) },
                 { label: "Refunded", value: formatMoney(p.refunded_amount, p.currency) },
-                { label: "Fee (provider)", value: formatMoney(p.fee.amount, p.currency) },
+                { label: "Merchant fee", value: formatMoney(p.fee.amount, p.currency) },
                 { label: "Capture method", value: titleCase(p.capture_method) },
                 { label: "Processing time", value: formatMs(p.processing_time_ms) },
                 { label: "Country", value: p.country ?? "—" },

@@ -95,7 +95,7 @@ export function fromDecimalString(value: string, currency: string): number {
 // ---------------------------------------------------------------------------
 
 const CANCELLATION_REASONS: Record<string, string> = {
-  // Genuinely worth another attempt elsewhere.
+  // Normalised issuer responses. The cascade policy decides whether customer action is required.
   insufficient_funds: "insufficient_funds",
   issuer_unavailable: "issuer_unavailable",
   call_issuer: "do_not_honor",
@@ -151,7 +151,7 @@ function credentialsOf(ctx: ProviderContext): YooKassaCredentials {
   const shopId = String(ctx.credentials.shop_id ?? ctx.credentials.shopId ?? "").trim();
   const secretKey = String(ctx.credentials.secret_key ?? ctx.credentials.secretKey ?? "").trim();
   if (!shopId || !secretKey) {
-    throw new ProviderUnavailableError("ЮKassa credentials are missing shop_id or secret_key");
+    throw new ProviderUnavailableError("ЮKassa credentials are missing shop_id or secret_key", true);
   }
   return { shopId, secretKey };
 }
@@ -355,6 +355,7 @@ export class YooKassaAdapter implements ProviderAdapter {
       found: true,
       status: statusOf(body),
       amount: fromDecimalString(body.amount.value, body.amount.currency),
+      currency: body.amount.currency,
       capturedAmount: body.status === "succeeded" ? fromDecimalString(body.amount.value, body.amount.currency) : 0,
       providerPaymentId: body.id,
       raw: body as unknown as Record<string, unknown>,
@@ -369,7 +370,7 @@ export class YooKassaAdapter implements ProviderAdapter {
    * The window is deliberately short: this is only ever called moments after a
    * timeout, and an unbounded scan would be both slow and wrong.
    *
-   * Returning `found: false` tells the orchestrator a failover is safe. That
+   * Returning `found: false` does not prove a final absence: an in-flight request may still complete. That
    * makes correctness here load-bearing — a false negative charges the
    * customer twice — so anything other than a clean, complete answer throws
    * instead, which parks the attempt as `unknown` and tries no one else.
@@ -397,6 +398,7 @@ export class YooKassaAdapter implements ProviderAdapter {
       found: true,
       status: statusOf(match),
       amount: fromDecimalString(match.amount.value, match.amount.currency),
+      currency: match.amount.currency,
       providerPaymentId: match.id,
       raw: match as unknown as Record<string, unknown>,
     };

@@ -10,7 +10,8 @@
  * The scoring function is intentionally simple and transparent; it is the extension point for an
  * ML-based ranker later (same input: candidates + stats + context, same output: ordered candidates).
  */
-import type { RoutingCandidate, RuleCondition, providerAccounts, providerRoutes, providers, routingRules } from "../../db/schema/index.js";
+import type { RoutingCandidate, RoutingPolicy, RuleCondition, providerAccounts, providerRoutes, providers, routingRules } from "../../db/schema/index.js";
+import type { PricingSnapshot } from "../pricing/engine.js";
 import { sha256Hex } from "../../lib/crypto.js";
 
 export type RuleRow = typeof routingRules.$inferSelect;
@@ -35,6 +36,8 @@ export interface Candidate {
   account: AccountRow;
   provider: ProviderRow;
   stats?: ProviderStats;
+  pricing?: PricingSnapshot;
+  pricingError?: string;
 }
 
 export interface RoutingContext {
@@ -53,6 +56,8 @@ export interface RoutingContext {
   seed?: string;
   /** Accounts already attempted for this payment, excluded from the route. */
   excludeAccountIds?: string[];
+  policyOverride?: RoutingPolicy;
+  captureMethod?: "automatic" | "manual";
 }
 
 export interface ScoreWeights {
@@ -70,6 +75,7 @@ export interface RoutingResult {
   ordered: Candidate[];
   candidates: RoutingCandidate[];
   reason: string;
+  policy: RoutingPolicy;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +101,7 @@ function fieldValue(field: RuleCondition["field"], ctx: RoutingContext): string 
     case "transaction_type":
       return ctx.transactionType;
     case "risk_score":
-      return ctx.riskScore ?? 0;
+      return ctx.riskScore ?? null;
     case "hour_of_day":
       return now.getUTCHours();
     case "day_of_week":
@@ -154,8 +160,8 @@ export function matchesRule(rule: RuleRow, ctx: RoutingContext): boolean {
 /** First matching rule by (merchant-specific before global, then priority ascending). */
 export function selectRule(rules: RuleWithRoutes[], ctx: RoutingContext): RuleWithRoutes | null {
   const sorted = [...rules].sort((a, b) => {
-    const scopeA = a.merchantId ? 0 : 1;
-    const scopeB = b.merchantId ? 0 : 1;
+    const scopeA = a.projectId ? 0 : a.merchantId ? 1 : 2;
+    const scopeB = b.projectId ? 0 : b.merchantId ? 1 : 2;
     if (scopeA !== scopeB) return scopeA - scopeB;
     if (a.priority !== b.priority) return a.priority - b.priority;
     return a.createdAt.getTime() - b.createdAt.getTime();
@@ -180,9 +186,8 @@ export function eligibility(c: Candidate, ctx: RoutingContext): string[] {
   }
   const currencies = account.currencies.length ? account.currencies : provider.supportedCurrencies;
   if (currencies.length && !currencies.includes(ctx.currency.toUpperCase())) reasons.push("currency_not_supported");
-  if (ctx.country && provider.supportedCountries.length && !provider.supportedCountries.includes(ctx.country.toUpperCase())) {
-    reasons.push("country_not_supported");
-  }
+  if (provider.supportedCountries.length && (!ctx.country || !provider.supportedCountries.includes(ctx.country.toUpperCase()))) reasons.push(ctx.country ? "country_not_supported" : "country_required");
+  if (ctx.captureMethod === "manual" && !provider.capabilities?.capture) reasons.push("manual_capture_not_supported");
   const limits = account.limits ?? {};
   if (limits.minAmount != null && ctx.amount < limits.minAmount) reasons.push("below_min_amount");
   if (limits.maxAmount != null && ctx.amount > limits.maxAmount) reasons.push("above_max_amount");
@@ -204,7 +209,7 @@ export function scoreCandidate(c: Candidate, ctx: RoutingContext, weights: Score
   const approval = stats && stats.sampleSize >= 5 ? stats.approvalRate : 0.9;
   const uptime = stats && stats.sampleSize >= 5 ? stats.uptime : 1;
   const latency = stats && stats.sampleSize >= 5 ? stats.avgLatencyMs : 300;
-  const cost = costBps(c.account, ctx.amount);
+  const cost = c.pricing ? c.pricing.provider.amount / ctx.amount * 10000 : costBps(c.account, ctx.amount);
 
   const costPenalty = (Math.min(cost, 500) / 500) * weights.cost;
   const approvalScore = approval * weights.approval;
@@ -221,6 +226,8 @@ export function scoreCandidate(c: Candidate, ctx: RoutingContext, weights: Score
       uptime: round(uptime),
       avg_latency_ms: Math.round(latency),
       priority: c.account.priority,
+      sample_size: stats?.sampleSize ?? 0,
+      ...(c.pricing ? { merchant_fee: c.pricing.merchant.amount, provider_cost: c.pricing.provider.amount, margin: c.pricing.margin } : {}),
     },
   };
 }
@@ -267,6 +274,9 @@ function weightedOrder<T>(items: T[], weightOf: (t: T) => number, seed: string):
 // ---------------------------------------------------------------------------
 export function buildRoute(rules: RuleWithRoutes[], allCandidates: Candidate[], ctx: RoutingContext, weights = DEFAULT_WEIGHTS): RoutingResult {
   const rule = selectRule(rules, ctx);
+  const policy = ctx.policyOverride ?? rule?.policy ?? {};
+  const profiles: Record<string, ScoreWeights> = { balanced: DEFAULT_WEIGHTS, conversion: { cost: 10, approval: 65, uptime: 20, latency: 5 }, cost: { cost: 65, approval: 15, uptime: 15, latency: 5 }, reliability: { cost: 5, approval: 25, uptime: 55, latency: 15 } };
+  if (policy.profile) weights = profiles[policy.profile] ?? weights;
   const byId = new Map(allCandidates.map((c) => [c.account.id, c] as const));
   const evaluated: RoutingCandidate[] = [];
 
@@ -286,7 +296,7 @@ export function buildRoute(rules: RuleWithRoutes[], allCandidates: Candidate[], 
   let reason: string;
   const routeWeights = new Map<string, number>();
 
-  if (rule && rule.routes.length) {
+  if (rule && (rule.routes.length || rule.strategy !== "score")) {
     strategy = rule.strategy;
     reason = `rule "${rule.name}" matched`;
     const sortedRoutes = [...rule.routes].sort((a, b) => a.position - b.position);
@@ -299,13 +309,23 @@ export function buildRoute(rules: RuleWithRoutes[], allCandidates: Candidate[], 
     }
   } else {
     strategy = "score";
-    reason = rule ? `rule "${rule.name}" matched but has no providers; default scoring used` : "no rule matched; default scoring used";
+    reason = rule ? `rule "${rule.name}" scores all eligible accounts` : "no rule matched; default scoring used";
     pool = allCandidates;
   }
 
   const eligible: Candidate[] = [];
   for (const c of pool) {
     const reasons = eligibility(c, ctx);
+    if (c.pricingError) reasons.push("pricing_configuration_error");
+    if (c.pricing?.warnings.includes("merchant_fee_exceeds_amount")) reasons.push("merchant_fee_exceeds_amount");
+    if (policy.blockNegativeMargin && c.pricing && c.pricing.margin < 0) reasons.push("negative_margin");
+    const measured = c.stats && c.stats.sampleSize >= (policy.minSamples ?? 20);
+    if (policy.requireHealthData && !measured) reasons.push("insufficient_health_data");
+    if (measured && c.stats) {
+      if (policy.minApprovalRate != null && c.stats.approvalRate < policy.minApprovalRate) reasons.push("approval_below_threshold");
+      if (policy.minUptime != null && c.stats.uptime < policy.minUptime) reasons.push("uptime_below_threshold");
+      if (policy.maxLatencyMs != null && c.stats.avgLatencyMs > policy.maxLatencyMs) reasons.push("latency_above_threshold");
+    }
     const { score, factors } = scoreCandidate(c, ctx, weights);
     evaluated.push(describe(c, reasons, score, factors));
     if (reasons.length === 0) eligible.push(c);
@@ -323,5 +343,5 @@ export function buildRoute(rules: RuleWithRoutes[], allCandidates: Candidate[], 
     });
   }
 
-  return { rule, strategy, ordered, candidates: evaluated, reason };
+  return { rule, strategy, ordered, candidates: evaluated, reason, policy };
 }

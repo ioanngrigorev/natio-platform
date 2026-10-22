@@ -114,6 +114,12 @@ export interface RuleCondition {
   value: string | number | Array<string | number>;
 }
 
+export interface RoutingPolicy {
+  profile?: "balanced" | "conversion" | "cost" | "reliability";
+  maxAttempts?: number; maxElapsedMs?: number; retryOnSoftDecline?: boolean; retryOnTimeout?: boolean;
+  minApprovalRate?: number; minUptime?: number; maxLatencyMs?: number; minSamples?: number;
+  requireHealthData?: boolean; blockNegativeMargin?: boolean;
+}
 export const routingRules = pgTable(
   "routing_rules",
   {
@@ -130,6 +136,7 @@ export const routingRules = pgTable(
     /** Transaction type this rule applies to. */
     transactionType: text("transaction_type").notNull().default("payment"),
     conditions: jsonb("conditions").$type<RuleCondition[]>().notNull().default([]),
+    policy: jsonb("policy").$type<RoutingPolicy>().notNull().default({}),
     strategy: routingStrategyEnum("strategy").notNull().default("ordered"),
     createdBy: text("created_by"),
     createdAt: ts("created_at").notNull().defaultNow(),

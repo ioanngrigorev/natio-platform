@@ -5,7 +5,10 @@
  * The suite drops and recreates the schema of the database it points at, so it is pinned
  * to the dedicated `natio_test` database and never to the development database.
  */
-process.env.DATABASE_URL = "postgres://natio:natio@localhost:5432/natio_test";
+const testUrl = process.env.NATIO_E2E_DATABASE_URL ?? "postgres://natio:natio@localhost:5432/natio_test";
+const parsedTestUrl = new URL(testUrl);
+if (parsedTestUrl.pathname !== "/natio_test" || !["localhost", "127.0.0.1", "[::1]"].includes(parsedTestUrl.hostname)) throw new Error("E2E requires a loopback natio_test database");
+process.env.DATABASE_URL = testUrl;
 process.env.NODE_ENV = "test";
 process.env.QUEUE_DRIVER = "memory";
 process.env.LOG_LEVEL ??= "silent";

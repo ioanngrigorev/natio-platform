@@ -14,7 +14,8 @@ import { failPayment, runOrchestration, type PaymentRow } from "./orchestrator.j
 import type { CreatePaymentInput } from "./schemas.js";
 import { serializePayment, type SerializeOpts } from "./serialize.js";
 import { applyTransition } from "./state-machine.js";
-import { computeFee, formatMinor } from "../../lib/money.js";
+import { quotePricing, repriceSnapshot } from "../pricing/engine.js";
+import { formatMinor } from "../../lib/money.js";
 import { reserveCryptoAddress } from "../wallets/service.js";
 
 export interface PaymentScope {
@@ -377,6 +378,10 @@ export async function capturePayment(db: Db, payment: PaymentRow, input: { amoun
   if (amount > payment.amount) throw Errors.badRequest("amount_exceeds_authorization", "Capture amount exceeds the authorized amount", "amount");
   if (!payment.providerAccountId || !payment.providerPaymentId) throw Errors.conflict("missing_provider_reference", "Payment has no provider reference");
   const { ctx, adapter, account, provider } = await providerFor(db, payment.providerAccountId);
+  const [attempt] = payment.currentAttemptId ? await db.select().from(paymentAttempts).where(eq(paymentAttempts.id, payment.currentAttemptId)) : [];
+  const pricing = repriceSnapshot(attempt?.pricingSnapshot ?? quotePricing([], { amount: payment.amount, currency: payment.currency, mode: payment.mode, merchantId: payment.merchantId, providerAccountId: account.id, paymentMethod: payment.paymentMethodType, at: payment.createdAt }, account), amount);
+  const fee = pricing.merchant.amount;
+  if (fee > amount) throw Errors.validation("Capture amount is below the frozen tariff's minimum fee");
   const t0 = Date.now();
   const res = await adapter.capturePayment(ctx, { providerPaymentId: payment.providerPaymentId, amount, currency: payment.currency });
   const latency = Date.now() - t0;
@@ -391,7 +396,6 @@ export async function capturePayment(db: Db, payment: PaymentRow, input: { amoun
     });
     throw Errors.conflict("capture_failed", res.providerMessage ?? "The provider rejected the capture");
   }
-  const fee = computeFee(amount, Number(account.feePercent), account.feeFixedMinor);
   const deliveries = await db.transaction(async (tx) => {
     const updated = await applyTransition(tx, "payment", payment.id, "authorized", "successful", {
       reason: "captured",
@@ -399,7 +403,7 @@ export async function capturePayment(db: Db, payment: PaymentRow, input: { amoun
       set: { capturedAmount: amount, feeAmount: fee, processedAt: new Date() },
     });
     if (payment.currentAttemptId) {
-      await tx.update(paymentAttempts).set({ status: "succeeded", feeAmount: fee, updatedAt: new Date() }).where(eq(paymentAttempts.id, payment.currentAttemptId));
+      await tx.update(paymentAttempts).set({ status: "succeeded", feeAmount: pricing.provider.amount, updatedAt: new Date() }).where(eq(paymentAttempts.id, payment.currentAttemptId));
     }
     await recordTransaction(tx, {
       merchantId: payment.merchantId,

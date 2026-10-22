@@ -61,10 +61,16 @@ export interface ProviderPaymentResult {
   failureCode?: string;
   nextAction?: NextAction;
   raw?: Record<string, unknown>;
+  /** Explicit adapter evidence, not inferred from an HTTP status. */
+  chargeState?: "not_created" | "created" | "unknown";
+  retryAdvice?: "do_not_retry" | "retry_later" | "authenticate" | "try_another_route";
 }
 
 export interface ProviderLookupResult {
   found: boolean;
+  /** True only if the PSP guarantees the original operation cannot create a late charge. */
+  finalNoCharge?: boolean;
+  currency?: string;
   status?: ProviderPaymentStatus;
   amount?: number;
   capturedAmount?: number;
@@ -145,7 +151,7 @@ export class ProviderTimeoutError extends Error {
 }
 
 export class ProviderUnavailableError extends Error {
-  constructor(message = "provider unavailable") {
+  constructor(message = "provider unavailable", public readonly finalNoCharge = false) {
     super(message);
     this.name = "ProviderUnavailableError";
   }

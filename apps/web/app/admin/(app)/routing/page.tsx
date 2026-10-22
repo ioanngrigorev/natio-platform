@@ -40,7 +40,7 @@ export default async function RoutingRulesPage({ searchParams }: { searchParams:
       <PageHeader
         title="Routing rules"
         subtitle={`Which provider account processes which transaction, in ${api.mode} mode. The first matching rule (lowest priority number) decides the provider chain; fallbacks are tried in order.`}
-        actions={<LinkButton href="/admin/routing/new" variant="primary">New rule</LinkButton>}
+        actions={<div className="flex gap-2"><LinkButton href="/admin/routing/studio">Routing studio</LinkButton><LinkButton href="/admin/routing/new" variant="primary">New rule</LinkButton></div>}
       />
 
       {searchParams.merchant_id ? (
@@ -100,7 +100,7 @@ export default async function RoutingRulesPage({ searchParams }: { searchParams:
                       <td className="!whitespace-normal">
                         <ConditionChips conditions={r.conditions} className="max-w-[360px]" />
                       </td>
-                      <td>{r.strategy}</td>
+                      <td>{r.strategy}<div className="text-xs text-ink-500">{r.policy?.profile ?? "balanced"} · {r.policy?.maxAttempts ?? "project"} attempts</div></td>
                       <td className="!whitespace-normal">
                         {r.routes.length ? (
                           <span className="text-[12px]">
@@ -121,7 +121,7 @@ export default async function RoutingRulesPage({ searchParams }: { searchParams:
         })}
         {groups.length ? null : (
           <Card>
-            <EmptyState title={`No routing rules in ${api.mode} mode`} description="Without a rule, transactions fall back to the provider accounts ordered by their priority." action={<LinkButton href="/admin/routing/new" variant="primary">Create the first rule</LinkButton>} />
+            <EmptyState title={`No routing rules in ${api.mode} mode`} description="Without a rule, transactions fall back to the eligible provider accounts ranked by cost, approval, uptime and latency." action={<LinkButton href="/admin/routing/new" variant="primary">Create the first rule</LinkButton>} />
           </Card>
         )}
       </div>

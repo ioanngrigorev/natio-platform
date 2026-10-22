@@ -1,3 +1,4 @@
+import { writeFileSync, unlinkSync } from "node:fs";
 import { loadConfig } from "./config.js";
 import { closeDb, getDb } from "./db/client.js";
 import { assertEncryptionKeyMatches } from "./lib/encryption-guard.js";
@@ -9,6 +10,7 @@ import { startWorkers, stopWorkers } from "./workers/index.js";
 async function main() {
   const cfg = loadConfig();
   const role = cfg.NATIO_PROCESS_ROLE;
+  let heartbeat: NodeJS.Timeout | undefined;
   let app: Awaited<ReturnType<typeof buildServer>> | null = null;
 
   // Before anything is served or any job is picked up. A process that starts
@@ -23,11 +25,16 @@ async function main() {
   }
   if (role === "worker" || role === "all") {
     await startWorkers();
+    if (role === "worker") {
+      const pulse = () => writeFileSync("/tmp/natio-worker-heartbeat", String(Date.now()), { mode: 0o600 });
+      pulse(); heartbeat = setInterval(pulse, 15000); heartbeat.unref();
+    }
   }
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "shutting down");
     try {
+      if (heartbeat) { clearInterval(heartbeat); try { unlinkSync("/tmp/natio-worker-heartbeat"); } catch {} }
       await app?.close();
       await stopWorkers();
       await closeQueues();
