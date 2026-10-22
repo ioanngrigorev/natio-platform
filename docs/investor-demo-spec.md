@@ -58,3 +58,30 @@ Production verification: provider, account and user profiles return 200; provide
 - No database migration, import restart or additional synthetic rows.
 
 Validation: API and web production builds pass. Nine new unit tests cover aliases, filter binding, currency separation, preview/export boundaries, CSV escaping, spreadsheet numeric types and stream failure cleanup. Production checks cover all eight templates, disjoint pagination, alias/status/type filtering, a 10,000-row Excel/CSV round-trip and summary reconciliation (EUR 500,448.75 for merchant 001). Coverage remains 670,000 transactions, 100 merchants, 100 users and 10,000 providers.
+
+## Payment timeline refinement · 23 October 2026
+
+- Daily mode defaults to a labelled trailing seven-calendar-day average, with an Off switch for exact daily totals. The first six days use available history. Days with no operations contribute zero. Source amounts and exports are unchanged.
+- Daily, Monday-based weekly and monthly intervals. Partial edge buckets include only selected dates, shown in tooltips.
+- Lower timeline preview with draggable/keyboard handles and 30/90/180-day and All shortcuts anchored to the report end. Zoom affects only the payment-volume chart; report filters and exports remain unchanged.
+- The amount above the chart is the exact total of original daily values within the visible range. Tooltips expose both original amounts and the displayed average.
+- Quiet grid, thinner curve, subtle gradient and theme-aware tooltip/navigator; reduced-motion handling retained.
+- Unit checks cover zero-filled dates, rolling-window boundaries, calendar-year/week boundaries, leap days, partial buckets, exact minor units, empty data and historical zoom presets.
+
+Hosting check: natio.me, api.natio.me and app.natio.me resolve to 95.179.244.175; the machine identifies itself as Vultr VC2. Web, API, worker, PostgreSQL and Redis run there. The remaining Sprintbox host serves unrelated projects and is outside the NATIO-only scope.
+
+## Admin performance and usability · 23 October 2026
+
+- Demo shortcuts (1/7/30/90 days) end on the most recent transaction day within 2025. Live shortcuts still follow the current clock. The full-year shortcut remains available and the exact UTC dates are visible above the KPIs.
+- Overview order: reporting period, period-specific financial KPIs, volume/outcome charts, Needs attention queues, workspace-wide totals, provider details and currency volumes, recent events. Operational KPI links retain the selected period.
+- Navigation groups: Overview/BI, Operations, Customers, Finance, Payment setup, Platform. Receipt review remains under Finance.
+- BI prioritizes dates/currency/merchant; additional filters are expandable and automatically open when active. Summary and ledger exports remain available.
+- Provider period controls moved above the list. Search and pagination preserve the chosen period; changing the period resets pagination. Slow provider comparisons stream separately from the usable provider list.
+- Empty charts explain the selected range and offer a reset. Filter fields synchronize on browser Back/Forward.
+- Merchant metrics now use batched aggregates instead of per-merchant repeated scans. BI breakdowns use PostgreSQL GROUPING SETS and a narrow projection.
+- Only authenticated admin overview, BI and provider-comparison snapshots are cached, for 15 seconds, in a bounded 64-entry process-local cache. Concurrent identical requests share work. Keys include data mode and every filter. Errors are not cached; successful admin mutations clear snapshots. Session/RBAC checks still run on each request. Transaction lists, report previews and exports bypass this cache.
+- Admin session lookup is deduplicated only within a React server-render request, never across users.
+
+Validation before release: all 448 tests across 33 files pass on an isolated PostgreSQL 17 test cluster. Financial comparisons against the unchanged production database match the prior implementation for default BI, merchant/date/currency/status filters, empty results and both merchant modes. Server-side BI calculation: 3370 → 2600 ms; merchant list: 4791 → 1352 ms. These are individual measurements, not load-test percentiles. Production response timings will be recorded separately after rollout.
+
+References: [PostgreSQL grouping sets](https://www.postgresql.org/docs/16/queries-table-expressions.html#QUERIES-GROUPING-SETS), [React request-scoped cache](https://react.dev/reference/react/cache), [Recharts timeline navigator](https://recharts.github.io/en-US/api/Brush/).

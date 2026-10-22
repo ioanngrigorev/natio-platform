@@ -122,3 +122,10 @@
 .admin-theme .bi-motion > :nth-child(2) { animation-delay:.12s; }
 @media (prefers-reduced-motion:reduce) { .admin-theme .bi-motion > * { animation:none; } }
 @media print { .natio-sidebar,.natio-topbar,.report-controls { display:none!important; } .natio-workspace { padding:0!important; } .admin-theme { color:#111!important; background:white!important; } }
+
+.admin-theme[data-theme="dark"] { --chart-1:#aaa4ff; --chart-2:#8a81ed; --chart-3:#6d61b8; --chart-4:#4c426f; }
+.volume-tooltip { background:var(--surface); border:1px solid var(--chart-grid); border-radius:12px; padding:14px 16px; box-shadow:0 12px 40px #00000012; }
+.volume-navigator .recharts-brush-slide { fill:var(--chart-1); fill-opacity:.06; }
+.volume-navigator .recharts-brush-texts text { fill:var(--chart-axis); font-size:10px; }
+.volume-navigator .recharts-brush-traveller:focus { outline:2px solid var(--chart-1); outline-offset:3px; }
+@media (max-width:640px) { .volume-month-scale > :nth-child(even) { visibility:hidden; } .volume-tooltip { max-width:280px; padding:12px; } }

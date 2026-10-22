@@ -10,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "../..",
     "noUncheckedIndexedAccess": false,
     "types": ["node"]
   },

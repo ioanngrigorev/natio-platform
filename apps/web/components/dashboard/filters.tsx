@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui";
 
 export interface FilterDef {
@@ -18,6 +18,12 @@ export function FilterBar({ filters }: { filters: FilterDef[] }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(filters.map((f) => [f.name, params.get(f.name) ?? ""])));
+  const query = params.toString();
+  const filterNames = filters.map(f => f.name).join(",");
+  useEffect(() => {
+    const current = new URLSearchParams(query);
+    setValues(Object.fromEntries(filterNames.split(",").map(name => [name, current.get(name) ?? ""])));
+  }, [query, filterNames]);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -91,27 +97,31 @@ export function QuerySelect({ name, label, current, options, allLabel = "All" }:
   );
 }
 
-export function PeriodPicker({ current }: { current: string }) {
+export function PeriodPicker({ current, demo = false }: { current: string; demo?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const options = [
-    { value: "1", label: "24h" },
+    ...(demo ? [{ value: "2025", label: "2025" }] : []),
+    { value: "1", label: demo ? "1d" : "24h" },
     { value: "7", label: "7d" },
     { value: "30", label: "30d" },
     { value: "90", label: "90d" },
   ];
   return (
-    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]">
+    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="group" aria-label={demo ? "Period within demo year 2025" : "Reporting period"}>
       {options.map((o) => (
         <button
           key={o.value}
+          type="button"
+          aria-pressed={current === o.value}
           onClick={() => {
             const u = new URLSearchParams(params.toString());
             u.set("days", o.value);
+            u.delete("page");
             router.push(`${pathname}?${u.toString()}`);
           }}
-          className={"rounded px-2.5 py-[3px] font-medium " + (current === o.value ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900")}
+          className={"rounded px-2.5 py-[3px] font-medium " + (current === o.value ? "bg-brand-600 text-white" : "text-ink-500 hover:text-ink-900")}
         >
           {o.label}
         </button>
