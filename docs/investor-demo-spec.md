@@ -1,3 +1,5 @@
+> Current follow-up scope and superseded requirements: [23 October release acceptance matrix](release-2026-10-23.md). Earlier verification notes below are historical snapshots.
+
 # NATIO investor demo
 
 Updated: 22 October 2026. Historical dataset: 1 January–31 December 2025 (UTC).

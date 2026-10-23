@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CodeBlock } from "@/components/ui";
@@ -29,11 +31,13 @@ const LAYERS: Array<{ term: string; detail: string }> = [
 ];
 
 export default function ReconciliationPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <PageIntro
         eyebrow="Reconciliation & settlement"
-        title="Two records of the same money, compared line by line."
+        title={translateUi("Two records of the same money, compared line by line.")}
         lead="NATIO knows what it orchestrated. Each provider knows what it processed and what it settled. Reconciliation puts the two side by side, classifies every difference, and leaves an auditable record of the comparison — so finance stops rebuilding it in a spreadsheet each month."
         actions={
           <>
@@ -43,20 +47,20 @@ export default function ReconciliationPage() {
         }
       />
 
-      <Section eyebrow="How a run works" title="Import a provider report, match it against NATIO transactions." lead="A reconciliation batch takes a provider file for a period, matches each row against the transactions NATIO recorded, and produces a result per row plus totals per category.">
+      <Section eyebrow="How a run works" title={translateUi("Import a provider report, match it against NATIO transactions.")} lead="A reconciliation batch takes a provider file for a period, matches each row against the transactions NATIO recorded, and produces a result per row plus totals per category.">
         <Split
           panel={
             <div className="space-y-3">
-              <Panel padded={false} title="Provider report · CSV">
+              <Panel padded={false} title={translateUi("Provider report · CSV")}>
                 <CodeBlock variant="dark" className="!rounded-none !border-0" code={CSV} language="csv" />
               </Panel>
-              <Panel padded={false} title="What a batch records">
+              <Panel padded={false} title={translateUi("What a batch records")}>
                 <ul className="divide-y divide-night-700 text-[13px] leading-6 text-mist-200">
-                  <li className="px-5 py-3">The file, the provider account and the period it covers</li>
-                  <li className="px-5 py-3">A count per result category, and the total rows compared</li>
-                  <li className="px-5 py-3">Each row with both sides: NATIO amount and status, provider amount and status</li>
-                  <li className="px-5 py-3">A link from every row back to the payment and its timeline</li>
-                  <li className="px-5 py-3">Who imported it, and when</li>
+                  <li className="px-5 py-3">{translateUi("The file, the provider account and the period it covers")}</li>
+                  <li className="px-5 py-3">{translateUi("A count per result category, and the total rows compared")}</li>
+                  <li className="px-5 py-3">{translateUi("Each row with both sides: NATIO amount and status, provider amount and status")}</li>
+                  <li className="px-5 py-3">{translateUi("A link from every row back to the payment and its timeline")}</li>
+                  <li className="px-5 py-3">{translateUi("Who imported it, and when")}</li>
                 </ul>
               </Panel>
             </div>
@@ -74,50 +78,42 @@ export default function ReconciliationPage() {
         </Split>
       </Section>
 
-      <Section tone="raised" eyebrow="Results" title="Five outcomes, and what each one usually means." lead="A reconciliation result is not just a flag. Each row keeps both sides of the comparison — the NATIO transaction and the provider row — so the difference can be investigated without opening two systems.">
+      <Section tone="raised" eyebrow="Results" title={translateUi("Five outcomes, and what each one usually means.")} lead="A reconciliation result is not just a flag. Each row keeps both sides of the comparison — the NATIO transaction and the provider row — so the difference can be investigated without opening two systems.">
         <div className="overflow-x-auto rounded-lg border border-night-700">
           <table className="data-table data-table-dark">
             <thead>
               <tr>
-                <th>Result</th>
-                <th>What it means</th>
-                <th>Typical cause</th>
+                <th>{translateUi("Result")}</th>
+                <th>{translateUi("What it means")}</th>
+                <th>{translateUi("Typical cause")}</th>
               </tr>
             </thead>
             <tbody>
-              {RESULTS.map((r) => (
+              {translateUi(RESULTS.map((r) => (
                 <tr key={r.status}>
                   <td>
-                    <Chip tone={r.tone}>{r.status}</Chip>
+                    <Chip tone={r.tone}>{translateUi(r.status)}</Chip>
                   </td>
                   <td className="!whitespace-normal">{r.body}</td>
-                  <td className="!whitespace-normal text-mist-400">{r.action}</td>
+                  <td className="!whitespace-normal text-mist-400">{translateUi(r.action)}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
-        <p className="mt-4 text-[13px] leading-6 text-mist-400">
-          Every batch keeps its file name, its period, who imported it and its totals. Results link back to the payment, so an exception ends at a timeline rather than at a dead end.
-        </p>
+        <p className="mt-4 text-[13px] leading-6 text-mist-400">{translateUi("Every batch keeps its file name, its period, who imported it and its totals. Results link back to the payment, so an exception ends at a timeline rather than at a dead end.")}</p>
       </Section>
 
-      <Section eyebrow="Four layers" title="Payment, provider transaction, settlement, merchant account." lead="Most reconciliation pain comes from treating these as one number. NATIO keeps them apart and shows how they relate.">
+      <Section eyebrow="Four layers" title={translateUi("Payment, provider transaction, settlement, merchant account.")} lead="Most reconciliation pain comes from treating these as one number. NATIO keeps them apart and shows how they relate.">
         <SpecList items={LAYERS.map((l) => ({ term: l.term, detail: l.detail }))} />
         <FeatureGrid cols={3} className="mt-12">
-          <Feature index={1} title="Processed vs settled">
-            Per currency, what NATIO orchestrated against what providers report as settled, so the gap is visible instead of implied.
-          </Feature>
-          <Feature index={2} title="Settlement batches">
-            Each batch reported by a provider, with its period, gross amount, fees, net amount, status and the transactions it covers.
-          </Feature>
-          <Feature index={3} title="Fees where they occur">
-            PSP cost is recorded per attempt. Merchant commissions are recorded in the transaction ledger, with settlement fees shown separately.
-          </Feature>
+          <Feature index={1} title={translateUi("Processed vs settled")}>{translateUi("Per currency, what NATIO orchestrated against what providers report as settled, so the gap is visible instead of implied.")}</Feature>
+          <Feature index={2} title={translateUi("Settlement batches")}>{translateUi("Each batch reported by a provider, with its period, gross amount, fees, net amount, status and the transactions it covers.")}</Feature>
+          <Feature index={3} title={translateUi("Fees where they occur")}>{translateUi("PSP cost is recorded per attempt. Merchant commissions are recorded in the transaction ledger, with settlement fees shown separately.")}</Feature>
         </FeatureGrid>
       </Section>
 
-      <Section tone="raised" eyebrow="Custody" title="NATIO does not hold your money." lead="This is a design decision, not a temporary state, and it shapes everything on this page.">
+      <Section tone="raised" eyebrow="Custody" title={translateUi("NATIO does not hold your money.")} lead="This is a design decision, not a temporary state, and it shapes everything on this page.">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
             <SpecList
@@ -130,31 +126,29 @@ export default function ReconciliationPage() {
             />
           </div>
           <Panel className="!p-7">
-            <h3 className="text-[15px] font-medium text-mist-50">Who does what</h3>
+            <h3 className="text-[15px] font-medium text-mist-50">{translateUi("Who does what")}</h3>
             <ul className="mt-5 divide-y divide-night-700 border-t border-night-700 text-[13.5px] leading-[1.7]">
               <li className="py-3.5">
-                <div className="font-medium text-mist-50">Merchant</div>
-                <div className="mt-0.5 text-mist-400">Sells, sets routing policy, holds the commercial relationship with each provider.</div>
+                <div className="font-medium text-mist-50">{translateUi("Merchant")}</div>
+                <div className="mt-0.5 text-mist-400">{translateUi("Sells, sets routing policy, holds the commercial relationship with each provider.")}</div>
               </li>
               <li className="py-3.5">
-                <div className="font-medium text-mist-50">NATIO</div>
-                <div className="mt-0.5 text-mist-400">Orchestrates the request, records every decision, normalises provider data, reconciles and reports.</div>
+                <div className="font-medium text-mist-50">{translateUi("NATIO")}</div>
+                <div className="mt-0.5 text-mist-400">{translateUi("Orchestrates the request, records every decision, normalises provider data, reconciles and reports.")}</div>
               </li>
               <li className="py-3.5">
-                <div className="font-medium text-mist-50">Licensed providers</div>
-                <div className="mt-0.5 text-mist-400">Process, acquire, hold funds where applicable, and settle directly to the merchant.</div>
+                <div className="font-medium text-mist-50">{translateUi("Licensed providers")}</div>
+                <div className="mt-0.5 text-mist-400">{translateUi("Process, acquire, hold funds where applicable, and settle directly to the merchant.")}</div>
               </li>
             </ul>
             <div className="mt-5 border-t border-night-700 pt-5">
-              <Link href="/product" className="text-[13px] font-medium text-iris hover:underline">
-                Scope of the platform →
-              </Link>
+              <Link href="/product" className="text-[13px] font-medium text-iris hover:underline">{translateUi("Scope of the platform →")}</Link>
             </div>
           </Panel>
         </div>
       </Section>
 
-      <CtaBand title="Reconcile a sandbox batch." lead="Run test payments, export the demo provider report, import it, and watch the matching engine classify every row." />
+      <CtaBand title={translateUi("Reconcile a sandbox batch.")} lead="Run test payments, export the demo provider report, import it, and watch the matching engine classify every row." />
     </>
   );
 }

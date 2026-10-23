@@ -1,7 +1,7 @@
 import { z } from 'zod';
 export const marketSources = [
  {id:'gambling_radar',name:'Gambling Radar',topic:'iGaming',access:'public'},
- {id:'mono_up',name:'monoup · платежки просто',topic:'Payments',access:'public'},
+ {id:'mono_up',name:"monoup · платежки просто",topic:'Payments',access:'public'},
  {id:'gaming_voice',name:'Gaming Voice',topic:'iGaming',access:'private'},
  {id:'product_iG',name:'Product HUB · iGaming',topic:'Product',access:'private'},
 ] as const;

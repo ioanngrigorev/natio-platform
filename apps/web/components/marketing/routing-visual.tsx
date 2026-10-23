@@ -1,3 +1,6 @@
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 /**
  * Hero visual: one merchant request entering NATIO and fanning out to providers,
  * with the failover hop drawn as the live path. Pure inline SVG — no images, no
@@ -17,6 +20,8 @@ const BOX_W = 168;
 const CENTER_Y = 170;
 
 export function RoutingVisual({ className }: { className?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className={className} aria-hidden>
       <svg viewBox="0 0 570 330" className="h-auto w-full" role="presentation">
@@ -44,32 +49,26 @@ export function RoutingVisual({ className }: { className?: string }) {
 
         {/* merchant */}
         <rect x="2" y={CENTER_Y - 21} width="118" height="42" rx="10" fill="#101319" stroke="#2A3040" />
-        <text x="61" y={CENTER_Y - 4} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="8" letterSpacing="1.7" fill="#5C6373">
-          MERCHANT
-        </text>
-        <text x="61" y={CENTER_Y + 11} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="9" fill="#C6CAD4">
-          POST /v1/payments
-        </text>
+        <text x="61" y={CENTER_Y - 4} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="8" letterSpacing="1.7" fill="#5C6373">{translateUi("MERCHANT")}</text>
+        <text x="61" y={CENTER_Y + 11} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="9" fill="#C6CAD4">{translateUi("POST /v1/payments")}</text>
 
         <path d={`M120 ${CENTER_Y} H172`} stroke="url(#rv-live)" strokeWidth="1.5" fill="none" />
 
         {/* engine */}
         <rect x="172" y={CENTER_Y - 48} width="128" height="96" rx="14" fill="#0B0D12" stroke="#7C8CFF" strokeOpacity="0.4" />
-        <text x="236" y={CENTER_Y - 30} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="8.5" letterSpacing="2" fill="#7C8CFF">
-          NATIO
-        </text>
-        {["ROUTING", "RISK", "FAILOVER"].map((t, i) => (
+        <text x="236" y={CENTER_Y - 30} textAnchor="middle" fontFamily="ui-monospace, Menlo, monospace" fontSize="8.5" letterSpacing="2" fill="#7C8CFF">{translateUi("NATIO")}</text>
+        {translateUi(["ROUTING", "RISK", "FAILOVER"].map((t, i) => (
           <g key={t}>
             <rect x="187" y={CENTER_Y - 20 + i * 20} width="98" height="15" rx="4" fill="#151922" />
             <text x="195" y={CENTER_Y - 9 + i * 20} fontFamily="ui-monospace, Menlo, monospace" fontSize="7.5" letterSpacing="1.2" fill="#8A91A0">
-              {t}
+              {translateUi(t)}
             </text>
             <circle cx="277" cy={CENTER_Y - 12.5 + i * 20} r="2.2" fill={i === 2 ? "#C2F04B" : "#7C8CFF"} />
           </g>
-        ))}
+        )))}
 
         {/* engine → providers */}
-        {PROVIDERS.map((p) => {
+        {translateUi(PROVIDERS.map((p) => {
           const targetY = p.y + 17;
           const stroke = p.state === "settled" ? "url(#rv-live)" : p.state === "declined" ? "url(#rv-fail)" : "url(#rv-dim)";
           return (
@@ -82,10 +81,10 @@ export function RoutingVisual({ className }: { className?: string }) {
               fill="none"
             />
           );
-        })}
+        }))}
 
         {/* providers */}
-        {PROVIDERS.map((p) => {
+        {translateUi(PROVIDERS.map((p) => {
           const settled = p.state === "settled";
           const declined = p.state === "declined";
           return (
@@ -102,9 +101,9 @@ export function RoutingVisual({ className }: { className?: string }) {
               />
               <circle cx={BOX_X + 14} cy={p.y + 17} r="3" fill={settled ? "#C2F04B" : declined ? "#5C6373" : "#2A3040"} />
               <text x={BOX_X + 26} y={p.y + 20.5} fontFamily="ui-monospace, Menlo, monospace" fontSize="8" letterSpacing="1.2" fill={settled ? "#C6CAD4" : "#5C6373"}>
-                {p.label}
+                {translateUi(p.label)}
               </text>
-              {p.status ? (
+              {translateUi(p.status ? (
                 <text
                   x={BOX_X + BOX_W - 12}
                   y={p.y + 20.5}
@@ -114,12 +113,12 @@ export function RoutingVisual({ className }: { className?: string }) {
                   letterSpacing="1.1"
                   fill={settled ? "#C2F04B" : "#5C6373"}
                 >
-                  {p.status}
+                  {translateUi(p.status)}
                 </text>
-              ) : null}
+              ) : null)}
             </g>
           );
-        })}
+        }))}
       </svg>
     </div>
   );

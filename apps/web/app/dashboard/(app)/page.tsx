@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { SuccessRateChart, VolumeChart } from "@/components/charts";
 import { PeriodPicker } from "@/components/dashboard/filters";
@@ -16,6 +18,8 @@ interface StatusResponse {
 }
 
 export default async function OverviewPage({ searchParams }: { searchParams: { days?: string } }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const days = searchParams.days ?? "1";
   const from = isoDaysAgo(Number(days) || 1);
@@ -31,82 +35,82 @@ export default async function OverviewPage({ searchParams }: { searchParams: { d
 
   return (
     <>
-      <PageHeader title={days === "1" ? "Today" : `Last ${days} days`} subtitle={`${api.mode === "test" ? "Sandbox" : "Live"} data · figures in ${cur ?? "—"}${cur ? " (largest currency in the period)" : ""}`} actions={<PeriodPicker current={days} />} />
+      <PageHeader title={translateUi(days === "1" ? translateUi("Today") : `Last ${days} days`)} subtitle={translateUi(`${api.mode === "test" ? "Sandbox" : "Live"} data · figures in ${cur ?? "—"}${cur ? " (largest currency in the period)" : ""}`)} actions={<PeriodPicker current={days} />} />
       <Grid cols={4}>
-        <Kpi label="Total payment volume" value={cur ? formatMoney(overview.tpv, cur) : "—"} hint={`${formatNumber(overview.successful)} successful payments`} />
-        <Kpi label="Transactions" value={formatNumber(overview.transactions)} hint={`${formatNumber(overview.failed)} failed · ${formatNumber(overview.in_flight)} in flight`} />
-        <Kpi label="Success rate" value={formatPercent(overview.success_rate)} tone={overview.success_rate === null ? "neutral" : overview.success_rate >= 0.9 ? "ok" : overview.success_rate >= 0.75 ? "warn" : "bad"} hint={`Approval rate ${formatPercent(overview.approval_rate)} at attempt level`} />
-        <Kpi label="Average ticket" value={cur ? formatMoney(overview.average_ticket, cur) : "—"} hint={`Avg processing ${formatMs(overview.avg_processing_ms)}`} />
+        <Kpi label={translateUi("Total payment volume")} value={cur ? formatMoney(overview.tpv, cur) : "—"} hint={`${formatNumber(overview.successful)} successful payments`} />
+        <Kpi label={translateUi("Transactions")} value={formatNumber(overview.transactions)} hint={`${formatNumber(overview.failed)} failed · ${formatNumber(overview.in_flight)} in flight`} />
+        <Kpi label={translateUi("Success rate")} value={formatPercent(overview.success_rate)} tone={overview.success_rate === null ? "neutral" : overview.success_rate >= 0.9 ? "ok" : overview.success_rate >= 0.75 ? "warn" : "bad"} hint={`Approval rate ${formatPercent(overview.approval_rate)} at attempt level`} />
+        <Kpi label={translateUi("Average ticket")} value={cur ? formatMoney(overview.average_ticket, cur) : "—"} hint={`Avg processing ${formatMs(overview.avg_processing_ms)}`} />
       </Grid>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card title="Payment volume" description={cur ? `Captured volume in ${cur}, ${bucket === "hour" ? "hourly" : "daily"}` : "No captured volume yet"} className="xl:col-span-2">
+        <Card title={translateUi("Payment volume")} description={translateUi(cur ? `Captured volume in ${cur}, ${bucket === "hour" ? "hourly" : "daily"}` : translateUi("No captured volume yet"))} className="xl:col-span-2">
           <VolumeChart points={series.points} currency={series.currency} bucket={bucket} />
         </Card>
-        <Card title="Success rate" description="Share of decided payments that succeeded">
+        <Card title={translateUi("Success rate")} description={translateUi("Share of decided payments that succeeded")}>
           <SuccessRateChart points={series.points} bucket={bucket} />
         </Card>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card title="Provider performance" description="Attempt-level metrics per provider account" className="xl:col-span-2" padded={false}>
-          {providers.rows.length ? (
+        <Card title={translateUi("Provider performance")} description={translateUi("Attempt-level metrics per provider account")} className="xl:col-span-2" padded={false}>
+          {translateUi(providers.rows.length ? (
             <Table>
               <thead>
                 <tr>
-                  <th>Provider</th>
-                  <th className="num">Volume</th>
-                  <th className="num">Attempts</th>
-                  <th className="num">Success</th>
-                  <th className="num">Cost</th>
-                  <th className="num">Latency</th>
-                  <th className="num">Uptime</th>
+                  <th>{translateUi("Provider")}</th>
+                  <th className="num">{translateUi("Volume")}</th>
+                  <th className="num">{translateUi("Attempts")}</th>
+                  <th className="num">{translateUi("Success")}</th>
+                  <th className="num">{translateUi("Cost")}</th>
+                  <th className="num">{translateUi("Latency")}</th>
+                  <th className="num">{translateUi("Uptime")}</th>
                 </tr>
               </thead>
               <tbody>
-                {providers.rows.map((r) => (
+                {translateUi(providers.rows.map((r) => (
                   <tr key={r.provider_account_id}>
                     <td>
-                      <div className="font-medium">{r.provider}</div>
-                      <div className="text-[11px] text-ink-500">{r.account}</div>
+                      <div className="font-medium">{translateUi(r.provider)}</div>
+                      <div className="text-[11px] text-ink-500">{translateUi(r.account)}</div>
                     </td>
-                    <td className="num">{providers.currency ? formatMoney(r.volume, providers.currency) : "—"}</td>
-                    <td className="num">{formatNumber(r.transactions)}</td>
-                    <td className="num">{formatPercent(r.success_rate)}</td>
-                    <td className="num">{providers.currency ? formatMoney(r.cost, providers.currency) : "—"}</td>
-                    <td className="num">{formatMs(r.avg_latency_ms)}</td>
-                    <td className="num">{formatPercent(r.uptime)}</td>
+                    <td className="num">{translateUi(providers.currency ? formatMoney(r.volume, providers.currency) : "—")}</td>
+                    <td className="num">{translateUi(formatNumber(r.transactions))}</td>
+                    <td className="num">{translateUi(formatPercent(r.success_rate))}</td>
+                    <td className="num">{translateUi(providers.currency ? formatMoney(r.cost, providers.currency) : "—")}</td>
+                    <td className="num">{translateUi(formatMs(r.avg_latency_ms))}</td>
+                    <td className="num">{translateUi(formatPercent(r.uptime))}</td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </Table>
           ) : (
-            <div className="px-4 py-8 text-center text-[13px] text-ink-500">No provider attempts in this period.</div>
-          )}
+            <div className="px-4 py-8 text-center text-[13px] text-ink-500">{translateUi("No provider attempts in this period.")}</div>
+          ))}
         </Card>
-        <Card title="System status" description="Providers available to your account" padded={false}>
+        <Card title={translateUi("System status")} description={translateUi("Providers available to your account")} padded={false}>
           <ul className="divide-y divide-ink-100">
             <li className="flex items-center justify-between px-4 py-2 text-[13px]">
-              <span>NATIO API</span>
-              <StatusBadge status={status.api === "operational" ? "active" : "error"} label={status.api} />
+              <span>{translateUi("NATIO API")}</span>
+              <StatusBadge status={status.api === "operational" ? "active" : "error"} label={translateUi(status.api)} />
             </li>
-            {status.providers.map((p) => (
+            {translateUi(status.providers.map((p) => (
               <li key={`${p.provider}-${p.account}`} className="flex items-center justify-between gap-2 px-4 py-2 text-[13px]">
                 <div className="min-w-0">
-                  <div className="truncate">{p.provider}</div>
+                  <div className="truncate">{translateUi(p.provider)}</div>
                   <div className="truncate text-[11px] text-ink-500">
-                    {p.account}
-                    {p.health_24h?.attempts ? ` · 24h uptime ${formatPercent(p.health_24h.uptime, 0)} · ${formatMs(p.health_24h.avg_latency_ms)}` : " · no traffic in 24h"}
+                    {translateUi(p.account)}
+                    {translateUi(p.health_24h?.attempts ? ` · 24h uptime ${formatPercent(p.health_24h.uptime, 0)} · ${formatMs(p.health_24h.avg_latency_ms)}` : translateUi(" · no traffic in 24h"))}
                   </div>
                 </div>
                 <StatusBadge status={p.status} />
               </li>
-            ))}
+            )))}
           </ul>
         </Card>
       </div>
 
-      <Card title="Recent payments" className="mt-4" padded={false} actions={<Link href="/dashboard/payments" className="text-[12px] font-medium text-brand-600 hover:underline">View all</Link>}>
+      <Card title={translateUi("Recent payments")} className="mt-4" padded={false} actions={<Link href="/dashboard/payments" className="text-[12px] font-medium text-brand-600 hover:underline">{translateUi("View all")}</Link>}>
         <PaymentsTable payments={recent.data} hrefBase="/dashboard/payments" />
       </Card>
     </>

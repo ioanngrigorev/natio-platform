@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code, DocHeader, DocTable, H2, H3, Note, Step, Tok } from "@/components/docs/parts";
@@ -290,35 +292,25 @@ const TEST_EVENT = `curl -X POST https://api.natio.me/v1/webhooks/test \\
   -d '{ "event_type": "payment.successful" }'`;
 
 export default function QuickstartPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <DocHeader
         eyebrow="Getting started"
-        title="Quickstart"
+        title={translateUi("Quickstart")}
         lead="Five steps from nothing to a verified integration: a sandbox account, a test key, a payment that deliberately fails over between two demo providers, the timeline that proves it, and a signed webhook you have verified yourself."
       />
 
-      <Note tone="info" title="What you need">
-        A terminal with <Tok>curl</Tok>, or any runtime with <Tok>fetch</Tok>. Nothing is installed, and no card data is involved at any point: the sandbox uses NATIO demo
-        providers only.
-      </Note>
+      <Note tone="info" title={translateUi("What you need")}>{translateUi("A terminal with ")}<Tok>{"curl"}</Tok>{translateUi(", or any runtime with ")}<Tok>{"fetch"}</Tok>{translateUi(". Nothing is installed, and no card data is involved at any point: the sandbox uses NATIO demo providers only.")}</Note>
 
-      <Step n={1} title="Create a sandbox account">
-        <p>
-          Register at <Link href="/dashboard/register">/dashboard/register</Link>. The account starts in <strong>test mode</strong> with the demo providers already connected and
-          a default set of routing rules, so payments can be orchestrated immediately.
-        </p>
-        <p>
-          Live mode is a separate step: live API keys are only issued once the merchant KYB review is approved. Everything in this quickstart runs in test mode and never touches
-          production money movement.
-        </p>
+      <Step n={1} title={translateUi("Create a sandbox account")}>
+        <p>{translateUi("Register at ")}<Link href="/dashboard/register">{translateUi("/dashboard/register")}</Link>{translateUi(". The account starts in ")}<strong>{translateUi("test mode")}</strong>{translateUi(" with the demo providers already connected and a default set of routing rules, so payments can be orchestrated immediately.")}</p>
+        <p>{translateUi("Live mode is a separate step: live API keys are only issued once the merchant KYB review is approved. Everything in this quickstart runs in test mode and never touches production money movement.")}</p>
       </Step>
 
-      <Step n={2} title="Get a test API key">
-        <p>
-          In the dashboard open <Link href="/dashboard/api-keys">API keys</Link> and create a key with mode <Tok>test</Tok>. The secret is shown once and stored as a SHA-256
-          hash, so copy it into your environment straight away.
-        </p>
+      <Step n={2} title={translateUi("Get a test API key")}>
+        <p>{translateUi("In the dashboard open ")}<Link href="/dashboard/api-keys">{translateUi("API keys")}</Link>{translateUi(" and create a key with mode ")}<Tok>{"test"}</Tok>{translateUi(". The secret is shown once and stored as a SHA-256 hash, so copy it into your environment straight away.")}</p>
         <Code
           caption="Shape of a key"
           code={`natio_sk_test_AP8j...        test mode — demo providers, test_scenario accepted
@@ -327,92 +319,69 @@ natio_sk_live_...            live mode — real providers, issued after KYB appr
 # keep it out of source control
 export NATIO_API_KEY="natio_sk_test_..."`}
         />
-        <p>
-          Every request authenticates with <Tok>Authorization: Bearer $NATIO_API_KEY</Tok>. The key identifies the merchant, the project and the mode; you never send those as
-          parameters. Details and rotation rules are in <Link href="/docs/authentication">Authentication</Link>.
+        <p>{translateUi("Every request authenticates with ")}<Tok>{"Authorization: Bearer $NATIO_API_KEY"}</Tok>{translateUi(". The key identifies the merchant, the project and the mode; you never send those as parameters. Details and rotation rules are in ")}<Link href="/docs/authentication">{translateUi("Authentication")}</Link>.
         </p>
       </Step>
 
-      <Step n={3} title="Create your first payment">
-        <p>
-          Create a 100.00 USD card payment and force a provider failover with <Tok>test_scenario: &quot;failover&quot;</Tok>. The first demo acquirer will fail technically, and
-          NATIO will cascade to the second one inside the same request.
-        </p>
+      <Step n={3} title={translateUi("Create your first payment")}>
+        <p>{translateUi("Create a 100.00 USD card payment and force a provider failover with ")}<Tok>{"test_scenario: \"failover\""}</Tok>{translateUi(". The first demo acquirer will fail technically, and NATIO will cascade to the second one inside the same request.")}</p>
         <Code caption="curl" code={CURL_CREATE} />
         <Code caption="Node — fetch" code={NODE_CREATE} />
-        <H3 id="response">The response</H3>
+        <H3 id="response">{translateUi("The response")}</H3>
         <p>
-          <Tok>201 Created</Tok>. The payment is <Tok>successful</Tok>, but look at <Tok>route.attempts</Tok>: it took two. The first attempt failed at NATIO Demo Acquirer A
-          with <Tok>technical_error</Tok>; the second succeeded at NATIO Demo Acquirer B. Both are returned inline, with the provider code, message, fee and latency of each.
-        </p>
+          <Tok>{"201 Created"}</Tok>{translateUi(". The payment is ")}<Tok>{"successful"}</Tok>{translateUi(", but look at ")}<Tok>{"route.attempts"}</Tok>{translateUi(": it took two. The first attempt failed at NATIO Demo Acquirer A with ")}<Tok>{"technical_error"}</Tok>{translateUi("; the second succeeded at NATIO Demo Acquirer B. Both are returned inline, with the provider code, message, fee and latency of each.")}</p>
         <Code caption="201 Created" code={RESPONSE} />
         <DocTable
           columns={["Field", "Why it matters"]}
           rows={[
-            [<Tok key="s">status</Tok>, <>The outcome of the whole payment, not of one provider call. See the <Link key="l" href="/docs/payments">status table</Link>.</>],
-            [<Tok key="r">route.provider</Tok>, "The provider account that actually processed the payment — the second one here."],
-            [<Tok key="ra">route.attempts</Tok>, "How many provider calls it took. Anything above 1 means a cascade happened."],
-            [<Tok key="rr">route.rule</Tok>, "The routing rule that produced the candidate order."],
-            [<Tok key="a">attempts[]</Tok>, "One entry per provider call, in order, with the normalised failure object on the ones that failed."],
-            [<Tok key="f">fee</Tok>, "The fee charged by the provider account that succeeded, in minor units."],
-            [<Tok key="na">next_action</Tok>, <><Tok key="n">null</Tok> here because cards are synchronous. Redirect and QR rails return an object to hand to the customer.</>],
+            [<Tok key="s">{"status"}</Tok>, <>{translateUi("The outcome of the whole payment, not of one provider call. See the ")}<Link key="l" href="/docs/payments">{translateUi("status table")}</Link>.</>],
+            [<Tok key="r">{"route.provider"}</Tok>, "The provider account that actually processed the payment — the second one here."],
+            [<Tok key="ra">{"route.attempts"}</Tok>, "How many provider calls it took. Anything above 1 means a cascade happened."],
+            [<Tok key="rr">{"route.rule"}</Tok>, "The routing rule that produced the candidate order."],
+            [<Tok key="a">{"attempts[]"}</Tok>, "One entry per provider call, in order, with the normalised failure object on the ones that failed."],
+            [<Tok key="f">{"fee"}</Tok>, "The fee charged by the provider account that succeeded, in minor units."],
+            [<Tok key="na">{"next_action"}</Tok>, <><Tok key="n">{"null"}</Tok>{translateUi(" here because cards are synchronous. Redirect and QR rails return an object to hand to the customer.")}</>],
           ]}
         />
-        <Note tone="warn" title="Amounts are integers in the minor unit">
-          <Tok>10000</Tok> with <Tok>USD</Tok> is 100.00 USD. Never send a decimal. Zero-decimal currencies such as JPY and VND take the amount as-is.
-        </Note>
+        <Note tone="warn" title={translateUi("Amounts are integers in the minor unit")}>
+          <Tok>10000</Tok>{translateUi(" with ")}<Tok>{"USD"}</Tok>{translateUi(" is 100.00 USD. Never send a decimal. Zero-decimal currencies such as JPY and VND take the amount as-is.")}</Note>
       </Step>
 
-      <Step n={4} title="Read the payment and its timeline">
-        <p>
-          The payment object is the state; the timeline is the explanation. It records the risk decision, the routing decision with every candidate and its score, each provider
-          request, the failure that triggered the cascade, and the success that closed it.
-        </p>
+      <Step n={4} title={translateUi("Read the payment and its timeline")}>
+        <p>{translateUi("The payment object is the state; the timeline is the explanation. It records the risk decision, the routing decision with every candidate and its score, each provider request, the failure that triggered the cascade, and the success that closed it.")}</p>
         <Code caption="curl" code={GET_PAYMENT} />
         <Code caption="GET /v1/payments/{id}/timeline — 200 OK" code={TIMELINE} />
-        <p>
-          That is the whole failover, in order: <Tok>routing.evaluated</Tok> with two eligible candidates, <Tok>provider.selected</Tok> for Acquirer A,{" "}
-          <Tok>provider.error</Tok> with the raw provider code <Tok>GW-500</Tok>, <Tok>failover.initiated</Tok> because a technical error is retryable, then{" "}
-          <Tok>provider.selected</Tok> for Acquirer B and <Tok>payment.successful</Tok>. Each timeline event type is listed in{" "}
-          <Link href="/docs/payments">Payments</Link>.
+        <p>{translateUi("That is the whole failover, in order: ")}<Tok>{"routing.evaluated"}</Tok>{translateUi(" with two eligible candidates, ")}<Tok>{"provider.selected"}</Tok>{translateUi(" for Acquirer A,")}{translateUi(" ")}
+          <Tok>{"provider.error"}</Tok>{translateUi(" with the raw provider code ")}<Tok>{"GW-500"}</Tok>, <Tok>{"failover.initiated"}</Tok>{translateUi(" because a technical error is retryable, then")}{translateUi(" ")}
+          <Tok>{"provider.selected"}</Tok>{translateUi(" for Acquirer B and ")}<Tok>{"payment.successful"}</Tok>{translateUi(". Each timeline event type is listed in")}{translateUi(" ")}
+          <Link href="/docs/payments">{translateUi("Payments")}</Link>.
         </p>
       </Step>
 
-      <Step n={5} title="Add a webhook endpoint and verify the signature">
-        <p>
-          Polling is not required. Add an endpoint under <Link href="/dashboard/webhooks">Webhooks</Link> in the dashboard, choose the event types you care about, and store the{" "}
-          <Tok>whsec_…</Tok> signing secret that is shown once.
-        </p>
-        <p>
-          Every delivery carries a <Tok>Natio-Signature</Tok> header of the form <Tok>t=&lt;unix&gt;,v1=&lt;hex&gt;</Tok>, where the hex value is an HMAC-SHA256 over{" "}
-          <Tok>&quot;&lt;t&gt;.&lt;raw body&gt;&quot;</Tok> with your endpoint secret. Verify it against the raw bytes, and reject timestamps older than five minutes.
-        </p>
+      <Step n={5} title={translateUi("Add a webhook endpoint and verify the signature")}>
+        <p>{translateUi("Polling is not required. Add an endpoint under ")}<Link href="/dashboard/webhooks">{translateUi("Webhooks")}</Link>{translateUi(" in the dashboard, choose the event types you care about, and store the")}{translateUi(" ")}
+          <Tok>{"whsec_…"}</Tok>{translateUi(" signing secret that is shown once.")}</p>
+        <p>{translateUi("Every delivery carries a ")}<Tok>{"Natio-Signature"}</Tok>{translateUi(" header of the form ")}<Tok>{"t=<unix>,v1=<hex>"}</Tok>{translateUi(", where the hex value is an HMAC-SHA256 over")}{translateUi(" ")}
+          <Tok>{"\"<t>.<raw body>\""}</Tok>{translateUi(" with your endpoint secret. Verify it against the raw bytes, and reject timestamps older than five minutes.")}</p>
         <Code caption="Node — Express receiver" code={VERIFY} />
-        <Note tone="bad" title="Use the raw body">
-          A JSON parse and re-serialise changes whitespace and key order, and the signature will not match. Capture the raw request body before any body parser touches it.
-        </Note>
-        <p>Trigger a delivery without creating another payment:</p>
+        <Note tone="bad" title={translateUi("Use the raw body")}>{translateUi("A JSON parse and re-serialise changes whitespace and key order, and the signature will not match. Capture the raw request body before any body parser touches it.")}</Note>
+        <p>{translateUi("Trigger a delivery without creating another payment:")}</p>
         <Code caption="Send a test event" code={TEST_EVENT} />
-        <p>
-          The dashboard shows every delivery, each attempt with its response status, and a manual resend button. Retries, the full event list and a Python verifier are in{" "}
-          <Link href="/docs/webhooks">Webhooks</Link>.
+        <p>{translateUi("The dashboard shows every delivery, each attempt with its response status, and a manual resend button. Retries, the full event list and a Python verifier are in")}{translateUi(" ")}
+          <Link href="/docs/webhooks">{translateUi("Webhooks")}</Link>.
         </p>
       </Step>
 
-      <H2 id="next">Where to go next</H2>
+      <H2 id="next">{translateUi("Where to go next")}</H2>
       <ul>
         <li>
-          <Link href="/docs/sandbox">Sandbox and test scenarios</Link> — every scenario you can force, including timeouts, recovered timeouts, risk review and total failure.
-        </li>
+          <Link href="/docs/sandbox">{translateUi("Sandbox and test scenarios")}</Link>{translateUi(" — every scenario you can force, including timeouts, recovered timeouts, risk review and total failure.")}</li>
         <li>
-          <Link href="/docs/payments">Payments</Link> — manual capture, cancel, refunds, <Tok>next_action</Tok> for redirect and QR rails, and idempotency semantics.
-        </li>
+          <Link href="/docs/payments">{translateUi("Payments")}</Link>{translateUi(" — manual capture, cancel, refunds, ")}<Tok>{"next_action"}</Tok>{translateUi(" for redirect and QR rails, and idempotency semantics.")}</li>
         <li>
-          <Link href="/docs/errors">Errors and failure codes</Link> — what to retry, what to show the customer, and what never to retry.
-        </li>
+          <Link href="/docs/errors">{translateUi("Errors and failure codes")}</Link>{translateUi(" — what to retry, what to show the customer, and what never to retry.")}</li>
         <li>
-          <Link href="/docs/api-reference">API reference</Link> — every endpoint, rendered from the published OpenAPI document.
-        </li>
+          <Link href="/docs/api-reference">{translateUi("API reference")}</Link>{translateUi(" — every endpoint, rendered from the published OpenAPI document.")}</li>
       </ul>
     </>
   );

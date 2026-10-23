@@ -1,4 +1,6 @@
 "use client";
+import {LanguagePicker,useI18n} from '@/lib/i18n/provider';
+
 
 import Link from "next/link";
 import { DevelopmentNotifications } from "@/components/development/notifications";
@@ -9,7 +11,7 @@ import { SectionIcon } from "@/components/admin/section-icon";
 import { AdminThemeToggle, SidebarThemeToggle } from "@/components/admin/theme-provider";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { cx } from "@/components/ui";
+import {cx} from "@/lib/classnames";
 import { useSession } from "@/components/session-provider";
 
 export interface NavItem {
@@ -20,6 +22,8 @@ export interface NavItem {
 }
 
 export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title: string; subtitle?: string }; children: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const pathname = usePathname();
   const [opening, setOpening] = useState<string | null>(null);
   useEffect(() => { setOpening(null); }, [pathname]);
@@ -46,70 +50,70 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
       <aside className="natio-sidebar hidden w-[232px] shrink-0 flex-col border-r border-ink-200 bg-white md:flex">
         <div className="flex h-14 items-center gap-2 border-b border-ink-100 px-4">
           <Link href={base} className="flex items-center gap-2">
-            <span className="natio-logo flex h-6 w-6 items-center justify-center rounded bg-ink-900 text-[11px] font-bold text-white">N</span>
-            <span className="text-[14px] font-semibold tracking-tight">NATIO</span>
+            <span className="natio-logo flex h-6 w-6 items-center justify-center rounded bg-ink-900 text-[11px] font-bold text-white">{translateUi("N")}</span>
+            <span className="text-[14px] font-semibold tracking-tight">{translateUi("NATIO")}</span>
           </Link>
-          <span className="ml-auto rounded bg-ink-100 px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-ink-600">{brand.title}</span>
+          <span className="ml-auto rounded bg-ink-100 px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-ink-600">{translateUi(brand.title)}</span>
         </div>
-        {session.kind === "admin" ? <SidebarThemeToggle/> : null}
+        {translateUi(session.kind === "admin" ? <SidebarThemeToggle/> : null)}
         <nav className="flex-1 overflow-y-auto px-2 py-3">
-          {sections.map((s) => (
+          {translateUi(sections.map((s) => (
             <div key={s.section || "root"} className="mb-4">
-              {s.section ? <div className="nav-section-heading flex items-center gap-2 px-2 pb-2 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-500">{session.kind === "admin" ? <SectionIcon name={s.section}/> : null}<span>{s.section}</span><span className="ml-1 h-px flex-1 bg-ink-100" aria-hidden="true"/></div> : null}
-              {s.items.map((item) => {
+              {translateUi(s.section ? <div className="nav-section-heading flex items-center gap-2 px-2 pb-2 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-500">{translateUi(session.kind === "admin" ? <SectionIcon name={s.section}/> : null)}<span>{translateUi(s.section)}</span><span className="ml-1 h-px flex-1 bg-ink-100" aria-hidden="true"/></div> : null)}
+              {translateUi(s.items.map((item) => {
                 const requiredPlan = /\/(api-keys|webhooks|developers|projects)(?:$|\/)/.test(item.href) ? 'premium' : /\/(analytics|reconciliation|settlements|recommendations)(?:$|\/)/.test(item.href) ? 'optimal' : null;
                 const locked = session.kind === 'merchant' && requiredPlan && (session.plan === 'light' || (session.plan === 'optimal' && requiredPlan === 'premium'));
                 const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <Link prefetch={false} key={item.href} href={locked ? "/dashboard/plans" : item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={active ? "page" : undefined} className={cx("block rounded-md px-2 py-[6px] text-[13px]", active ? "bg-ink-100 font-medium text-ink-900" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900")}>
-                    {item.label}{locked ? <span className="float-right text-[9px] uppercase text-ink-400">{requiredPlan}</span> : null}
+                    {translateUi(item.label)}{translateUi(locked ? <span className="float-right text-[9px] uppercase text-ink-400">{translateUi(requiredPlan)}</span> : null)}
                   </Link>
                 );
-              })}
+              }))}
             </div>
-          ))}
+          )))}
         </nav>
         <div className="border-t border-ink-100 px-4 py-3 text-[12px] text-ink-500">
           <div className="truncate font-medium text-ink-800">{session.user.name}</div>
           <div className="truncate">{session.user.email}</div>
-          <div className="mt-0.5 capitalize">{session.user.role}</div>
+          <div className="mt-0.5 capitalize">{translateUi(session.user.role)}</div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="natio-topbar flex h-14 items-center gap-3 border-b border-ink-200 bg-white px-4 md:px-6">
           <div className="md:hidden">
-            {session.kind === "admin" ? <details className="admin-mobile-nav"><summary>NATIO · Menu</summary><nav>{nav.map((item) => <Link prefetch={false} key={item.href} href={item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</Link>)}</nav></details> : <Link href={base} className="text-[14px] font-semibold">NATIO</Link>}
+            {translateUi(session.kind === "admin" ? <details className="admin-mobile-nav"><summary>{translateUi("NATIO · Menu")}</summary><nav>{translateUi(nav.map((item) => <Link prefetch={false} key={item.href} href={item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={pathname === item.href ? "page" : undefined}>{translateUi(item.label)}</Link>))}</nav></details> : <Link href={base} className="text-[14px] font-semibold">{translateUi("NATIO")}</Link>)}
           </div>
-          <div className="hidden text-[13px] text-ink-500 md:block">{brand.subtitle}</div>
+          <div className="hidden text-[13px] text-ink-500 md:block">{translateUi(brand.subtitle)}</div>
           <div className="ml-auto flex items-center gap-3">
-            {session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">Support ↗</Link><AdminThemeToggle /></> : null}
-            <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">＋ Suggest improvement</Link>
+            {translateUi(session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">{translateUi("Support ↗")}</Link><AdminThemeToggle /></> : null)}
+            <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">{translateUi("＋ Suggest improvement")}</Link>
             <DevelopmentNotifications/>
-            <ModeToggle />
-            <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">
-              Sign out
-            </button>
+            <LanguagePicker compact/><ModeToggle />
+            <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
           </div>
         </header>
-        {opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">Opening {opening}…</div> : null}
+        {translateUi(opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">{translateUi("Opening ")}{translateUi(opening)}…</div> : null)}
         <main className="natio-workspace flex-1 px-4 py-6 md:px-6">
-          <div className="mx-auto max-w-[1280px]">{session.kind === "admin" ? <AdminGreeting/> : null}{children}</div>
+          <div className="mx-auto max-w-[1280px]">{translateUi(session.kind === "admin" ? <AdminGreeting/> : null)}{children}</div>
         </main>
       </div>
-      {session.kind === "admin" ? <AdminAssistant /> : null}
+      {translateUi(session.kind === "admin" ? <AdminAssistant /> : null)}
     </div>
   );
 }
 
 export function ModeToggle() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   return (
-    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="radiogroup" aria-label="Data mode">
-      {(["test", "live"] as const).map((m) => (
+    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="radiogroup" aria-label={translateUi("Data mode")}>
+      {translateUi((["test", "live"] as const).map((m) => (
         <button key={m} role="radio" aria-checked={session.mode === m} onClick={() => session.setMode(m)} className={cx("rounded px-2.5 py-[3px] font-medium capitalize", session.mode === m ? (m === "live" ? "bg-ok text-white" : "bg-warn text-white") : "text-ink-500 hover:text-ink-900")}>
-          {m === "test" ? "Test data" : "Live data"}
+          {translateUi(m === "test" ? translateUi("Test data") : translateUi("Live data"))}
         </button>
-      ))}
+      )))}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RoutingRuleForm } from "@/components/admin/routing-rule-form";
@@ -9,6 +11,8 @@ import type { Provider, RoutingRule } from "@/lib/types";
 
 /** There is no single-rule GET endpoint: the list is filtered server-side by id. */
 export default async function EditRoutingRulePage({ params }: { params: { id: string } }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const [rules, providers, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>("/admin/routing/rules"), api.get<{ data: Provider[] }>("/admin/providers"), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const rule = rules.data.find((r) => r.id === params.id);
@@ -19,21 +23,19 @@ export default async function EditRoutingRulePage({ params }: { params: { id: st
     <>
       <PageHeader
         breadcrumb={
-          <Link href="/admin/routing" className="hover:underline">
-            Routing rules
-          </Link>
+          <Link href="/admin/routing" className="hover:underline">{translateUi("Routing rules")}</Link>
         }
         title={
-          <span className="flex items-center gap-3">
+          translateUi(<span className="flex items-center gap-3">
             {rule.name}
-            <StatusBadge status={rule.mode} label={rule.mode === "test" ? "Test" : "Live"} />
-            <StatusBadge status={rule.enabled ? "active" : "disabled"} label={rule.enabled ? "Enabled" : "Disabled"} />
-          </span>
+            <StatusBadge status={rule.mode} label={translateUi(rule.mode === "test" ? translateUi("Test") : translateUi("Live"))} />
+            <StatusBadge status={rule.enabled ? "active" : "disabled"} label={translateUi(rule.enabled ? translateUi("Enabled") : translateUi("Disabled"))} />
+          </span>)
         }
         subtitle={
-          <span>
-            <Mono>{rule.id}</Mono> · created {formatDateTime(rule.createdAt)} · priority {rule.priority}
-          </span>
+          translateUi(<span>
+            <Mono>{rule.id}</Mono>{translateUi(" · created ")}{translateUi(formatDateTime(rule.createdAt))}{translateUi(" · priority ")}{translateUi(rule.priority)}
+          </span>)
         }
       />
       <RoutingRuleForm rule={rule} accounts={accounts} merchants={merchants.data.map((m) => ({ id: m.id, name: m.name }))} />

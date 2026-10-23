@@ -1,3 +1,4 @@
+import {localize,type Locale} from '../localization/service.js';
 export interface KnowledgeArticle {
   id: string; title: string; category: string; summary: string; tags: string[]; route: string;
   steps: Array<{title:string; detail:string}>;
@@ -8,7 +9,7 @@ const article = (id:string,title:string,category:string,summary:string,route:str
   steps:steps.map(s=>{const [title,...rest]=s.split('|');return {title,detail:rest.join('|')};}),
   sections:sections.map(s=>{const [title,...rest]=s.split('|');return {title,body:rest.join('|')};}),
 });
-export const knowledge: KnowledgeArticle[] = [
+const sourceKnowledge: KnowledgeArticle[] = [
   article('risk','Риск-дашборд: сигналы и расследование','Риски','Отказы, концентрация PSP, всплески операций и отраслевые риски.','/admin/risk-dashboard',['risk','риск','чарджбэк','chargeback','фрод','отказ','индустрия'],[
   'Выберите срез|Период UTC, одна валюта, мерчант и PSP.', 'Проверьте основание|Количество операций, знаменатель и порог сигнала.', 'Откройте источник|Перейдите к мерчанту или провайдеру.', 'Зафиксируйте решение|Сверьте сведения с PSP; затем меняйте правила отдельным действием.',
   ],['Что рассчитано|Доля failed среди successful + failed платежей; возвраты; концентрация успешного оборота; всплески дневной активности относительно предшествующих дней в выбранном периоде. Пороги относятся только к просмотру и не блокируют операции.','Чарджбэки|PSP-поток споров пока не подключён. Отказы не считаются чарджбэками. Test содержит отдельный what-if калькулятор: disputed / settled внутри заданной когорты и потенциальная сумма + комиссия. Это не сетевой норматив.','Отрасли|Плейбуки помогают проверить подписки, отложенную поставку, gaming, финансовые услуги и маркетплейсы. Индустрия читается из профиля, неизвестная не угадывается по названию. Решение зависит от юрисдикции и договора PSP.']),
@@ -58,11 +59,13 @@ export const knowledge: KnowledgeArticle[] = [
     'Найдите доставку|Статус, merchant и event type.', 'Откройте попытки|HTTP-результат и история повторов.', 'Устраните причину|Доступность адреса, подпись и ответ получателя.', 'Проверьте аудит|Кто, когда и что изменил.',
   ],['Повторы|Повторная отправка требует разрешения webhooks.resend. Не нажимайте повтор многократно, если результат ещё неизвестен.','Аудит|История помогает отделить ошибку обработки от изменения настроек. Для значимых действий сохраняются actor, время и параметры изменения.','Безопасность|Секрет подписи не должен появляться в запросах помощнику или в общедоступных сообщениях.']),
 ];
-export const knowledgeVersion = '2026-10-23.1';
+export function localizedKnowledge(locale:Locale='en'):KnowledgeArticle[]{const t=(s:string)=>localize(s,locale);return sourceKnowledge.map(a=>({...a,title:t(a.title),summary:t(a.summary),category:t(a.category),steps:a.steps.map(s=>({title:t(s.title),detail:t(s.detail)})),sections:a.sections.map(s=>({title:t(s.title),body:t(s.body)}))}));}
+export const knowledge=localizedKnowledge('en');
+export const knowledgeVersion = '2026-10-23.2';
 const tokens = (s:string) => s.toLowerCase().replace(/ё/g,'е').match(/[\p{L}\p{N}]{2,}/gu)?.map(t=>t.length>5?t.slice(0,-2):t) ?? [];
-export function searchKnowledge(query='', category?:string) {
+export function searchKnowledge(query='', category?:string,locale:Locale='en') {
   const terms=[...new Set(tokens(query))];
-  return knowledge.filter(a=>!category||a.category===category).map(a=>{
+  return localizedKnowledge(locale).filter(a=>!category||a.category===category).map(a=>{
     const title=tokens(a.title+' '+a.tags.join(' ')), body=tokens(a.summary+' '+a.sections.map(s=>s.body).join(' '));
     const score=terms.reduce((n,t)=>n+(title.some(x=>x.startsWith(t)||t.startsWith(x))?5:0)+(body.some(x=>x.startsWith(t)||t.startsWith(x))?1:0),0);
     return {...a,score};

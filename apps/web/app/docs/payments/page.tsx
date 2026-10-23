@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code, DocHeader, DocTable, H2, H3, Note, Tok } from "@/components/docs/parts";
@@ -19,6 +21,7 @@ const CREATE = `curl https://api.natio.me/v1/payments \\
     "currency": "USD",
     "payment_method": "card",
     "capture_method": "automatic",
+    "traffic_type": "ftd",
     "country": "US",
     "reference": "ORD-1001",
     "description": "Order 1001",
@@ -193,284 +196,219 @@ POST /v1/payments   Idempotency-Key: order-1001   { "amount": 20000, ... }
   }`;
 
 export default function PaymentsPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <DocHeader
         eyebrow="Guides"
-        title="Payments"
+        title={translateUi("Payments")}
         lead="A payment is the unit of orchestration: one object, one status, and as many provider attempts as the routing rules and the failure categories allow. This page covers its lifecycle, the operations on it, and the two things every integration gets wrong — idempotency and money representation."
       />
 
-      <H2 id="lifecycle">Lifecycle</H2>
-      <p>
-        The status machine is enforced in the API, not in the client. An invalid move returns <Tok>409 invalid_state_transition</Tok> rather than silently doing nothing, and the
-        guard is applied at the database level so two concurrent writers can never produce an invalid path.
-      </p>
+      <H2 id="lifecycle">{translateUi("Lifecycle")}</H2>
+      <p>{translateUi("The status machine is enforced in the API, not in the client. An invalid move returns ")}<Tok>{"409 invalid_state_transition"}</Tok>{translateUi(" rather than silently doing nothing, and the guard is applied at the database level so two concurrent writers can never produce an invalid path.")}</p>
       <PaymentLifecycle />
       <DocTable
         columns={["Status", "Meaning", "Can move to"]}
         rows={PAYMENT_STATUSES.map((s) => [
           <span key={s.status} className="whitespace-nowrap">
-            <StatusBadge variant="dark" status={s.status} label={s.status} />
+            <StatusBadge variant="dark" status={s.status} label={translateUi(s.status)} />
           </span>,
           s.meaning,
           <span key={`${s.status}-n`} className="font-mono text-[11.5px] text-mist-400">
-            {s.next}
+            {translateUi(s.next)}
           </span>,
         ])}
       />
-      <Note tone="info" title="Status is about the payment, not the provider">
-        A payment can be <Tok>successful</Tok> after a provider failed: that failure is an attempt outcome, not the payment outcome. Read <Tok>status</Tok> for the decision you
-        show the customer, and <Tok>attempts[]</Tok> for what happened on the way there.
-      </Note>
+      <Note tone="info" title={translateUi("Status is about the payment, not the provider")}>{translateUi("A payment can be ")}<Tok>{"successful"}</Tok>{translateUi(" after a provider failed: that failure is an attempt outcome, not the payment outcome. Read ")}<Tok>{"status"}</Tok>{translateUi(" for the decision you show the customer, and ")}<Tok>{"attempts[]"}</Tok>{translateUi(" for what happened on the way there.")}</Note>
 
-      <H2 id="create">Create a payment</H2>
+      <H2 id="create">{translateUi("Create a payment")}</H2>
       <p>
-        <Tok>POST /v1/payments</Tok> runs risk evaluation, routing and the provider calls synchronously. The response is <Tok>201 Created</Tok> with the final status for
-        synchronous rails, or <Tok>processing</Tok> with a <Tok>next_action</Tok> for rails that need the customer.
-      </p>
+        <Tok>{"POST /v1/payments"}</Tok>{translateUi(" runs risk evaluation, routing and the provider calls synchronously. The response is ")}<Tok>{"201 Created"}</Tok>{translateUi(" with the final status for synchronous rails, or ")}<Tok>{"processing"}</Tok>{translateUi(" with a ")}<Tok>{"next_action"}</Tok>{translateUi(" for rails that need the customer.")}</p>
       <Code caption="Request" code={CREATE} />
       <DocTable
         columns={["Field", "Required", "Notes"]}
         rows={[
-          [<Tok key="a">amount</Tok>, "yes", "Positive integer in the minor unit of the currency."],
-          [<Tok key="b">currency</Tok>, "yes", "Three-letter ISO 4217 code from the supported list."],
+          [<Tok key="a">{"amount"}</Tok>, "yes", "Positive integer in the minor unit of the currency."],
+          [<Tok key="b">{"currency"}</Tok>, "yes", "Three-letter ISO 4217 code from the supported list."],
           [
-            <Tok key="c">payment_method</Tok>,
+            <Tok key="c">{"payment_method"}</Tok>,
             "yes",
-            <>
-              A type string ({PAYMENT_METHOD_TYPES.map((t, i) => (
+            <>{translateUi("A type string (")}{translateUi(PAYMENT_METHOD_TYPES.map((t, i) => (
                 <span key={t}>
-                  {i > 0 ? ", " : ""}
+                  {translateUi(i > 0 ? ", " : "")}
                   <Tok>{t}</Tok>
                 </span>
-              ))}
-              ), or an object <Tok key="o">{"{ type, token?, id? }"}</Tok> referencing a stored provider token.
-            </>,
+              )))}{translateUi("), or an object ")}<Tok key="o">{"{ type, token?, id? }"}</Tok>{translateUi(" referencing a stored provider token.")}</>,
           ],
-          [<Tok key="d">capture_method</Tok>, "no", <>
-            <Tok key="x">automatic</Tok> (default) or <Tok key="y">manual</Tok>.
+          [<Tok key="d">{"capture_method"}</Tok>, "no", <>
+            <Tok key="x">{"automatic"}</Tok>{translateUi(" (default) or ")}<Tok key="y">{"manual"}</Tok>.
           </>],
-          [<Tok key="e">country</Tok>, "no", "Two-letter country code. Used by routing rules and by provider eligibility."],
-          [<Tok key="f">customer</Tok>, "no", <>
-            <Tok key="z">id</Tok>, <Tok key="z2">external_id</Tok>, <Tok key="z3">email</Tok>, <Tok key="z4">name</Tok>, <Tok key="z5">country</Tok>. Used for risk signals and for support lookups.
-          </>],
-          [<Tok key="g">reference</Tok>, "no", "Your order identifier. Searchable and carried onto the ledger."],
-          [<Tok key="h">description</Tok>, "no", "Free text, up to 500 characters."],
-          [<Tok key="i">return_url</Tok>, "no", "Where the customer returns after a redirect or QR action."],
-          [<Tok key="j">metadata</Tok>, "no", "Up to 50 keys of string, number, boolean or null. Returned on the payment and on webhook payloads."],
-          [<Tok key="k">test_scenario</Tok>, "no", <>Test keys only. See <Link key="l" href="/docs/sandbox">Sandbox</Link>.</>],
-          [<Tok key="m">device</Tok>, "no", <>
-            <Tok key="n">ip</Tok>, <Tok key="o2">user_agent</Tok>, <Tok key="p">fingerprint</Tok>. Risk signals from the customer session.
-          </>],
+          [<Tok key="traffic">traffic_type</Tok>, "no", "Merchant-declared deposit cohort: ftd (first-time deposit), std (returning deposit), or unknown (default). NATIO does not infer this from local history. The value is retained on the payment and financial transaction."],
+          [<Tok key="e">{"country"}</Tok>, "no", "Two-letter country code. Used by routing rules and by provider eligibility."],
+          [<Tok key="f">{"customer"}</Tok>, "no", <>
+            <Tok key="z">{"id"}</Tok>, <Tok key="z2">{"external_id"}</Tok>, <Tok key="z3">{"email"}</Tok>, <Tok key="z4">{"name"}</Tok>, <Tok key="z5">{"country"}</Tok>{translateUi(". Used for risk signals and for support lookups.")}</>],
+          [<Tok key="g">{"reference"}</Tok>, "no", "Your order identifier. Searchable and carried onto the ledger."],
+          [<Tok key="h">{"description"}</Tok>, "no", "Free text, up to 500 characters."],
+          [<Tok key="i">{"return_url"}</Tok>, "no", "Where the customer returns after a redirect or QR action."],
+          [<Tok key="j">{"metadata"}</Tok>, "no", "Up to 50 keys of string, number, boolean or null. Returned on the payment and on webhook payloads."],
+          [<Tok key="k">{"test_scenario"}</Tok>, "no", <>{translateUi("Test keys only. See ")}<Link key="l" href="/docs/sandbox">{translateUi("Sandbox")}</Link>.</>],
+          [<Tok key="m">{"device"}</Tok>, "no", <>
+            <Tok key="n">{"ip"}</Tok>, <Tok key="o2">{"user_agent"}</Tok>, <Tok key="p">{"fingerprint"}</Tok>{translateUi(". Risk signals from the customer session.")}</>],
         ]}
       />
-      <Note tone="bad" title="Never send card data">
-        The request body has no field for a card number, and the API rejects anything that looks like one on <Tok>POST /v1/payment-methods</Tok>. Sensitive entry belongs on a
-        provider-hosted page or a PCI-compliant tokenisation service; NATIO receives the type or the token reference only.
-      </Note>
+      <Note tone="bad" title={translateUi("Never send card data")}>{translateUi("The request body has no field for a card number, and the API rejects anything that looks like one on ")}<Tok>{"POST /v1/payment-methods"}</Tok>{translateUi(". Sensitive entry belongs on a provider-hosted page or a PCI-compliant tokenisation service; NATIO receives the type or the token reference only.")}</Note>
 
-      <H2 id="capture-method">Capture method</H2>
+      <H2 id="capture-method">{translateUi("Capture method")}</H2>
       <DocTable
         columns={["capture_method", "What happens", "When to use it"]}
         rows={[
           [
-            <Tok key="a">automatic</Tok>,
-            <>
-              Authorisation and capture in one provider call. A successful payment lands directly on <Tok key="b">successful</Tok> with{" "}
-              <Tok key="c">captured_amount</Tok> equal to <Tok key="d">amount</Tok>.
+            <Tok key="a">{"automatic"}</Tok>,
+            <>{translateUi("Authorisation and capture in one provider call. A successful payment lands directly on ")}<Tok key="b">{"successful"}</Tok>{translateUi(" with")}{translateUi(" ")}
+              <Tok key="c">{"captured_amount"}</Tok>{translateUi(" equal to ")}<Tok key="d">{"amount"}</Tok>.
             </>,
             "Goods or services delivered immediately: digital products, subscriptions, top-ups.",
           ],
           [
-            <Tok key="e">manual</Tok>,
-            <>
-              Funds are authorised and held. The payment stops at <Tok key="f">authorized</Tok> with <Tok key="g">captured_amount: 0</Tok> until you capture or cancel.
-            </>,
+            <Tok key="e">{"manual"}</Tok>,
+            <>{translateUi("Funds are authorised and held. The payment stops at ")}<Tok key="f">{"authorized"}</Tok>{translateUi(" with ")}<Tok key="g">{"captured_amount: 0"}</Tok>{translateUi(" until you capture or cancel.")}</>,
             "Anything you confirm before charging: stock checks, shipping, fraud review, bookings.",
           ],
         ]}
       />
       <Code caption="Manual capture — 201 Created" code={AUTHORIZE} />
-      <H3 id="capture">Capture</H3>
+      <H3 id="capture">{translateUi("Capture")}</H3>
       <p>
-        <Tok>POST /v1/payments/{"{id}"}/capture</Tok> takes an optional <Tok>amount</Tok>; omit it to capture the full authorised amount. Partial capture is supported where the
-        provider supports it.
-      </p>
+        <Tok>{"POST /v1/payments/"}{"{id}"}{"/capture"}</Tok>{translateUi(" takes an optional ")}<Tok>{"amount"}</Tok>{translateUi("; omit it to capture the full authorised amount. Partial capture is supported where the provider supports it.")}</p>
       <Code caption="Capture" code={CAPTURE} />
+      <p>{translateUi("If the provider rejects the capture, a ")}<Tok>{"capture.failed"}</Tok>{translateUi(" timeline event is written and the payment stays ")}<Tok>{"authorized"}</Tok>{translateUi(" — it does not fail. Authorisations also expire at the provider; capture inside the window the provider grants, or cancel.")}</p>
+      <H3 id="cancel">{translateUi("Cancel")}</H3>
       <p>
-        If the provider rejects the capture, a <Tok>capture.failed</Tok> timeline event is written and the payment stays <Tok>authorized</Tok> — it does not fail. Authorisations
-        also expire at the provider; capture inside the window the provider grants, or cancel.
-      </p>
-      <H3 id="cancel">Cancel</H3>
-      <p>
-        <Tok>POST /v1/payments/{"{id}"}/cancel</Tok> releases an authorisation or abandons a payment that has not completed. The optional <Tok>reason</Tok> is recorded on the
-        timeline and in the audit trail.
-      </p>
+        <Tok>{"POST /v1/payments/"}{"{id}"}{"/cancel"}</Tok>{translateUi(" releases an authorisation or abandons a payment that has not completed. The optional ")}<Tok>{"reason"}</Tok>{translateUi(" is recorded on the timeline and in the audit trail.")}</p>
       <Code caption="Cancel" code={CANCEL} />
-      <H3 id="refund">Refund</H3>
+      <H3 id="refund">{translateUi("Refund")}</H3>
       <p>
-        <Tok>POST /v1/payments/{"{id}"}/refund</Tok> returns money through the provider that took the payment. Omit <Tok>amount</Tok> for a full refund; send a smaller amount for
-        a partial one. Refunds can be repeated until the captured amount is exhausted.
-      </p>
+        <Tok>{"POST /v1/payments/"}{"{id}"}{"/refund"}</Tok>{translateUi(" returns money through the provider that took the payment. Omit ")}<Tok>{"amount"}</Tok>{translateUi(" for a full refund; send a smaller amount for a partial one. Refunds can be repeated until the captured amount is exhausted.")}</p>
       <Code caption="Partial refund" code={REFUND} />
-      <p>
-        A settled refund moves the payment to <Tok>partially_refunded</Tok> or <Tok>refunded</Tok> and increases <Tok>refunded_amount</Tok>. A rejected refund leaves the payment
-        amounts untouched and carries its own <Tok>failure</Tok> object. Read refunds back with{" "}
-        <Tok>GET /v1/payments/{"{id}"}/refunds</Tok> or <Tok>GET /v1/refunds/{"{id}"}</Tok>.
+      <p>{translateUi("A settled refund moves the payment to ")}<Tok>{"partially_refunded"}</Tok>{translateUi(" or ")}<Tok>{"refunded"}</Tok>{translateUi(" and increases ")}<Tok>{"refunded_amount"}</Tok>{translateUi(". A rejected refund leaves the payment amounts untouched and carries its own ")}<Tok>{"failure"}</Tok>{translateUi(" object. Read refunds back with")}{translateUi(" ")}
+        <Tok>{"GET /v1/payments/"}{"{id}"}{"/refunds"}</Tok>{translateUi(" or ")}<Tok>{"GET /v1/refunds/"}{"{id}"}</Tok>.
       </p>
 
-      <H2 id="next-action">next_action: redirect and QR rails</H2>
-      <p>
-        When the provider needs the customer, the create call returns <Tok>processing</Tok> and a <Tok>next_action</Tok> object. Your code hands that to the customer and then
-        waits for the webhook; it does not poll and it does not decide the outcome itself.
-      </p>
+      <H2 id="next-action">{translateUi("next_action: redirect and QR rails")}</H2>
+      <p>{translateUi("When the provider needs the customer, the create call returns ")}<Tok>{"processing"}</Tok>{translateUi(" and a ")}<Tok>{"next_action"}</Tok>{translateUi(" object. Your code hands that to the customer and then waits for the webhook; it does not poll and it does not decide the outcome itself.")}</p>
       <Code caption="201 Created — action required" code={NEXT_ACTION} />
       <DocTable
         columns={["next_action.type", "What you do"]}
         rows={[
-          [<Tok key="a">redirect</Tok>, <>Send the browser to <Tok key="b">url</Tok>. The customer returns to your <Tok key="c">return_url</Tok> when the provider is done.</>],
-          [<Tok key="d">qr_code</Tok>, <>Render <Tok key="e">qrPayload</Tok> as a QR image for the customer to scan. <Tok key="f">url</Tok> is the provider page that completes it.</>],
-          [<Tok key="g">display_details</Tok>, "Show the instructions the provider returned, for rails where the customer pushes money themselves."],
+          [<Tok key="a">{"redirect"}</Tok>, <>{translateUi("Send the browser to ")}<Tok key="b">{"url"}</Tok>{translateUi(". The customer returns to your ")}<Tok key="c">{"return_url"}</Tok>{translateUi(" when the provider is done.")}</>],
+          [<Tok key="d">{"qr_code"}</Tok>, <>{translateUi("Render ")}<Tok key="e">{"qrPayload"}</Tok>{translateUi(" as a QR image for the customer to scan. ")}<Tok key="f">{"url"}</Tok>{translateUi(" is the provider page that completes it.")}</>],
+          [<Tok key="g">{"display_details"}</Tok>, "Show the instructions the provider returned, for rails where the customer pushes money themselves."],
         ]}
       />
-      <Note tone="warn" title="The return URL is not the outcome">
-        A customer can close the tab, lose connectivity or come back on a different device. The authoritative transitions are the{" "}
-        <Link href="/docs/webhooks">webhook events</Link> and <Tok>GET /v1/payments/{"{id}"}</Tok>. Treat the return as a navigation hint and re-read the payment.
-      </Note>
+      <Note tone="warn" title={translateUi("The return URL is not the outcome")}>{translateUi("A customer can close the tab, lose connectivity or come back on a different device. The authoritative transitions are the")}{translateUi(" ")}
+        <Link href="/docs/webhooks">{translateUi("webhook events")}</Link>{translateUi(" and ")}<Tok>{"GET /v1/payments/"}{"{id}"}</Tok>{translateUi(". Treat the return as a navigation hint and re-read the payment.")}</Note>
       <p>
-        <Tok>next_action.expiresAt</Tok> is when the action stops being completable. After that the provider expires the payment, which surfaces as a failure with code{" "}
-        <Tok>payment_expired</Tok>.
+        <Tok>{"next_action.expiresAt"}</Tok>{translateUi(" is when the action stops being completable. After that the provider expires the payment, which surfaces as a failure with code")}{translateUi(" ")}
+        <Tok>{"payment_expired"}</Tok>.
       </p>
 
-      <H2 id="route-attempts">The route and attempts objects</H2>
+      <H2 id="route-attempts">{translateUi("The route and attempts objects")}</H2>
       <p>
-        <Tok>route</Tok> is the summary of where the payment ended up; <Tok>attempts[]</Tok> is the full history of how it got there. Both are returned inline on every payment,
-        so support questions rarely need a second call.
-      </p>
+        <Tok>{"route"}</Tok>{translateUi(" is the summary of where the payment ended up; ")}<Tok>{"attempts[]"}</Tok>{translateUi(" is the full history of how it got there. Both are returned inline on every payment, so support questions rarely need a second call.")}</p>
       <Code caption="Excerpt from a payment that failed over" code={ATTEMPTS} />
       <DocTable
         columns={["route field", "Meaning"]}
         rows={[
-          [<Tok key="a">provider</Tok>, "The provider that processed the payment: id, code and display name. Null while no attempt has succeeded."],
-          [<Tok key="b">provider_account_id</Tok>, "The specific provider account (credentials, fees, limits) that was used."],
-          [<Tok key="c">provider_payment_id</Tok>, "The provider side identifier. Quote this in a provider support ticket."],
-          [<Tok key="d">attempts</Tok>, "How many provider calls the payment took. Greater than 1 means a cascade occurred."],
-          [<Tok key="e">routing_decision_id</Tok>, "The recorded routing decision, including every candidate and its score."],
-          [<Tok key="f">rule</Tok>, "The routing rule that matched, or null when the default scoring strategy was used."],
+          [<Tok key="a">{"provider"}</Tok>, "The provider that processed the payment: id, code and display name. Null while no attempt has succeeded."],
+          [<Tok key="b">{"provider_account_id"}</Tok>, "The specific provider account (credentials, fees, limits) that was used."],
+          [<Tok key="c">{"provider_payment_id"}</Tok>, "The provider side identifier. Quote this in a provider support ticket."],
+          [<Tok key="d">{"attempts"}</Tok>, "How many provider calls the payment took. Greater than 1 means a cascade occurred."],
+          [<Tok key="e">{"routing_decision_id"}</Tok>, "The recorded routing decision, including every candidate and its score."],
+          [<Tok key="f">{"rule"}</Tok>, "The routing rule that matched, or null when the default scoring strategy was used."],
         ]}
       />
       <DocTable
         columns={["attempt field", "Meaning"]}
         rows={[
-          [<Tok key="a">attempt_number</Tok>, "1-based position in the cascade for this payment."],
+          [<Tok key="a">{"attempt_number"}</Tok>, "1-based position in the cascade for this payment."],
           [
-            <Tok key="b">status</Tok>,
-            <span key="s" className="font-mono text-[11.5px]">
-              created · processing · unknown · authorized · succeeded · failed · cancelled
-            </span>,
+            <Tok key="b">{"status"}</Tok>,
+            <span key="s" className="font-mono text-[11.5px]">{translateUi("created · processing · unknown · authorized · succeeded · failed · cancelled")}</span>,
           ],
           [
-            <Tok key="c">outcome</Tok>,
-            <span key="o" className="font-mono text-[11.5px]">
-              success · requires_action · soft_decline · hard_decline · technical_error · timeout · provider_unavailable · unknown
-            </span>,
+            <Tok key="c">{"outcome"}</Tok>,
+            <span key="o" className="font-mono text-[11.5px]">{translateUi("success · requires_action · soft_decline · hard_decline · technical_error · timeout · provider_unavailable · unknown")}</span>,
           ],
-          [<Tok key="d">provider_code</Tok>, "The raw code the provider returned, unmapped. Useful when talking to the provider."],
-          [<Tok key="e">provider_message</Tok>, "The provider message, unmapped. Do not show it to customers."],
-          [<Tok key="f">failure</Tok>, <>The normalised <Link key="l" href="/docs/errors">failure object</Link>: code, category and message. This is what you branch on.</>],
-          [<Tok key="g">fee_amount</Tok>, "Fee charged by that provider account, in minor units. Zero on attempts that did not move money."],
-          [<Tok key="h">latency_ms</Tok>, "Provider round-trip for that attempt."],
+          [<Tok key="d">{"provider_code"}</Tok>, "The raw code the provider returned, unmapped. Useful when talking to the provider."],
+          [<Tok key="e">{"provider_message"}</Tok>, "The provider message, unmapped. Do not show it to customers."],
+          [<Tok key="f">{"failure"}</Tok>, <>{translateUi("The normalised ")}<Link key="l" href="/docs/errors">{translateUi("failure object")}</Link>{translateUi(": code, category and message. This is what you branch on.")}</>],
+          [<Tok key="g">{"fee_amount"}</Tok>, "Fee charged by that provider account, in minor units. Zero on attempts that did not move money."],
+          [<Tok key="h">{"latency_ms"}</Tok>, "Provider round-trip for that attempt."],
         ]}
       />
-      <p>
-        Whether a failed attempt is followed by another one is decided by the failure <em>category</em>: soft declines and technical failures may cascade to the next eligible
-        provider, hard declines never do. The full dictionary is in <Link href="/docs/errors">Errors and failure codes</Link>.
+      <p>{translateUi("Whether a failed attempt is followed by another one is decided by the failure ")}<em>{translateUi("category")}</em>{translateUi(": soft declines and technical failures may cascade to the next eligible provider, hard declines never do. The full dictionary is in ")}<Link href="/docs/errors">{translateUi("Errors and failure codes")}</Link>.
       </p>
 
-      <H2 id="timeline">Timeline</H2>
+      <H2 id="timeline">{translateUi("Timeline")}</H2>
       <p>
-        <Tok>GET /v1/payments/{"{id}"}/timeline</Tok> returns every decision and provider interaction in order. It is the same data the dashboard renders, and it is the fastest
-        answer to &ldquo;why did this payment go there&rdquo;.
-      </p>
+        <Tok>{"GET /v1/payments/"}{"{id}"}{"/timeline"}</Tok>{translateUi(" returns every decision and provider interaction in order. It is the same data the dashboard renders, and it is the fastest answer to &ldquo;why did this payment go there&rdquo;.")}</p>
       <Code caption="Timeline event" code={TIMELINE} />
-      <p>
-        Each event has a stable <Tok>type</Tok>, a human <Tok>title</Tok> and <Tok>description</Tok>, an optional <Tok>attempt_id</Tok> tying it to one provider call, and a{" "}
-        <Tok>data</Tok> object whose shape depends on the type. Branch on <Tok>type</Tok>; treat <Tok>title</Tok> and <Tok>description</Tok> as display text.
-      </p>
+      <p>{translateUi("Each event has a stable ")}<Tok>{"type"}</Tok>{translateUi(", a human ")}<Tok>{"title"}</Tok>{translateUi(" and ")}<Tok>{"description"}</Tok>{translateUi(", an optional ")}<Tok>{"attempt_id"}</Tok>{translateUi(" tying it to one provider call, and a")}{translateUi(" ")}
+        <Tok>{"data"}</Tok>{translateUi(" object whose shape depends on the type. Branch on ")}<Tok>{"type"}</Tok>{translateUi("; treat ")}<Tok>{"title"}</Tok>{translateUi(" and ")}<Tok>{"description"}</Tok>{translateUi(" as display text.")}</p>
       <DocTable columns={["type", "What it records"]} rows={TIMELINE_EVENTS.map((e) => [<Tok key={e.type}>{e.type}</Tok>, e.meaning])} />
-      <Note tone="info" title="Timeline events are not webhook events">
-        The timeline is the internal narrative of one payment and is read on demand. Webhooks are the subset of state changes you subscribe to and are pushed to your endpoints.
-        The names overlap deliberately, but the two lists are not the same.
-      </Note>
+      <Note tone="info" title={translateUi("Timeline events are not webhook events")}>{translateUi("The timeline is the internal narrative of one payment and is read on demand. Webhooks are the subset of state changes you subscribe to and are pushed to your endpoints. The names overlap deliberately, but the two lists are not the same.")}</Note>
 
-      <H2 id="idempotency">Idempotency</H2>
-      <p>
-        Every mutating endpoint accepts an <Tok>Idempotency-Key</Tok> header, up to 255 characters. Use one per logical operation — your order id for the payment, your refund id
-        for the refund — and reuse it on every retry of that operation, including retries after a timeout or a 429.
-      </p>
+      <H2 id="idempotency">{translateUi("Idempotency")}</H2>
+      <p>{translateUi("Every mutating endpoint accepts an ")}<Tok>{"Idempotency-Key"}</Tok>{translateUi(" header, up to 255 characters. Use one per logical operation — your order id for the payment, your refund id for the refund — and reuse it on every retry of that operation, including retries after a timeout or a 429.")}</p>
       <DocTable
         columns={["Situation", "Result"]}
         rows={[
           [
             "Same key, same body",
-            <>
-              The stored response is replayed verbatim with the original status code and the header <Tok key="a">Idempotent-Replayed: true</Tok>. The handler does not run again.
-            </>,
+            <>{translateUi("The stored response is replayed verbatim with the original status code and the header ")}<Tok key="a">{"Idempotent-Replayed: true"}</Tok>{translateUi(". The handler does not run again.")}</>,
           ],
           [
             "Same key, different body",
             <>
-              <Tok key="b">422</Tok> <Tok key="c">idempotency_key_reused</Tok>. Nothing is created.
-            </>,
+              <Tok key="b">422</Tok> <Tok key="c">{"idempotency_key_reused"}</Tok>{translateUi(". Nothing is created.")}</>,
           ],
           [
             "Same key, first call still in flight",
             <>
-              <Tok key="d">409</Tok> <Tok key="e">idempotency_in_progress</Tok>. Retry shortly; the stored response will be replayed once the first call finishes.
-            </>,
+              <Tok key="d">409</Tok> <Tok key="e">{"idempotency_in_progress"}</Tok>{translateUi(". Retry shortly; the stored response will be replayed once the first call finishes.")}</>,
           ],
           ["No key at all", "The request executes normally. A retry creates a second payment — which is exactly the failure mode the header exists to prevent."],
         ]}
       />
       <Code caption="The three outcomes" code={IDEMPOTENT} />
-      <p>
-        Bodies are compared by a stable hash that ignores key order, so re-serialising the same object is safe. Keys are scoped per merchant, per mode and per operation, so the
-        same key can be used for a payment and for a capture without colliding. Keys expire after a retention window; a replay is only guaranteed while the record is retained.
-      </p>
+      <p>{translateUi("Bodies are compared by a stable hash that ignores key order, so re-serialising the same object is safe. Keys are scoped per merchant, per mode and per operation, so the same key can be used for a payment and for a capture without colliding. Keys expire after a retention window; a replay is only guaranteed while the record is retained.")}</p>
 
-      <H2 id="money">Money representation</H2>
-      <p>
-        All amounts — <Tok>amount</Tok>, <Tok>captured_amount</Tok>, <Tok>refunded_amount</Tok>, <Tok>fee.amount</Tok>, ledger and settlement amounts — are integers in the minor
-        unit of the currency. There are no decimals anywhere in the API, which removes rounding and float ambiguity from the contract.
-      </p>
+      <H2 id="money">{translateUi("Money representation")}</H2>
+      <p>{translateUi("All amounts — ")}<Tok>{"amount"}</Tok>, <Tok>{"captured_amount"}</Tok>, <Tok>{"refunded_amount"}</Tok>, <Tok>{"fee.amount"}</Tok>{translateUi(", ledger and settlement amounts — are integers in the minor unit of the currency. There are no decimals anywhere in the API, which removes rounding and float ambiguity from the contract.")}</p>
       <DocTable
         columns={["Decimals", "Currencies", "Example"]}
-        rows={CURRENCY_EXPONENTS.map((c) => [<Tok key={c.exponent}>{c.exponent}</Tok>, c.currencies, <span key={`${c.exponent}-e`}>{c.example}</span>])}
+        rows={CURRENCY_EXPONENTS.map((c) => [<Tok key={c.exponent}>{c.exponent}</Tok>, c.currencies, <span key={`${c.exponent}-e`}>{translateUi(c.example)}</span>])}
       />
-      <Note tone="warn" title="Zero-decimal currencies are the classic bug">
-        <Tok>10000</Tok> is 100.00 USD but 10000 JPY — a hundredfold difference. Convert from your own representation using the exponent of the currency, never a fixed
-        multiplication by 100.
-      </Note>
-      <p>
-        Currency is a three-letter ISO 4217 code and must be one of the supported list; anything else is refused at validation with{" "}
-        <Tok>422 validation_failed</Tok> before a provider is ever contacted.
-      </p>
+      <Note tone="warn" title={translateUi("Zero-decimal currencies are the classic bug")}>
+        <Tok>10000</Tok>{translateUi(" is 100.00 USD but 10000 JPY — a hundredfold difference. Convert from your own representation using the exponent of the currency, never a fixed multiplication by 100.")}</Note>
+      <p>{translateUi("Currency is a three-letter ISO 4217 code and must be one of the supported list; anything else is refused at validation with")}{translateUi(" ")}
+        <Tok>{"422 validation_failed"}</Tok>{translateUi(" before a provider is ever contacted.")}</p>
 
-      <H2 id="reading">Reading payments back</H2>
+      <H2 id="reading">{translateUi("Reading payments back")}</H2>
       <DocTable
         columns={["Call", "Returns"]}
         rows={[
-          [<Tok key="a">GET /v1/payments/{"{id}"}</Tok>, "The payment with its route, risk, failure, fee and full attempts array."],
-          [<Tok key="b">GET /v1/payments</Tok>, <>A cursor-paginated list. Filter by <Tok key="c">status</Tok>, <Tok key="d">currency</Tok>, <Tok key="e">country</Tok>, <Tok key="f">payment_method</Tok>, <Tok key="g">reference</Tok>, <Tok key="h">search</Tok>, <Tok key="i">from</Tok> and <Tok key="j">to</Tok>.</>],
-          [<Tok key="k">GET /v1/payments/{"{id}"}/timeline</Tok>, "Every decision and provider interaction, in order."],
-          [<Tok key="l">GET /v1/payments/{"{id}"}/refunds</Tok>, "Every refund created against the payment."],
-          [<Tok key="m">GET /v1/transactions</Tok>, "The ledger lines the payment produced, with the provider reference used in reconciliation."],
+          [<Tok key="a">{"GET /v1/payments/"}{"{id}"}</Tok>, "The payment with its route, risk, failure, fee and full attempts array."],
+          [<Tok key="b">{"GET /v1/payments"}</Tok>, <>{translateUi("A cursor-paginated list. Filter by ")}<Tok key="c">{"status"}</Tok>, <Tok key="d">{"currency"}</Tok>, <Tok key="e">{"country"}</Tok>, <Tok key="f">{"payment_method"}</Tok>, <Tok key="g">{"reference"}</Tok>, <Tok key="h">{"search"}</Tok>, <Tok key="i">{"from"}</Tok>{translateUi(" and ")}<Tok key="j">{"to"}</Tok>.</>],
+          [<Tok key="k">{"GET /v1/payments/"}{"{id}"}{"/timeline"}</Tok>, "Every decision and provider interaction, in order."],
+          [<Tok key="l">{"GET /v1/payments/"}{"{id}"}{"/refunds"}</Tok>, "Every refund created against the payment."],
+          [<Tok key="m">{"GET /v1/transactions"}</Tok>, "The ledger lines the payment produced, with the provider reference used in reconciliation."],
         ]}
       />
-      <p>
-        Lists are cursor based: send <Tok>limit</Tok> (1–200, default 50) and pass <Tok>next_cursor</Tok> from the previous page back as <Tok>cursor</Tok> while{" "}
-        <Tok>has_more</Tok> is true. Every parameter is documented in the <Link href="/docs/api-reference">API reference</Link>.
+      <p>{translateUi("Lists are cursor based: send ")}<Tok>{"limit"}</Tok>{translateUi(" (1–200, default 50) and pass ")}<Tok>{"next_cursor"}</Tok>{translateUi(" from the previous page back as ")}<Tok>{"cursor"}</Tok>{translateUi(" while")}{translateUi(" ")}
+        <Tok>{"has_more"}</Tok>{translateUi(" is true. Every parameter is documented in the ")}<Link href="/docs/api-reference">{translateUi("API reference")}</Link>.
       </p>
     </>
   );

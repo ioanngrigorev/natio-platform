@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
@@ -16,21 +18,25 @@ function tickDate(t: string, bucket: "hour" | "day") {
 }
 
 function TooltipBox({ rows, title }: { rows: Array<{ label: string; value: string }>; title: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="rounded-md border border-ink-200 bg-white px-3 py-2 text-[12px] shadow-lg">
-      <div className="mb-1 font-medium text-ink-800">{title}</div>
-      {rows.map((r) => (
+      <div className="mb-1 font-medium text-ink-800">{translateUi(title)}</div>
+      {translateUi(rows.map((r) => (
         <div key={r.label} className="flex justify-between gap-4 text-ink-600">
-          <span>{r.label}</span>
-          <span className="tabular text-ink-900">{r.value}</span>
+          <span>{translateUi(r.label)}</span>
+          <span className="tabular text-ink-900">{translateUi(r.value)}</span>
         </div>
-      ))}
+      )))}
     </div>
   );
 }
 
 export function VolumeChart({ points, currency, bucket = "day", height = 220 }: { points: TimeseriesPoint[]; currency: string | null; bucket?: "hour" | "day"; height?: number }) {
-  if (!points.length) return <div className="flex h-[220px] items-center justify-center text-[13px] text-ink-400">No payments in this period</div>;
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
+  if (!points.length) return <div className="flex h-[220px] items-center justify-center text-[13px] text-ink-400">{translateUi("No payments in this period")}</div>;
   const exp = currency ? (["JPY", "KRW", "VND"].includes(currency) ? 0 : 2) : 2;
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -49,7 +55,7 @@ export function VolumeChart({ points, currency, bucket = "day", height = 220 }: 
           content={({ active, payload }) => {
             if (!active || !payload?.length) return null;
             const p = payload[0]!.payload as TimeseriesPoint;
-            return <TooltipBox title={tickDate(p.t, bucket)} rows={[{ label: "Volume", value: formatMoney(p.tpv, currency ?? "") }, { label: "Transactions", value: formatNumber(p.transactions) }, { label: "Success rate", value: formatPercent(p.success_rate) }]} />;
+            return <TooltipBox title={translateUi(tickDate(p.t, bucket))} rows={[{ label: "Volume", value: formatMoney(p.tpv, currency ?? "") }, { label: "Transactions", value: formatNumber(p.transactions) }, { label: "Success rate", value: formatPercent(p.success_rate) }]} />;
           }}
         />
         <Area type="monotone" dataKey="tpv" stroke={CATEGORICAL[0]} strokeWidth={2} fill="url(#tpvFill)" dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
@@ -59,8 +65,10 @@ export function VolumeChart({ points, currency, bucket = "day", height = 220 }: 
 }
 
 export function SuccessRateChart({ points, bucket = "day", height = 200 }: { points: TimeseriesPoint[]; bucket?: "hour" | "day"; height?: number }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const data = points.filter((p) => p.success_rate !== null);
-  if (!data.length) return <div className="flex h-[200px] items-center justify-center text-[13px] text-ink-400">No decided payments in this period</div>;
+  if (!data.length) return <div className="flex h-[200px] items-center justify-center text-[13px] text-ink-400">{translateUi("No decided payments in this period")}</div>;
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -72,7 +80,7 @@ export function SuccessRateChart({ points, bucket = "day", height = 200 }: { poi
           content={({ active, payload }) => {
             if (!active || !payload?.length) return null;
             const p = payload[0]!.payload as TimeseriesPoint;
-            return <TooltipBox title={tickDate(p.t, bucket)} rows={[{ label: "Success rate", value: formatPercent(p.success_rate) }, { label: "Successful", value: formatNumber(p.successful) }, { label: "Failed", value: formatNumber(p.failed) }]} />;
+            return <TooltipBox title={translateUi(tickDate(p.t, bucket))} rows={[{ label: "Success rate", value: formatPercent(p.success_rate) }, { label: "Successful", value: formatNumber(p.successful) }, { label: "Failed", value: formatNumber(p.failed) }]} />;
           }}
         />
         <Line type="monotone" dataKey="success_rate" stroke={CATEGORICAL[1]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
@@ -83,7 +91,9 @@ export function SuccessRateChart({ points, bucket = "day", height = 200 }: { poi
 
 /** Horizontal bar breakdown; top 4 keep fixed categorical hues, the rest are neutral. */
 export function BreakdownChart({ rows, metric = "transactions", currency, height }: { rows: BreakdownRow[]; metric?: "transactions" | "tpv"; currency?: string | null; height?: number }) {
-  if (!rows.length) return <div className="flex h-[160px] items-center justify-center text-[13px] text-ink-400">No data</div>;
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
+  if (!rows.length) return <div className="flex h-[160px] items-center justify-center text-[13px] text-ink-400">{translateUi("No data")}</div>;
   const data = rows.slice(0, 8).map((r, i) => ({ ...r, fill: i < 4 ? CATEGORICAL[i] : OTHER }));
   const h = height ?? Math.max(120, data.length * 28 + 16);
   return (
@@ -97,13 +107,13 @@ export function BreakdownChart({ rows, metric = "transactions", currency, height
           content={({ active, payload }) => {
             if (!active || !payload?.length) return null;
             const p = payload[0]!.payload as BreakdownRow;
-            return <TooltipBox title={p.key} rows={[{ label: "Transactions", value: formatNumber(p.transactions) }, { label: "Volume", value: currency ? formatMoney(p.tpv, currency) : "—" }, { label: "Success rate", value: formatPercent(p.success_rate) }]} />;
+            return <TooltipBox title={translateUi(p.key)} rows={[{ label: "Transactions", value: formatNumber(p.transactions) }, { label: "Volume", value: currency ? formatMoney(p.tpv, currency) : "—" }, { label: "Success rate", value: formatPercent(p.success_rate) }]} />;
           }}
         />
         <Bar dataKey={metric} radius={[0, 4, 4, 0]} maxBarSize={18}>
-          {data.map((d) => (
+          {translateUi(data.map((d) => (
             <Cell key={d.key} fill={d.fill} />
-          ))}
+          )))}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -111,12 +121,14 @@ export function BreakdownChart({ rows, metric = "transactions", currency, height
 }
 
 export function Sparkbar({ values, color = CATEGORICAL[0] }: { values: number[]; color?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const max = Math.max(1, ...values);
   return (
     <div className="flex h-6 items-end gap-[2px]">
-      {values.map((v, i) => (
+      {translateUi(values.map((v, i) => (
         <div key={i} className="w-[4px] rounded-t-[2px]" style={{ height: `${Math.max(8, (v / max) * 100)}%`, background: color, opacity: v ? 1 : 0.25 }} />
-      ))}
+      )))}
     </div>
   );
 }

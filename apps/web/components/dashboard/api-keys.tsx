@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -8,6 +10,8 @@ import { Alert, Button, Field } from "@/components/ui";
 import type { ApiKey } from "@/lib/types";
 
 export function CreateApiKey() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -38,63 +42,59 @@ export function CreateApiKey() {
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Create key
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Create an API key" description="Secret keys authenticate server-to-server calls. The secret is shown once, immediately after creation.">
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Create key")}</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={translateUi("Create an API key")} description={translateUi("Secret keys authenticate server-to-server calls. The secret is shown once, immediately after creation.")}>
         <form onSubmit={submit}>
-          {error ? (
+          {translateUi(error ? (
             <div className="mt-3">
-              <Alert tone="bad">{error}</Alert>
+              <Alert tone="bad">{translateUi(error)}</Alert>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-4 space-y-3">
-            <Field label="Name" htmlFor="ak-name" help="Where the key will live, e.g. “Checkout backend (prod)”">
+            <Field label={translateUi("Name")} htmlFor="ak-name" help={translateUi("Where the key will live, e.g. “Checkout backend (prod)”")}>
               <input id="ak-name" className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={1} maxLength={80} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Mode" htmlFor="ak-mode" help={form.mode === "live" && !kybApproved ? "Live keys require KYB approval." : undefined}>
+              <Field label={translateUi("Mode")} htmlFor="ak-mode" help={translateUi(form.mode === "live" && !kybApproved ? translateUi("Live keys require KYB approval.") : undefined)}>
                 <select id="ak-mode" className="input" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value as "test" | "live" })}>
-                  <option value="test">Test (sandbox)</option>
-                  <option value="live">Live</option>
+                  <option value="test">{translateUi("Test (sandbox)")}</option>
+                  <option value="live">{translateUi("Live")}</option>
                 </select>
               </Field>
-              <Field label="Project" htmlFor="ak-project">
+              <Field label={translateUi("Project")} htmlFor="ak-project">
                 <select id="ak-project" className="input" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                  {projects.map((p) => (
+                  {translateUi(projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>
-                  ))}
+                  )))}
                 </select>
               </Field>
             </div>
           </div>
           <div className="mt-5 flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Create key
-            </Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Create key")}</Button>
           </div>
         </form>
       </Modal>
-      {secret ? (
+      {translateUi(secret ? (
         <SecretReveal
           open
           onClose={() => setSecret(null)}
-          title={`Key “${secret.name}” created`}
-          description="Use it as a bearer token: Authorization: Bearer <key>."
+          title={translateUi(`Key “${secret.name}” created`)}
+          description={translateUi("Use it as a bearer token: Authorization: Bearer <key>.")}
           secret={secret.value}
           warning="Store this key securely now. It will not be shown again. If it is lost, revoke it and create a new one."
         />
-      ) : null}
+      ) : null)}
     </>
   );
 }
 
 export function RevokeApiKey({ apiKey }: { apiKey: ApiKey }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -115,8 +115,6 @@ export function RevokeApiKey({ apiKey }: { apiKey: ApiKey }) {
   }
 
   return (
-    <Button variant="danger" size="sm" loading={busy} onClick={() => void revoke()}>
-      Revoke
-    </Button>
+    <Button variant="danger" size="sm" loading={busy} onClick={() => void revoke()}>{translateUi("Revoke")}</Button>
   );
 }

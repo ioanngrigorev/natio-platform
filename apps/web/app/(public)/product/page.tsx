@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Chip, CtaBand, Feature, FeatureGrid, PageIntro, PrimaryCta, SecondaryCta, Section, SpecList } from "@/components/marketing/sections";
@@ -59,11 +61,13 @@ const MODULES: Array<{ href: string; title: string; body: string; items: string[
 ];
 
 export default function ProductPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <PageIntro
         eyebrow="Product"
-        title="Payment orchestration as a single infrastructure layer."
+        title={translateUi("Payment orchestration as a single infrastructure layer.")}
         lead="NATIO sits between your platform and the licensed payment providers you use. It exposes one API, decides where each payment or payout goes, protects you from provider failures, and gives finance and operations one view of everything that happened."
         actions={
           <>
@@ -73,34 +77,32 @@ export default function ProductPage() {
         }
       />
 
-      <Section eyebrow="Modules" title="What the platform consists of." lead="Each module is exposed through the API and the dashboard. Everything is scoped to a merchant, a project and a mode (test or live).">
+      <Section eyebrow="Modules" title={translateUi("What the platform consists of.")} lead="Each module is exposed through the API and the dashboard. Everything is scoped to a merchant, a project and a mode (test or live).">
         <div className="grid grid-cols-1 gap-x-12 gap-y-12 md:grid-cols-2">
-          {MODULES.map((m, i) => (
+          {translateUi(MODULES.map((m, i) => (
             <div key={m.title} className="flex flex-col border-t border-night-700 pt-5">
-              <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{String(i + 1).padStart(2, "0")}</div>
-              <h3 className="text-[17px] font-medium leading-snug tracking-[-0.012em] text-mist-50">{m.title}</h3>
+              <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{translateUi(String(i + 1).padStart(2, "0"))}</div>
+              <h3 className="text-[17px] font-medium leading-snug tracking-[-0.012em] text-mist-50">{translateUi(m.title)}</h3>
               <p className="mt-2.5 text-[14px] leading-[1.7] text-mist-400">{m.body}</p>
               <ul className="mt-4 space-y-2 text-[13px] leading-[1.6] text-mist-200">
-                {m.items.map((it) => (
+                {translateUi(m.items.map((it) => (
                   <li key={it} className="flex gap-2.5">
                     <span className="mt-[8px] h-[3px] w-[3px] shrink-0 rounded-full bg-iris" aria-hidden />
-                    <span>{it}</span>
+                    <span>{translateUi(it)}</span>
                   </li>
-                ))}
+                )))}
               </ul>
-              <Link href={m.href} className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-iris hover:underline">
-                Details
-                <span aria-hidden>→</span>
+              <Link href={m.href} className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-iris hover:underline">{translateUi("Details")}<span aria-hidden>→</span>
               </Link>
             </div>
-          ))}
+          )))}
         </div>
       </Section>
 
-      <Section id="operations" tone="raised" eyebrow="Scope" title="What NATIO does, and what it deliberately does not." lead="NATIO is a technology infrastructure layer. The regulated parts of a payment stay with the licensed providers connected to the platform.">
+      <Section id="operations" tone="raised" eyebrow="Scope" title={translateUi("What NATIO does, and what it deliberately does not.")} lead="NATIO is a technology infrastructure layer. The regulated parts of a payment stay with the licensed providers connected to the platform.">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
-            <h3 className="text-[14px] font-medium text-mist-50">NATIO does</h3>
+            <h3 className="text-[14px] font-medium text-mist-50">{translateUi("NATIO does")}</h3>
             <SpecList
               className="mt-3"
               items={[
@@ -113,7 +115,7 @@ export default function ProductPage() {
             />
           </div>
           <div>
-            <h3 className="text-[14px] font-medium text-mist-50">NATIO does not</h3>
+            <h3 className="text-[14px] font-medium text-mist-50">{translateUi("NATIO does not")}</h3>
             <SpecList
               className="mt-3"
               items={[
@@ -127,22 +129,16 @@ export default function ProductPage() {
         </div>
       </Section>
 
-      <Section eyebrow="Payment methods" title="Seven method types, one request shape." lead="The payment_method field takes a type or a stored reference. Which providers can serve a given type, currency and country is configuration, not code.">
+      <Section eyebrow="Payment methods" title={translateUi("Seven method types, one request shape.")} lead="The payment_method field takes a type or a stored reference. Which providers can serve a given type, currency and country is configuration, not code.">
         <div className="flex flex-wrap gap-2">
-          {["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"].map((m) => (
-            <Chip key={m}>{m}</Chip>
-          ))}
+          {translateUi(["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"].map((m) => (
+            <Chip key={m}>{translateUi(m)}</Chip>
+          )))}
         </div>
         <FeatureGrid cols={3} className="mt-10">
-          <Feature index={1} title="Synchronous rails">
-            Card and wallet payments return their final status in the create response, including the provider that processed them.
-          </Feature>
-          <Feature index={2} title="Asynchronous rails">
-            Bank transfers, QR and open banking return processing with a next_action (redirect or qr_code). Completion arrives as a webhook.
-          </Feature>
-          <Feature index={3} title="Test and live">
-            natio_sk_test_ keys run against NATIO demo providers with scripted scenarios; natio_sk_live_ keys run against the providers configured for your project.
-          </Feature>
+          <Feature index={1} title={translateUi("Synchronous rails")}>{translateUi("Card and wallet payments return their final status in the create response, including the provider that processed them.")}</Feature>
+          <Feature index={2} title={translateUi("Asynchronous rails")}>{translateUi("Bank transfers, QR and open banking return processing with a next_action (redirect or qr_code). Completion arrives as a webhook.")}</Feature>
+          <Feature index={3} title={translateUi("Test and live")}>{translateUi("natio_sk_test_ keys run against NATIO demo providers with scripted scenarios; natio_sk_live_ keys run against the providers configured for your project.")}</Feature>
         </FeatureGrid>
       </Section>
 

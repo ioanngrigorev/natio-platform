@@ -1,9 +1,13 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import { PricingCenter } from "@/components/admin/pricing-center";
 import { PageHeader } from "@/components/ui";
 import { serverApi } from "@/lib/session";
 import type { PricePlan } from "@/components/admin/strategy-types";
 export const metadata = { title: "Pricing & margin" };
 export default async function PricingPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const [plans, merchants, providers] = await Promise.all([
     api.get<{ data: PricePlan[] }>("/admin/pricing"),
@@ -23,8 +27,8 @@ export default async function PricingPage() {
   return (
     <>
       <PageHeader
-        title="Pricing & margin"
-        subtitle="Amount-based merchant fees and PSP costs. Exact minor units, immutable published versions and an auditable margin."
+        title={translateUi("Pricing & margin")}
+        subtitle={translateUi("Amount-based merchant fees and PSP costs. Exact minor units, immutable published versions and an auditable margin.")}
       />
       <PricingCenter
         initial={plans.data}

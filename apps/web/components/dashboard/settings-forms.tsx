@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -11,6 +13,8 @@ import type { Merchant, Project } from "@/lib/types";
 // Merchant profile
 // ---------------------------------------------------------------------------
 export function MerchantProfileForm({ merchant }: { merchant: Merchant }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const canEdit = session.can("merchant.update");
@@ -59,44 +63,42 @@ export function MerchantProfileForm({ merchant }: { merchant: Merchant }) {
 
   return (
     <form onSubmit={submit}>
-      {error ? (
+      {translateUi(error ? (
         <div className="mb-3">
-          <Alert tone="bad">{error}</Alert>
+          <Alert tone="bad">{translateUi(error)}</Alert>
         </div>
-      ) : null}
+      ) : null)}
       <fieldset disabled={!canEdit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Display name" htmlFor="m-name">
+        <Field label={translateUi("Display name")} htmlFor="m-name">
           <input id="m-name" className="input" value={form.name} onChange={set("name")} required minLength={2} maxLength={120} />
         </Field>
-        <Field label="Legal name" htmlFor="m-legal">
+        <Field label={translateUi("Legal name")} htmlFor="m-legal">
           <input id="m-legal" className="input" value={form.legal_name} onChange={set("legal_name")} maxLength={200} />
         </Field>
-        <Field label="Country" htmlFor="m-country" help="ISO 3166-1 alpha-2">
+        <Field label={translateUi("Country")} htmlFor="m-country" help={translateUi("ISO 3166-1 alpha-2")}>
           <input id="m-country" className="input" value={form.country} onChange={set("country")} maxLength={2} />
         </Field>
-        <Field label="Website" htmlFor="m-web">
-          <input id="m-web" type="url" className="input" placeholder="https://" value={form.website} onChange={set("website")} />
+        <Field label={translateUi("Website")} htmlFor="m-web">
+          <input id="m-web" type="url" className="input" placeholder={translateUi("https://")} value={form.website} onChange={set("website")} />
         </Field>
-        <Field label="Registration number" htmlFor="m-reg">
+        <Field label={translateUi("Registration number")} htmlFor="m-reg">
           <input id="m-reg" className="input" value={form.registration_number} onChange={set("registration_number")} maxLength={64} />
         </Field>
-        <Field label="Contact email" htmlFor="m-email">
+        <Field label={translateUi("Contact email")} htmlFor="m-email">
           <input id="m-email" type="email" className="input" value={form.contact_email} onChange={set("contact_email")} />
         </Field>
-        <Field label="Default currency" htmlFor="m-cur" help="Used for analytics when no currency is selected">
+        <Field label={translateUi("Default currency")} htmlFor="m-cur" help={translateUi("Used for analytics when no currency is selected")}>
           <input id="m-cur" className="input" value={form.default_currency} onChange={set("default_currency")} maxLength={3} />
         </Field>
-        <Field label="Timezone" htmlFor="m-tz" help="IANA name, e.g. Europe/London">
+        <Field label={translateUi("Timezone")} htmlFor="m-tz" help={translateUi("IANA name, e.g. Europe/London")}>
           <input id="m-tz" className="input" value={form.timezone} onChange={set("timezone")} maxLength={64} />
         </Field>
       </fieldset>
       <div className="mt-4 flex items-center justify-between">
-        <span className="text-[12px] text-ink-500">{canEdit ? "Changes are audited." : "Your role cannot edit the merchant profile."}</span>
-        {canEdit ? (
-          <Button type="submit" variant="primary" loading={loading}>
-            Save profile
-          </Button>
-        ) : null}
+        <span className="text-[12px] text-ink-500">{translateUi(canEdit ? translateUi("Changes are audited.") : translateUi("Your role cannot edit the merchant profile."))}</span>
+        {translateUi(canEdit ? (
+          <Button type="submit" variant="primary" loading={loading}>{translateUi("Save profile")}</Button>
+        ) : null)}
       </div>
     </form>
   );
@@ -106,6 +108,8 @@ export function MerchantProfileForm({ merchant }: { merchant: Merchant }) {
 // Projects
 // ---------------------------------------------------------------------------
 export function CreateProject() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -133,26 +137,22 @@ export function CreateProject() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Create project</Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Create a project" description="Projects separate API keys, webhooks and settings, e.g. one per storefront or platform." width="max-w-[420px]">
+      <Button onClick={() => setOpen(true)}>{translateUi("Create project")}</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={translateUi("Create a project")} description={translateUi("Projects separate API keys, webhooks and settings, e.g. one per storefront or platform.")} width="max-w-[420px]">
         <form onSubmit={submit}>
-          {error ? (
+          {translateUi(error ? (
             <div className="mt-3">
-              <Alert tone="bad">{error}</Alert>
+              <Alert tone="bad">{translateUi(error)}</Alert>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-4">
-            <Field label="Name" htmlFor="pj-name">
-              <input id="pj-name" className="input" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} placeholder="Mobile app" />
+            <Field label={translateUi("Name")} htmlFor="pj-name">
+              <input id="pj-name" className="input" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} placeholder={translateUi("Mobile app")} />
             </Field>
           </div>
           <div className="mt-5 flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Create
-            </Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Create")}</Button>
           </div>
         </form>
       </Modal>
@@ -161,6 +161,8 @@ export function CreateProject() {
 }
 
 export function ProjectSettingsForm({ project }: { project: Project }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const canEdit = session.can("projects.manage");
@@ -225,64 +227,58 @@ export function ProjectSettingsForm({ project }: { project: Project }) {
 
   return (
     <form onSubmit={submit}>
-      {error ? (
+      {translateUi(error ? (
         <div className="mb-3">
-          <Alert tone="bad">{error}</Alert>
+          <Alert tone="bad">{translateUi(error)}</Alert>
         </div>
-      ) : null}
+      ) : null)}
       <fieldset disabled={!canEdit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Name" htmlFor={`p-name-${project.id}`}>
+        <Field label={translateUi("Name")} htmlFor={`p-name-${project.id}`}>
           <input id={`p-name-${project.id}`} className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} maxLength={80} />
         </Field>
-        <Field label="Capture method" htmlFor={`p-cap-${project.id}`} help="Default for payments created without capture_method">
+        <Field label={translateUi("Capture method")} htmlFor={`p-cap-${project.id}`} help={translateUi("Default for payments created without capture_method")}>
           <select id={`p-cap-${project.id}`} className="input" value={form.capture_method} onChange={(e) => setForm({ ...form, capture_method: e.target.value })}>
-            <option value="automatic">Automatic</option>
-            <option value="manual">Manual (authorize, then capture)</option>
+            <option value="automatic">{translateUi("Automatic")}</option>
+            <option value="manual">{translateUi("Manual (authorize, then capture)")}</option>
           </select>
         </Field>
-        <Field label="Default currency" htmlFor={`p-cur-${project.id}`}>
-          <input id={`p-cur-${project.id}`} className="input" value={form.default_currency} onChange={(e) => setForm({ ...form, default_currency: e.target.value })} maxLength={3} placeholder="USD" />
+        <Field label={translateUi("Default currency")} htmlFor={`p-cur-${project.id}`}>
+          <input id={`p-cur-${project.id}`} className="input" value={form.default_currency} onChange={(e) => setForm({ ...form, default_currency: e.target.value })} maxLength={3} placeholder={translateUi("USD")} />
         </Field>
-        <Field label="Statement descriptor" htmlFor={`p-sd-${project.id}`} help="Up to 22 characters, passed to providers that support it">
+        <Field label={translateUi("Statement descriptor")} htmlFor={`p-sd-${project.id}`} help={translateUi("Up to 22 characters, passed to providers that support it")}>
           <input id={`p-sd-${project.id}`} className="input" value={form.statement_descriptor} onChange={(e) => setForm({ ...form, statement_descriptor: e.target.value })} maxLength={22} />
         </Field>
         <div className="sm:col-span-2">
-          <div className="label">Retry policy</div>
+          <div className="label">{translateUi("Retry policy")}</div>
           <div className="grid grid-cols-1 gap-3 rounded-md border border-ink-200 p-3 sm:grid-cols-3">
-            <Field label="Max attempts" htmlFor={`p-max-${project.id}`} help="Providers tried per payment (1–5)">
+            <Field label={translateUi("Max attempts")} htmlFor={`p-max-${project.id}`} help={translateUi("Providers tried per payment (1–5)")}>
               <input id={`p-max-${project.id}`} type="number" min={1} max={5} className="input" value={form.max_attempts} onChange={(e) => setForm({ ...form, max_attempts: e.target.value })} />
             </Field>
             <label className="flex items-center gap-2 pt-5 text-[13px] text-ink-800">
-              <input type="checkbox" className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-100" checked={form.retry_on_soft_decline} onChange={(e) => setForm({ ...form, retry_on_soft_decline: e.target.checked })} />
-              Retry on soft decline
-            </label>
+              <input type="checkbox" className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-100" checked={form.retry_on_soft_decline} onChange={(e) => setForm({ ...form, retry_on_soft_decline: e.target.checked })} />{translateUi("Retry on soft decline")}</label>
             <label className="flex items-center gap-2 pt-5 text-[13px] text-ink-800">
-              <input type="checkbox" className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-100" checked={form.retry_on_timeout} onChange={(e) => setForm({ ...form, retry_on_timeout: e.target.checked })} />
-              Retry on timeout
-            </label>
+              <input type="checkbox" className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-100" checked={form.retry_on_timeout} onChange={(e) => setForm({ ...form, retry_on_timeout: e.target.checked })} />{translateUi("Retry on timeout")}</label>
           </div>
         </div>
-        <Field label="Allowed IPs" htmlFor={`p-ips-${project.id}`} help="One IP or CIDR per line. Empty allows any source for this project's API keys.">
-          <textarea id={`p-ips-${project.id}`} className="input mono min-h-[88px]" value={form.allowed_ips} onChange={(e) => setForm({ ...form, allowed_ips: e.target.value })} placeholder={"203.0.113.10\n198.51.100.0/24"} />
+        <Field label={translateUi("Allowed IPs")} htmlFor={`p-ips-${project.id}`} help={translateUi("One IP or CIDR per line. Empty allows any source for this project's API keys.")}>
+          <textarea id={`p-ips-${project.id}`} className="input mono min-h-[88px]" value={form.allowed_ips} onChange={(e) => setForm({ ...form, allowed_ips: e.target.value })} placeholder={translateUi("203.0.113.10\n198.51.100.0/24")} />
         </Field>
-        <Field label="Allowed domains" htmlFor={`p-dom-${project.id}`} help="One domain per line, for hosted checkout origins.">
-          <textarea id={`p-dom-${project.id}`} className="input mono min-h-[88px]" value={form.allowed_domains} onChange={(e) => setForm({ ...form, allowed_domains: e.target.value })} placeholder={"shop.example.com"} />
+        <Field label={translateUi("Allowed domains")} htmlFor={`p-dom-${project.id}`} help={translateUi("One domain per line, for hosted checkout origins.")}>
+          <textarea id={`p-dom-${project.id}`} className="input mono min-h-[88px]" value={form.allowed_domains} onChange={(e) => setForm({ ...form, allowed_domains: e.target.value })} placeholder={translateUi("shop.example.com")} />
         </Field>
       </fieldset>
       <div className="mt-4 flex items-center justify-between gap-2">
         <span className="text-[12px] text-ink-500">
-          <span className="mono">{project.id}</span> · slug <span className="mono">{project.slug}</span>
+          <span className="mono">{project.id}</span>{translateUi(" · slug ")}<span className="mono">{translateUi(project.slug)}</span>
         </span>
-        {canEdit ? (
+        {translateUi(canEdit ? (
           <div className="flex items-center gap-2">
             <Button type="button" variant={project.status === "active" ? "danger" : "secondary"} size="sm" disabled={loading} onClick={() => void toggleStatus()}>
-              {project.status === "active" ? "Disable project" : "Enable project"}
+              {translateUi(project.status === "active" ? translateUi("Disable project") : translateUi("Enable project"))}
             </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Save project
-            </Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Save project")}</Button>
           </div>
-        ) : null}
+        ) : null)}
       </div>
     </form>
   );
@@ -292,6 +288,8 @@ export function ProjectSettingsForm({ project }: { project: Project }) {
 // Security
 // ---------------------------------------------------------------------------
 export function ChangePasswordForm() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -318,26 +316,24 @@ export function ChangePasswordForm() {
 
   return (
     <form onSubmit={submit} className="max-w-[420px]">
-      {error ? (
+      {translateUi(error ? (
         <div className="mb-3">
-          <Alert tone="bad">{error}</Alert>
+          <Alert tone="bad">{translateUi(error)}</Alert>
         </div>
-      ) : null}
+      ) : null)}
       <div className="space-y-3">
-        <Field label="Current password" htmlFor="pw-cur">
+        <Field label={translateUi("Current password")} htmlFor="pw-cur">
           <input id="pw-cur" type="password" autoComplete="current-password" className="input" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} required />
         </Field>
-        <Field label="New password" htmlFor="pw-new" help="At least 10 characters with mixed case or digits">
+        <Field label={translateUi("New password")} htmlFor="pw-new" help={translateUi("At least 10 characters with mixed case or digits")}>
           <input id="pw-new" type="password" autoComplete="new-password" className="input" value={form.next} onChange={(e) => setForm({ ...form, next: e.target.value })} required minLength={10} maxLength={200} />
         </Field>
-        <Field label="Confirm new password" htmlFor="pw-conf">
+        <Field label={translateUi("Confirm new password")} htmlFor="pw-conf">
           <input id="pw-conf" type="password" autoComplete="new-password" className="input" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} required minLength={10} maxLength={200} />
         </Field>
       </div>
       <div className="mt-4 flex justify-end">
-        <Button type="submit" variant="primary" loading={loading}>
-          Change password
-        </Button>
+        <Button type="submit" variant="primary" loading={loading}>{translateUi("Change password")}</Button>
       </div>
     </form>
   );

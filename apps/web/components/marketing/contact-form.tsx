@@ -1,28 +1,32 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useState, type ReactNode, type FormEvent } from "react";
 import { ApiRequestError, apiClient } from "@/lib/api";
-import { cx } from "@/components/ui";
+import {cx} from "@/lib/classnames";
 
 /**
  * Dark-surface field wrapper. The shared `Field` / `.label` / `.help` in the UI kit
  * are light-theme and belong to the dashboard; the public site uses `.input-dark`.
  */
 function DarkField({ label, help, error, htmlFor, children }: { label: string; help?: ReactNode; error?: string; htmlFor: string; children: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div>
       <label className="label-dark" htmlFor={htmlFor}>
-        {label}
+        {translateUi(label)}
       </label>
       {children}
-      {error ? (
+      {translateUi(error ? (
         <p className="mt-2 flex items-start gap-1.5 text-[12.5px] leading-5 text-rose-300">
           <span aria-hidden className="mt-[7px] h-[5px] w-[5px] shrink-0 rounded-full bg-rose-300" />
-          <span>{error}</span>
+          <span>{translateUi(error)}</span>
         </p>
       ) : help ? (
-        <p className="help-dark">{help}</p>
-      ) : null}
+        <p className="help-dark">{translateUi(help)}</p>
+      ) : null)}
     </div>
   );
 }
@@ -42,6 +46,8 @@ type FieldErrors = Partial<Record<"name" | "email" | "company" | "message", stri
 const EMPTY: ContactPayload = { name: "", email: "", company: "", message: "", source: "website" };
 
 export function ContactForm({ topic }: { topic?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const [values, setValues] = useState<ContactPayload>(() => ({ ...EMPTY, message: topic ? `${topic}\n\n` : "" }));
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ id: string } | null>(null);
@@ -102,14 +108,13 @@ export function ContactForm({ topic }: { topic?: string }) {
       <div className="rounded-2xl border border-night-700 bg-night-900 p-7">
         <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-lime">
           <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-lime" aria-hidden />
-          <span>Message received</span>
+          <span>{translateUi("Message received")}</span>
         </div>
-        <h2 className="mt-4 text-[24px] font-medium leading-[1.15] tracking-[-0.022em] text-mist-50">Thank you, {values.name.trim()}.</h2>
-        <p className="mt-3 text-[15px] leading-[1.7] text-mist-400">
-          Your request has been recorded and a member of the NATIO team will reply to <span className="font-medium text-mist-50">{values.email.trim()}</span>.
+        <h2 className="mt-4 text-[24px] font-medium leading-[1.15] tracking-[-0.022em] text-mist-50">{translateUi("Thank you, ")}{translateUi(values.name.trim())}.</h2>
+        <p className="mt-3 text-[15px] leading-[1.7] text-mist-400">{translateUi("Your request has been recorded and a member of the NATIO team will reply to ")}<span className="font-medium text-mist-50">{translateUi(values.email.trim())}</span>.
         </p>
         <p className="mt-5 border-t border-night-700 pt-4 font-mono text-[11.5px] text-mist-400">
-          <span className="text-mist-600">reference</span> {done.id}
+          <span className="text-mist-600">{translateUi("reference")}</span> {done.id}
         </p>
         <div className="mt-6">
           <button
@@ -119,9 +124,7 @@ export function ContactForm({ topic }: { topic?: string }) {
               setValues({ ...EMPTY });
             }}
             className="inline-flex h-10 items-center rounded-full border border-night-600 px-5 text-[14px] font-medium text-mist-200 transition-colors hover:border-mist-400 hover:text-mist-50"
-          >
-            Send another message
-          </button>
+          >{translateUi("Send another message")}</button>
         </div>
       </div>
     );
@@ -130,7 +133,7 @@ export function ContactForm({ topic }: { topic?: string }) {
   return (
     <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-night-700 bg-night-900 p-6 md:p-7">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <DarkField label="Name" htmlFor="contact-name" error={fieldErrors.name}>
+        <DarkField label={translateUi("Name")} htmlFor="contact-name" error={fieldErrors.name}>
           <input
             id="contact-name"
             name="name"
@@ -143,7 +146,7 @@ export function ContactForm({ topic }: { topic?: string }) {
             aria-invalid={Boolean(fieldErrors.name)}
           />
         </DarkField>
-        <DarkField label="Work email" htmlFor="contact-email" error={fieldErrors.email}>
+        <DarkField label={translateUi("Work email")} htmlFor="contact-email" error={fieldErrors.email}>
           <input
             id="contact-email"
             name="email"
@@ -159,7 +162,7 @@ export function ContactForm({ topic }: { topic?: string }) {
         </DarkField>
       </div>
       <div className="mt-5">
-        <DarkField label="Company (optional)" htmlFor="contact-company" error={fieldErrors.company}>
+        <DarkField label={translateUi("Company (optional)")} htmlFor="contact-company" error={fieldErrors.company}>
           <input
             id="contact-company"
             name="company"
@@ -174,10 +177,10 @@ export function ContactForm({ topic }: { topic?: string }) {
       </div>
       <div className="mt-5">
         <DarkField
-          label="Message"
+          label={translateUi("Message")}
           htmlFor="contact-message"
           error={fieldErrors.message}
-          help="Markets, payment methods, volumes and providers you already work with help us prepare a useful answer."
+          help={translateUi("Markets, payment methods, volumes and providers you already work with help us prepare a useful answer.")}
         >
           <textarea
             id="contact-message"
@@ -191,29 +194,29 @@ export function ContactForm({ topic }: { topic?: string }) {
           />
         </DarkField>
       </div>
-      {error ? (
+      {translateUi(error ? (
         <div role="alert" className="mt-5 rounded-lg border border-l-2 border-night-700 border-l-rose-300 bg-night-850 px-4 py-3">
           <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-rose-300">
             <span className="h-[5px] w-[5px] shrink-0 rounded-full bg-rose-300" aria-hidden />
-            <span>Not sent</span>
+            <span>{translateUi("Not sent")}</span>
           </div>
-          <p className="mt-1.5 text-[13.5px] leading-6 text-mist-200">{error}</p>
+          <p className="mt-1.5 text-[13.5px] leading-6 text-mist-200">{translateUi(error)}</p>
         </div>
-      ) : null}
+      ) : null)}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-night-700 pt-5">
-        <p className="text-[12.5px] leading-5 text-mist-400">We use your details only to reply to this request.</p>
+        <p className="text-[12.5px] leading-5 text-mist-400">{translateUi("We use your details only to reply to this request.")}</p>
         <button
           type="submit"
           disabled={submitting}
           className="group inline-flex h-10 items-center gap-2 rounded-full bg-mist-50 pl-5 pr-4 text-[14px] font-medium text-night-950 transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-night-950/40 border-t-night-950" aria-hidden /> : null}
-          {submitting ? "Sending…" : "Send message"}
-          {submitting ? null : (
+          {translateUi(submitting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-night-950/40 border-t-night-950" aria-hidden /> : null)}
+          {translateUi(submitting ? translateUi("Sending…") : translateUi("Send message"))}
+          {translateUi(submitting ? null : (
             <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
               →
             </span>
-          )}
+          ))}
         </button>
       </div>
     </form>

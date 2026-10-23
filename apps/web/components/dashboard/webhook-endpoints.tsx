@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -8,6 +10,8 @@ import { Alert, Button, Field } from "@/components/ui";
 import type { WebhookEndpoint } from "@/lib/types";
 
 export function AddWebhookEndpoint({ eventTypes }: { eventTypes: string[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,61 +44,57 @@ export function AddWebhookEndpoint({ eventTypes }: { eventTypes: string[] }) {
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Add endpoint
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title={`Add a ${session.mode} webhook endpoint`} description="NATIO POSTs signed JSON events to this URL and retries with backoff on non-2xx responses.">
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Add endpoint")}</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={translateUi(`Add a ${session.mode} webhook endpoint`)} description={translateUi("NATIO POSTs signed JSON events to this URL and retries with backoff on non-2xx responses.")}>
         <form onSubmit={submit}>
-          {error ? (
+          {translateUi(error ? (
             <div className="mt-3">
-              <Alert tone="bad">{error}</Alert>
+              <Alert tone="bad">{translateUi(error)}</Alert>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-4 space-y-3">
-            <Field label="URL" htmlFor="wh-url" help="HTTPS in production. Must be publicly reachable.">
-              <input id="wh-url" type="url" className="input" placeholder="https://example.com/webhooks/natio" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+            <Field label={translateUi("URL")} htmlFor="wh-url" help={translateUi("HTTPS in production. Must be publicly reachable.")}>
+              <input id="wh-url" type="url" className="input" placeholder={translateUi("https://example.com/webhooks/natio")} value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
             </Field>
-            <Field label="Description" htmlFor="wh-desc">
-              <input id="wh-desc" className="input" placeholder="Order service" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={200} />
+            <Field label={translateUi("Description")} htmlFor="wh-desc">
+              <input id="wh-desc" className="input" placeholder={translateUi("Order service")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={200} />
             </Field>
             <div>
-              <div className="label">Events</div>
-              <div className="help !mt-0 mb-2">Leave everything unchecked to receive all events.</div>
+              <div className="label">{translateUi("Events")}</div>
+              <div className="help !mt-0 mb-2">{translateUi("Leave everything unchecked to receive all events.")}</div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-md border border-ink-200 p-3">
-                {eventTypes.map((ev) => (
+                {translateUi(eventTypes.map((ev) => (
                   <label key={ev} className="flex items-center gap-2 text-[12.5px] text-ink-800">
                     <input type="checkbox" className="h-3.5 w-3.5 rounded border-ink-300 text-brand-600 focus:ring-brand-100" checked={form.events.includes(ev)} onChange={() => toggle(ev)} />
-                    <span className="mono">{ev}</span>
+                    <span className="mono">{translateUi(ev)}</span>
                   </label>
-                ))}
+                )))}
               </div>
             </div>
           </div>
           <div className="mt-5 flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Add endpoint
-            </Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Add endpoint")}</Button>
           </div>
         </form>
       </Modal>
-      {secret ? (
+      {translateUi(secret ? (
         <SecretReveal
           open
           onClose={() => setSecret(null)}
-          title="Endpoint added"
-          description={`Signing secret for ${secret.url}. Verify the Natio-Signature header with it.`}
+          title={translateUi("Endpoint added")}
+          description={translateUi(`Signing secret for ${secret.url}. Verify the Natio-Signature header with it.`)}
           secret={secret.value}
           warning="Store the signing secret securely. It will not be shown again; you can rotate it later."
         />
-      ) : null}
+      ) : null)}
     </>
   );
 }
 
 export function EndpointActions({ endpoint }: { endpoint: WebhookEndpoint }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -129,18 +129,18 @@ export function EndpointActions({ endpoint }: { endpoint: WebhookEndpoint }) {
 
   return (
     <div className="flex items-center justify-end gap-1.5">
-      <Button size="sm" variant="ghost" loading={busy === "rotate"} onClick={() => void rotate()}>
-        Rotate secret
-      </Button>
+      <Button size="sm" variant="ghost" loading={busy === "rotate"} onClick={() => void rotate()}>{translateUi("Rotate secret")}</Button>
       <Button size="sm" variant={endpoint.status === "active" ? "danger" : "secondary"} loading={busy === "status"} onClick={() => void toggleStatus()}>
-        {endpoint.status === "active" ? "Disable" : "Enable"}
+        {translateUi(endpoint.status === "active" ? translateUi("Disable") : translateUi("Enable"))}
       </Button>
-      {secret ? <SecretReveal open onClose={() => setSecret(null)} title="Secret rotated" description={`New signing secret for ${endpoint.url}.`} secret={secret} warning="Update your integration with the new secret now. The old secret is no longer valid and this one will not be shown again." /> : null}
+      {translateUi(secret ? <SecretReveal open onClose={() => setSecret(null)} title={translateUi("Secret rotated")} description={translateUi(`New signing secret for ${endpoint.url}.`)} secret={secret} warning="Update your integration with the new secret now. The old secret is no longer valid and this one will not be shown again." /> : null)}
     </div>
   );
 }
 
 export function ResendDelivery({ deliveryId, size = "sm" }: { deliveryId: string; size?: "sm" | "md" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -160,8 +160,6 @@ export function ResendDelivery({ deliveryId, size = "sm" }: { deliveryId: string
   }
 
   return (
-    <Button size={size} loading={busy} onClick={() => void resend()}>
-      Resend
-    </Button>
+    <Button size={size} loading={busy} onClick={() => void resend()}>{translateUi("Resend")}</Button>
   );
 }

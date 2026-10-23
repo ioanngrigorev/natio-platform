@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CodeBlock } from "@/components/ui";
@@ -58,6 +60,8 @@ const CLIENTS = [
 ];
 
 export default function HomePage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       {/* Hero */}
@@ -68,16 +72,11 @@ export default function HomePage() {
         <Container className="relative py-16 md:py-24">
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-center lg:gap-10">
             <div>
-              <Eyebrow className="mb-7">Payment orchestration infrastructure</Eyebrow>
-              <h1 className="text-[52px] font-medium leading-[0.95] tracking-[-0.038em] text-mist-50 sm:text-[68px] lg:text-[82px]">
-                Payments.
-                <br />
-                <Accent>Orchestrated.</Accent>
+              <Eyebrow className="mb-7">{translateUi("Payment orchestration infrastructure")}</Eyebrow>
+              <h1 className="text-[52px] font-medium leading-[0.95] tracking-[-0.038em] text-mist-50 sm:text-[68px] lg:text-[82px]">{translateUi("Payments.")}<br />
+                <Accent>{translateUi("Orchestrated.")}</Accent>
               </h1>
-              <p className="mt-8 max-w-[520px] text-[17px] leading-[1.7] text-mist-400 md:text-[18px]">
-                Connect once. Route payments across providers, countries and payment methods through one infrastructure layer — with
-                failover, reconciliation and a decision trail for every transaction.
-              </p>
+              <p className="mt-8 max-w-[520px] text-[17px] leading-[1.7] text-mist-400 md:text-[18px]">{translateUi("Connect once. Route payments across providers, countries and payment methods through one infrastructure layer — with failover, reconciliation and a decision trail for every transaction.")}</p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <PrimaryCta size="lg" />
                 <SecondaryCta size="lg" />
@@ -97,122 +96,94 @@ export default function HomePage() {
         />
       </section>
 
-      <Section eyebrow="Explore the demo" title="Global payment methods. Local market detail." lead="Explore a synthetic 2025 dataset across 100 merchants and 10,000 fictional providers. Methods and market combinations are a demonstration catalog; production availability depends on connected providers.">
+      <Section eyebrow="Explore the demo" title={translateUi("Global payment methods. Local market detail.")} lead="Explore a synthetic 2025 dataset across 100 merchants and 10,000 fictional providers. Methods and market combinations are a demonstration catalog; production availability depends on connected providers.">
         <div className="grid gap-8 md:grid-cols-3">
-          {[{title:"Demo payment methods",items:["NATIO Aurora 001", "NATIO Orbit 002", "NATIO Prism 003", "NATIO Nova 004", "NATIO Pulse 005", "NATIO Horizon 006", "NATIO Vector 007", "NATIO Crest 008", "NATIO Aurora 009", "NATIO Orbit 010", "NATIO Prism 011", "NATIO Nova 012", "NATIO Pulse 013", "NATIO Horizon 014", "NATIO Vector 015", "NATIO Crest 016"]},{title:"Currencies",items:["EUR","USD","GBP","BRL","INR","IDR","MXN","PLN","VND","THB","MYR","SGD","JPY","KRW","CAD","AUD","ZAR","KES","NGN","ARS"]},{title:"Geography",items:["Europe","Latin America","Southeast Asia","South Asia","Africa","Canada","Australia","Japan","South Korea"]}].map(g=><div key={g.title}><h3 className="mb-4 text-[15px] font-medium text-mist-50">{g.title}</h3><div className="flex flex-wrap gap-2">{g.items.map(v=><Chip key={v}>{v}</Chip>)}</div></div>)}
+          {translateUi([{title:"Demo payment methods",items:["NATIO Aurora 001", "NATIO Orbit 002", "NATIO Prism 003", "NATIO Nova 004", "NATIO Pulse 005", "NATIO Horizon 006", "NATIO Vector 007", "NATIO Crest 008", "NATIO Aurora 009", "NATIO Orbit 010", "NATIO Prism 011", "NATIO Nova 012", "NATIO Pulse 013", "NATIO Horizon 014", "NATIO Vector 015", "NATIO Crest 016"]},{title:"Currencies",items:["EUR","USD","GBP","BRL","INR","IDR","MXN","PLN","VND","THB","MYR","SGD","JPY","KRW","CAD","AUD","ZAR","KES","NGN","ARS"]},{title:"Geography",items:["Europe","Latin America","Southeast Asia","South Asia","Africa","Canada","Australia","Japan","South Korea"]}].map(g=><div key={g.title}><h3 className="mb-4 text-[15px] font-medium text-mist-50">{translateUi(g.title)}</h3><div className="flex flex-wrap gap-2">{translateUi(g.items.map(v=><Chip key={v}>{translateUi(v)}</Chip>))}</div></div>))}
         </div>
-        <Link href="/admin/login" className="mt-8 inline-block text-iris hover:underline">Open the investor demo →</Link>
+        <Link href="/admin/login" className="mt-8 inline-block text-iris hover:underline">{translateUi("Open the investor demo →")}</Link>
       </Section>
       {/* Flow diagram */}
-      <Section tone="raised" eyebrow="How it works" title="One infrastructure layer between your platform and the payment providers." lead="Your systems talk to NATIO. NATIO talks to acquirers, banks, PSPs and local payment methods, decides where each payment goes, retries safely when a provider fails, and reports what happened.">
+      <Section tone="raised" eyebrow="How it works" title={translateUi("One infrastructure layer between your platform and the payment providers.")} lead="Your systems talk to NATIO. NATIO talks to acquirers, banks, PSPs and local payment methods, decides where each payment goes, retries safely when a provider fails, and reports what happened.">
         <FlowDiagram />
       </Section>
 
       {/* One integration */}
-      <Section id="integration" eyebrow="One integration" title="Create a payment. NATIO does the rest." lead="A single request carries amount, currency and payment method. Risk evaluation, routing, provider calls and failover happen inside the request; the response tells you the outcome and the route taken.">
+      <Section id="integration" eyebrow="One integration" title={translateUi("Create a payment. NATIO does the rest.")} lead="A single request carries amount, currency and payment method. Risk evaluation, routing, provider calls and failover happen inside the request; the response tells you the outcome and the route taken.">
         <Split
           panel={
             <div className="space-y-3">
-              <Panel padded={false} title="Request">
+              <Panel padded={false} title={translateUi("Request")}>
                 <CodeBlock variant="dark" className="!rounded-none !border-0" code={CREATE_REQUEST} language="bash" />
               </Panel>
-              <Panel padded={false} title="Response · 201 Created">
+              <Panel padded={false} title={translateUi("Response · 201 Created")}>
                 <CodeBlock variant="dark" className="!rounded-none !border-0" code={CREATE_RESPONSE} language="json" />
               </Panel>
             </div>
           }
         >
           <FeatureGrid cols={2}>
-            <Feature index={1} title="Amounts in minor units">
-              Integers only: <code className="font-mono text-[12.5px] text-mist-50">10000</code> is 100.00 USD. No floating point, no ambiguity across currencies.
-            </Feature>
-            <Feature index={2} title="Payment method as a type or a token">
-              Send <code className="font-mono text-[12.5px] text-mist-50">&quot;card&quot;</code>, or a stored payment method reference issued by a PCI-compliant provider. NATIO never receives card numbers.
-            </Feature>
-            <Feature index={3} title="Route object on every payment">
-              Which provider processed the payment, how many attempts it took and which routing rule matched.
-            </Feature>
-            <Feature index={4} title="next_action for asynchronous rails">
-              Redirects and QR codes are returned as a structured <code className="font-mono text-[12.5px] text-mist-50">next_action</code>; completion arrives by webhook.
-            </Feature>
+            <Feature index={1} title={translateUi("Amounts in minor units")}>{translateUi("Integers only: ")}<code className="font-mono text-[12.5px] text-mist-50">10000</code>{translateUi(" is 100.00 USD. No floating point, no ambiguity across currencies.")}</Feature>
+            <Feature index={2} title={translateUi("Payment method as a type or a token")}>{translateUi("Send ")}<code className="font-mono text-[12.5px] text-mist-50">&quot;card&quot;</code>{translateUi(", or a stored payment method reference issued by a PCI-compliant provider. NATIO never receives card numbers.")}</Feature>
+            <Feature index={3} title={translateUi("Route object on every payment")}>{translateUi("Which provider processed the payment, how many attempts it took and which routing rule matched.")}</Feature>
+            <Feature index={4} title={translateUi("next_action for asynchronous rails")}>{translateUi("Redirects and QR codes are returned as a structured ")}<code className="font-mono text-[12.5px] text-mist-50">next_action</code>{translateUi("; completion arrives by webhook.")}</Feature>
           </FeatureGrid>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/docs/quickstart" className="text-[13px] font-medium text-iris hover:underline">
-              Read the quickstart →
-            </Link>
-            <Link href="/docs/api-reference" className="text-[13px] font-medium text-iris hover:underline">
-              API reference →
-            </Link>
+            <Link href="/docs/quickstart" className="text-[13px] font-medium text-iris hover:underline">{translateUi("Read the quickstart →")}</Link>
+            <Link href="/docs/api-reference" className="text-[13px] font-medium text-iris hover:underline">{translateUi("API reference →")}</Link>
           </div>
         </Split>
       </Section>
 
       {/* Orchestration */}
-      <Section id="orchestration" tone="raised" eyebrow="Orchestration" title="Rules decide. Failover protects. The timeline explains." lead="The orchestration engine turns provider connectivity into a policy you control: where a payment goes, what happens when a provider declines or fails, and a complete record of every decision.">
+      <Section id="orchestration" tone="raised" eyebrow="Orchestration" title={translateUi("Rules decide. Failover protects. The timeline explains.")} lead="The orchestration engine turns provider connectivity into a policy you control: where a payment goes, what happens when a provider declines or fails, and a complete record of every decision.">
         <FeatureGrid cols={3}>
-          <Feature index={1} title="Routing rules">
-            Conditions on country, currency, payment method, amount, risk score, transaction type and time select the eligible providers. Strategies: ordered, weighted or score-based.
-          </Feature>
-          <Feature index={2} title="Retry and failover">
-            Soft declines and technical failures cascade to the next eligible provider. Hard declines stop. Timeouts are verified against the provider before any retry, so a customer is never charged twice.
-          </Feature>
-          <Feature index={3} title="Transaction timeline">
-            Every payment carries an ordered narrative: risk evaluated, rule matched, provider selected, request sent, error, fallback, success, webhook queued.
-          </Feature>
+          <Feature index={1} title={translateUi("Routing rules")}>{translateUi("Conditions on country, currency, payment method, amount, risk score, transaction type and time select the eligible providers. Strategies: ordered, weighted or score-based.")}</Feature>
+          <Feature index={2} title={translateUi("Retry and failover")}>{translateUi("Soft declines and technical failures cascade to the next eligible provider. Hard declines stop. Timeouts are verified against the provider before any retry, so a customer is never charged twice.")}</Feature>
+          <Feature index={3} title={translateUi("Transaction timeline")}>{translateUi("Every payment carries an ordered narrative: risk evaluated, rule matched, provider selected, request sent, error, fallback, success, webhook queued.")}</Feature>
         </FeatureGrid>
         <div className="mt-10">
-          <Link href="/orchestration" className="text-[13px] font-medium text-iris hover:underline">
-            How the engine works →
-          </Link>
+          <Link href="/orchestration" className="text-[13px] font-medium text-iris hover:underline">{translateUi("How the engine works →")}</Link>
         </div>
       </Section>
 
       {/* Operations */}
-      <Section id="operations" eyebrow="Operations" title="Built for the teams who run payments every day." lead="Engineering integrates once. Finance and operations get a single place to monitor transactions, reconcile provider reports, follow settlements and compare providers.">
+      <Section id="operations" eyebrow="Operations" title={translateUi("Built for the teams who run payments every day.")} lead="Engineering integrates once. Finance and operations get a single place to monitor transactions, reconcile provider reports, follow settlements and compare providers.">
         <FeatureGrid cols={4}>
-          <Feature index={1} title="Transaction monitor">
-            Payments, refunds and payouts across all providers with status, route, attempts, fees and failure codes. Filter by provider, method, country, currency or reference.
-          </Feature>
-          <Feature index={2} title="Reconciliation">
-            Import provider reports and match them against NATIO records: MATCHED, MISSING_PROVIDER, MISSING_NATIO, AMOUNT_MISMATCH, STATUS_MISMATCH.
-          </Feature>
-          <Feature index={3} title="Settlement visibility">
-            Settlement batches reported by providers, with gross, fees, net and the transactions they cover. Funds are settled by the providers, not by NATIO.
-          </Feature>
-          <Feature index={4} title="Analytics">
-            Volume, approval rate, latency and failure breakdowns per provider, method and country to inform routing decisions.
-          </Feature>
+          <Feature index={1} title={translateUi("Transaction monitor")}>{translateUi("Payments, refunds and payouts across all providers with status, route, attempts, fees and failure codes. Filter by provider, method, country, currency or reference.")}</Feature>
+          <Feature index={2} title={translateUi("Reconciliation")}>{translateUi("Import provider reports and match them against NATIO records: MATCHED, MISSING_PROVIDER, MISSING_NATIO, AMOUNT_MISMATCH, STATUS_MISMATCH.")}</Feature>
+          <Feature index={3} title={translateUi("Settlement visibility")}>{translateUi("Settlement batches reported by providers, with gross, fees, net and the transactions they cover. Funds are settled by the providers, not by NATIO.")}</Feature>
+          <Feature index={4} title={translateUi("Analytics")}>{translateUi("Volume, approval rate, latency and failure breakdowns per provider, method and country to inform routing decisions.")}</Feature>
         </FeatureGrid>
       </Section>
 
       {/* Infrastructure */}
-      <Section id="infrastructure" tone="raised" eyebrow="Built as infrastructure" title="Designed like the systems it connects to." lead="NATIO is a technology layer between merchants and licensed payment providers. It is engineered to be predictable, verifiable and narrow in scope.">
+      <Section id="infrastructure" tone="raised" eyebrow="Built as infrastructure" title={translateUi("Designed like the systems it connects to.")} lead="NATIO is a technology layer between merchants and licensed payment providers. It is engineered to be predictable, verifiable and narrow in scope.">
         <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-night-700 bg-night-600 sm:grid-cols-2 lg:grid-cols-4">
-          {SECURITY.map((s) => (
+          {translateUi(SECURITY.map((s) => (
             <div key={s.title} className="bg-night-850 p-5">
-              <h3 className="text-[14px] font-medium text-mist-50">{s.title}</h3>
+              <h3 className="text-[14px] font-medium text-mist-50">{translateUi(s.title)}</h3>
               <p className="mt-2 text-[13px] leading-6 text-mist-400">{s.body}</p>
             </div>
-          ))}
+          )))}
         </div>
       </Section>
 
       {/* Target clients */}
-      <Section id="teams" eyebrow="Who it is for" title="For teams operating across markets." lead="If your business accepts or sends payments in more than one country, through more than one provider, or via more than one payment method, orchestration replaces a growing set of integrations with one.">
+      <Section id="teams" eyebrow="Who it is for" title={translateUi("For teams operating across markets.")} lead="If your business accepts or sends payments in more than one country, through more than one provider, or via more than one payment method, orchestration replaces a growing set of integrations with one.">
         <div className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
-          {CLIENTS.map((c) => (
+          {translateUi(CLIENTS.map((c) => (
             <div key={c.title} className="border-t border-night-700 pt-4">
-              <h3 className="text-[15px] font-medium text-mist-50">{c.title}</h3>
+              <h3 className="text-[15px] font-medium text-mist-50">{translateUi(c.title)}</h3>
               <p className="mt-2 text-[14px] leading-6 text-mist-400">{c.body}</p>
             </div>
-          ))}
+          )))}
           <div className="border-t border-night-700 pt-4">
             <div className="flex flex-wrap gap-1.5">
-              {["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"].map((m) => (
-                <Chip key={m}>{m}</Chip>
-              ))}
+              {translateUi(["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"].map((m) => (
+                <Chip key={m}>{translateUi(m)}</Chip>
+              )))}
             </div>
-            <p className="mt-3 text-[13px] leading-6 text-mist-400">Supported payment method types. The architecture is prepared for connecting global and local providers behind each of them.</p>
+            <p className="mt-3 text-[13px] leading-6 text-mist-400">{translateUi("Supported payment method types. The architecture is prepared for connecting global and local providers behind each of them.")}</p>
           </div>
         </div>
       </Section>

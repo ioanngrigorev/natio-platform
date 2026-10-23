@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ResendDelivery } from "@/components/admin/webhook-actions";
@@ -15,6 +17,8 @@ function truncate(s: string | null, n = 160): string {
 }
 
 export default async function AdminWebhookDeliveryPage({ params }: { params: { id: string } }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   let d: Detail;
   try {
@@ -29,44 +33,41 @@ export default async function AdminWebhookDeliveryPage({ params }: { params: { i
     <>
       <PageHeader
         breadcrumb={
-          <Link href="/admin/webhooks" className="hover:underline">
-            Webhook deliveries
-          </Link>
+          <Link href="/admin/webhooks" className="hover:underline">{translateUi("Webhook deliveries")}</Link>
         }
         title={
-          <span className="flex items-center gap-3">
-            <Mono className="text-[18px]">{d.event_type}</Mono>
+          translateUi(<span className="flex items-center gap-3">
+            <Mono className="text-[18px]">{translateUi(d.event_type)}</Mono>
             <StatusBadge status={d.status} />
-          </span>
+          </span>)
         }
         subtitle={
-          <>
-            Delivery <Mono>{d.id}</Mono> · event <Mono>{d.event_id}</Mono> · created {formatDateTime(d.created_at)}
-          </>
+          translateUi(<>{translateUi("Delivery ")}<Mono>{d.id}</Mono>{translateUi(" · event ")}<Mono>{translateUi(d.event_id)}</Mono>{translateUi(" · created ")}{translateUi(formatDateTime(d.created_at))}
+          </>)
         }
         actions={<ResendDelivery deliveryId={d.id} size="md" />}
       />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
-          <Card title="Delivery">
+          <Card title={translateUi("Delivery")}>
             <DescriptionList
               cols={3}
               items={[
-                { label: "Endpoint", value: <span className="break-all">{d.endpoint_url ?? "—"}</span> },
-                { label: "Endpoint id", value: <Mono>{d.endpoint_id}</Mono> },
+                { label: "Endpoint", value: <span className="break-all">{translateUi(d.endpoint_url ?? "—")}</span> },
+                { label: "Endpoint id", value: <Mono>{translateUi(d.endpoint_id)}</Mono> },
                 {
                   label: "Merchant",
                   value: (
                     <Link href={`/admin/merchants/${d.merchant_id}`} className="text-brand-600 hover:underline">
-                      <Mono>{d.merchant_id}</Mono>
+                      <Mono>{translateUi(d.merchant_id)}</Mono>
                     </Link>
                   ),
                 },
                 { label: "Status", value: <StatusBadge status={d.status} /> },
                 { label: "Attempts", value: `${d.attempt_count} of ${d.max_attempts}` },
                 { label: "Last HTTP status", value: d.last_response_status ?? "—" },
-                { label: "Last error", value: d.last_error ? <span className="text-bad">{d.last_error}</span> : "—" },
+                { label: "Last error", value: d.last_error ? <span className="text-bad">{translateUi(d.last_error)}</span> : "—" },
                 { label: "Next attempt", value: formatDateTimeFull(d.next_attempt_at) },
                 { label: "Delivered", value: formatDateTimeFull(d.delivered_at) },
                 {
@@ -90,53 +91,53 @@ export default async function AdminWebhookDeliveryPage({ params }: { params: { i
             />
           </Card>
 
-          <Card title="Attempts" description="Every HTTP request NATIO made for this delivery" padded={false}>
-            {d.attempts.length ? (
+          <Card title={translateUi("Attempts")} description={translateUi("Every HTTP request NATIO made for this delivery")} padded={false}>
+            {translateUi(d.attempts.length ? (
               <Table>
                 <thead>
                   <tr>
                     <th className="num">#</th>
-                    <th className="num">HTTP</th>
-                    <th className="num">Duration</th>
-                    <th>Error</th>
-                    <th>Trigger</th>
-                    <th>Time</th>
-                    <th>Response body</th>
+                    <th className="num">{translateUi("HTTP")}</th>
+                    <th className="num">{translateUi("Duration")}</th>
+                    <th>{translateUi("Error")}</th>
+                    <th>{translateUi("Trigger")}</th>
+                    <th>{translateUi("Time")}</th>
+                    <th>{translateUi("Response body")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {d.attempts.map((a) => (
+                  {translateUi(d.attempts.map((a) => (
                     <tr key={a.id}>
-                      <td className="num">{a.attempt_number}</td>
-                      <td className="num">{a.response_status !== null ? <span className={a.response_status >= 200 && a.response_status < 300 ? "text-ok" : "text-bad"}>{a.response_status}</span> : "—"}</td>
-                      <td className="num">{formatMs(a.duration_ms)}</td>
-                      <td className="max-w-[220px] truncate" title={a.error ?? undefined}>
-                        {a.error ? <span className="text-bad">{a.error}</span> : "—"}
+                      <td className="num">{translateUi(a.attempt_number)}</td>
+                      <td className="num">{translateUi(a.response_status !== null ? <span className={a.response_status >= 200 && a.response_status < 300 ? "text-ok" : "text-bad"}>{translateUi(a.response_status)}</span> : "—")}</td>
+                      <td className="num">{translateUi(formatMs(a.duration_ms))}</td>
+                      <td className="max-w-[220px] truncate" title={translateUi(a.error ?? undefined)}>
+                        {translateUi(a.error ? <span className="text-bad">{translateUi(a.error)}</span> : "—")}
                       </td>
-                      <td>{a.manual ? <Tag tone="brand">manual</Tag> : <Tag>scheduled</Tag>}</td>
-                      <td className="text-ink-500">{formatDateTimeFull(a.created_at)}</td>
-                      <td className="max-w-[280px] truncate text-ink-600" title={a.response_body ?? undefined}>
-                        <Mono>{truncate(a.response_body)}</Mono>
+                      <td>{translateUi(a.manual ? <Tag tone="brand">{translateUi("manual")}</Tag> : <Tag>{translateUi("scheduled")}</Tag>)}</td>
+                      <td className="text-ink-500">{translateUi(formatDateTimeFull(a.created_at))}</td>
+                      <td className="max-w-[280px] truncate text-ink-600" title={translateUi(a.response_body ?? undefined)}>
+                        <Mono>{translateUi(truncate(a.response_body))}</Mono>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </Table>
             ) : (
-              <EmptyState title="No attempts yet" description={d.status === "pending" ? "The delivery is queued and will be sent shortly." : "No attempt has been recorded for this delivery."} />
-            )}
+              <EmptyState title={translateUi("No attempts yet")} description={translateUi(d.status === "pending" ? translateUi("The delivery is queued and will be sent shortly.") : translateUi("No attempt has been recorded for this delivery."))} />
+            ))}
           </Card>
         </div>
 
         <div className="space-y-4">
-          <Card title="Payload" description="Exactly what was POSTed; signed with the endpoint secret">
+          <Card title={translateUi("Payload")} description={translateUi("Exactly what was POSTed; signed with the endpoint secret")}>
             <pre className="mono max-h-[640px] overflow-auto whitespace-pre-wrap break-all text-ink-700">{JSON.stringify(d.payload, null, 2)}</pre>
           </Card>
-          {d.attempts[0]?.request_headers ? (
-            <Card title="Request headers" description="From the first attempt; signature truncated">
+          {translateUi(d.attempts[0]?.request_headers ? (
+            <Card title={translateUi("Request headers")} description={translateUi("From the first attempt; signature truncated")}>
               <pre className="mono whitespace-pre-wrap break-all text-ink-700">{JSON.stringify(d.attempts[0].request_headers, null, 2)}</pre>
             </Card>
-          ) : null}
+          ) : null)}
         </div>
       </div>
     </>

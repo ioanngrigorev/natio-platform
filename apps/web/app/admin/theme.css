@@ -178,7 +178,7 @@
 .admin-greeting h2 span {font-weight:400;}
 .greeting-date {font-size:10px;color:var(--muted);text-transform:capitalize;}
 .greeting-date span {text-transform:none;}
-.greeting-thought {border-left:1px solid var(--line);padding-left:30px;position:relative;}
+.greeting-thought {border-inline-start:1px solid var(--line);padding-inline-start:30px;position:relative;}
 .greeting-thought blockquote p {font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(15px,1.3vw,19px);line-height:1.55;text-wrap:pretty;}
 .greeting-thought footer {display:flex;gap:15px;align-items:center;margin-top:10px;font-size:10px;color:var(--muted);}
 .greeting-thought cite {font-style:normal;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
@@ -189,5 +189,13 @@
 .quote-library-card blockquote {font:italic 20px/1.6 Georgia,serif;margin:15px 0;}
 .quote-library-card figcaption {display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:11px;}
 .quote-library-card cite {font-style:normal;font-weight:600;}
-@media(max-width:950px){.admin-greeting{grid-template-columns:1fr;gap:18px}.greeting-thought{border-left:0;padding-left:0;max-width:700px}.greeting-orbit{width:52px;height:52px}}
+@media(max-width:950px){.admin-greeting{grid-template-columns:1fr;gap:18px}.greeting-thought{border-inline-start:0;padding-inline-start:0;max-width:700px}.greeting-orbit{width:52px;height:52px}}
 @media print {.admin-greeting{display:none!important}}
+
+/* Recharts otherwise paints default item labels black, including in dark themes. */
+.admin-theme .recharts-default-tooltip {background:var(--surface)!important;color:var(--foreground)!important;border-color:var(--line)!important;}
+.admin-theme .recharts-default-tooltip :is(.recharts-tooltip-label,.recharts-tooltip-item) {color:var(--foreground)!important;}
+.outcome-tooltip {min-width:132px;max-width:220px;padding:12px 16px;border:1px solid var(--line,#e8e5f2);border-radius:12px;background:var(--surface,#fff);color:var(--foreground,#19182f);box-shadow:0 8px 24px #00000020;text-align:start;}
+.outcome-tooltip-label {display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;line-height:1.4;color:var(--muted,#655f79);overflow-wrap:anywhere;}
+.outcome-tooltip-label>span {width:8px;height:8px;flex:none;border-radius:50%;}
+.outcome-tooltip strong {display:block;margin-top:4px;font-size:20px;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--foreground,#19182f);}

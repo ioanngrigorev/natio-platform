@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PayoutActions } from "@/components/dashboard/create-payout";
@@ -10,6 +12,8 @@ import type { Payout } from "@/lib/types";
 type Detail = Payout & { metadata?: Record<string, unknown>; updated_at?: string };
 
 export default async function PayoutDetailPage({ params }: { params: { id: string } }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   let p: Detail;
   try {
@@ -23,28 +27,26 @@ export default async function PayoutDetailPage({ params }: { params: { id: strin
     <>
       <PageHeader
         breadcrumb={
-          <Link href="/dashboard/payouts" className="hover:underline">
-            Payouts
-          </Link>
+          <Link href="/dashboard/payouts" className="hover:underline">{translateUi("Payouts")}</Link>
         }
         title={
-          <span className="flex items-center gap-3">
+          translateUi(<span className="flex items-center gap-3">
             <Mono className="text-[18px]">{p.id}</Mono>
             <StatusBadge status={p.status} />
-            {p.mode === "test" ? <StatusBadge status="test" label="Sandbox" /> : null}
-          </span>
+            {translateUi(p.mode === "test" ? <StatusBadge status="test" label={translateUi("Sandbox")} /> : null)}
+          </span>)
         }
-        subtitle={`${formatMoney(p.amount, p.currency)} · ${titleCase(p.destination.type)} · created ${formatDateTime(p.created_at)}`}
+        subtitle={translateUi(`${formatMoney(p.amount, p.currency)} · ${titleCase(p.destination.type)} · created ${formatDateTime(p.created_at)}`)}
         actions={<PayoutActions payout={p} />}
       />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
-          <Card title="Payout">
+          <Card title={translateUi("Payout")}>
             <DescriptionList
               cols={3}
               items={[
-                { label: "Amount", value: <span className="font-medium">{formatMoney(p.amount, p.currency)}</span> },
+                { label: "Amount", value: <span className="font-medium">{translateUi(formatMoney(p.amount, p.currency))}</span> },
                 { label: "Fee (provider)", value: formatMoney(p.fee.amount, p.fee.currency) },
                 { label: "Status", value: <StatusBadge status={p.status} /> },
                 { label: "Destination", value: p.destination.display },
@@ -58,42 +60,39 @@ export default async function PayoutDetailPage({ params }: { params: { id: strin
                 { label: "Mode", value: p.mode === "test" ? "Sandbox" : "Live" },
               ]}
             />
-            {p.failure ? (
+            {translateUi(p.failure ? (
               <div className="mt-4 rounded-md border border-bad/20 bg-bad-bg px-3 py-2 text-[13px] text-bad">
-                <span className="font-medium">{p.failure.code}</span> · {p.failure.message} <span className="text-[11px] uppercase tracking-wide">({p.failure.category})</span>
+                <span className="font-medium">{translateUi(p.failure.code)}</span> · {translateUi(p.failure.message)} <span className="text-[11px] uppercase tracking-wide">({translateUi(p.failure.category)})</span>
               </div>
-            ) : null}
+            ) : null)}
           </Card>
 
-          <Card title="Route" description="Provider account selected by routing to execute this transfer">
+          <Card title={translateUi("Route")} description={translateUi("Provider account selected by routing to execute this transfer")}>
             <DescriptionList
               cols={3}
               items={[
                 { label: "Provider", value: p.route.provider_name ?? "—" },
                 { label: "Provider account", value: p.route.provider_account_name ?? "—" },
-                { label: "Provider payout id", value: p.route.provider_payout_id ? <Mono>{p.route.provider_payout_id}</Mono> : "—" },
-                { label: "Provider id", value: p.route.provider_id ? <Mono>{p.route.provider_id}</Mono> : "—" },
-                { label: "Provider account id", value: p.route.provider_account_id ? <Mono>{p.route.provider_account_id}</Mono> : "—" },
-                { label: "Routing decision", value: p.route.routing_decision_id ? <Mono>{p.route.routing_decision_id}</Mono> : "—" },
+                { label: "Provider payout id", value: p.route.provider_payout_id ? <Mono>{translateUi(p.route.provider_payout_id)}</Mono> : "—" },
+                { label: "Provider id", value: p.route.provider_id ? <Mono>{translateUi(p.route.provider_id)}</Mono> : "—" },
+                { label: "Provider account id", value: p.route.provider_account_id ? <Mono>{translateUi(p.route.provider_account_id)}</Mono> : "—" },
+                { label: "Routing decision", value: p.route.routing_decision_id ? <Mono>{translateUi(p.route.routing_decision_id)}</Mono> : "—" },
               ]}
             />
           </Card>
         </div>
 
         <div className="space-y-4">
-          <Card title="Ledger">
-            <p className="text-[13px] text-ink-600">
-              Successful and failed payouts are recorded as transactions of type <Mono>payout</Mono>.{" "}
-              <Link href={`/dashboard/transactions?search=${encodeURIComponent(p.id)}`} className="font-medium text-brand-600 hover:underline">
-                View ledger entries
-              </Link>
+          <Card title={translateUi("Ledger")}>
+            <p className="text-[13px] text-ink-600">{translateUi("Successful and failed payouts are recorded as transactions of type ")}<Mono>{translateUi("payout")}</Mono>.{translateUi(" ")}
+              <Link href={`/dashboard/transactions?search=${encodeURIComponent(p.id)}`} className="font-medium text-brand-600 hover:underline">{translateUi("View ledger entries")}</Link>
             </p>
           </Card>
-          {Object.keys(p.metadata ?? {}).length ? (
-            <Card title="Metadata">
+          {translateUi(Object.keys(p.metadata ?? {}).length ? (
+            <Card title={translateUi("Metadata")}>
               <pre className="mono whitespace-pre-wrap text-ink-700">{JSON.stringify(p.metadata, null, 2)}</pre>
             </Card>
-          ) : null}
+          ) : null)}
         </div>
       </div>
     </>

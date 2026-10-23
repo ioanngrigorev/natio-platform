@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import Link from "next/link";
 
 import { RoutingPolicyEditor } from "./routing-policy";
@@ -72,6 +74,8 @@ function parseCondition(row: ConditionRow): Condition {
 }
 
 export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingRule; accounts: ProviderAccount[]; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const canManage = adminCan(session.user.role, "routing.manage");
@@ -165,146 +169,132 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
 
   return (
     <form onSubmit={submit} className="space-y-4"><fieldset disabled={loading} className="space-y-4">
-      {!canManage && <Alert tone="warn">Preview mode. You can change options and simulate ranking and cascading. Saving a working rule requires routing management access.</Alert>}
-      <Card title="Ranking & cascade controls"><RoutingPolicyEditor value={policy} onChange={p=>{setPolicy(p);setForm(f=>({...f,strategy:"score"}));}}/><div className="mt-4 flex items-center gap-3"><Button type="button" onClick={()=>router.push("/admin/routing/studio?preview="+encodeURIComponent(JSON.stringify(policy))+"&merchant_id="+encodeURIComponent(form.merchant_id))}>Simulate ranking & cascade →</Button><span className="text-xs text-ink-500">Preview these policy settings against published provider scope; rule conditions and draft chain are not applied.</span></div></Card>
-      {error ? <Alert tone="bad">{error}</Alert> : null}
+      {translateUi(!canManage && <Alert tone="warn">{translateUi("Preview mode. You can change options and simulate ranking and cascading. Saving a working rule requires routing management access.")}</Alert>)}
+      <Card title={translateUi("Ranking & cascade controls")}><RoutingPolicyEditor value={policy} onChange={p=>{setPolicy(p);setForm(f=>({...f,strategy:"score"}));}}/><div className="mt-4 flex items-center gap-3"><Button type="button" onClick={()=>router.push("/admin/routing/studio?preview="+encodeURIComponent(JSON.stringify(policy))+"&merchant_id="+encodeURIComponent(form.merchant_id))}>{translateUi("Simulate ranking & cascade →")}</Button><span className="text-xs text-ink-500">{translateUi("Preview these policy settings against published provider scope; rule conditions and draft chain are not applied.")}</span></div></Card>
+      {translateUi(error ? <Alert tone="bad">{translateUi(error)}</Alert> : null)}
 
-      <Card title="Rule" description="Rules are evaluated per transaction, lowest priority number first; the first matching rule decides the provider chain.">
+      <Card title={translateUi("Rule")} description={translateUi("Rules are evaluated per transaction, lowest priority number first; the first matching rule decides the provider chain.")}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <Field label="Name" htmlFor="rr-name">
-              <input id="rr-name" className="input" required minLength={2} maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Cards → Acquirer A, fallback Acquirer B" />
+            <Field label={translateUi("Name")} htmlFor="rr-name">
+              <input id="rr-name" className="input" required minLength={2} maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={translateUi("Cards → Acquirer A, fallback Acquirer B")} />
             </Field>
           </div>
-          <Field label="Priority" htmlFor="rr-priority" help="Lower runs first">
+          <Field label={translateUi("Priority")} htmlFor="rr-priority" help={translateUi("Lower runs first")}>
             <input id="rr-priority" className="input" type="number" min={0} max={10000} required value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
           </Field>
           <div className="xl:col-span-3">
-            <Field label="Description" htmlFor="rr-description" help="Optional, max 500 characters — why this rule exists">
+            <Field label={translateUi("Description")} htmlFor="rr-description" help={translateUi("Optional, max 500 characters — why this rule exists")}>
               <input id="rr-description" className="input" maxLength={500} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </Field>
           </div>
-          <Field label="Mode" htmlFor="rr-mode" help="Rules only apply in their own mode">
+          <Field label={translateUi("Mode")} htmlFor="rr-mode" help={translateUi("Rules only apply in their own mode")}>
             <select id="rr-mode" className="input" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value as "test" | "live" })}>
-              <option value="test">test</option>
-              <option value="live">live</option>
+              <option value="test">{translateUi("test")}</option>
+              <option value="live">{translateUi("live")}</option>
             </select>
           </Field>
-          <Field label="Transaction type" htmlFor="rr-type">
+          <Field label={translateUi("Transaction type")} htmlFor="rr-type">
             <select id="rr-type" className="input" value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value })}>
-              <option value="payment">payment</option>
-              <option value="payout">payout</option>
+              <option value="payment">{translateUi("payment")}</option>
+              <option value="payout">{translateUi("payout")}</option>
             </select>
           </Field>
-          <Field label="Scope" htmlFor="rr-merchant" help="Global rules apply to every merchant">
+          <Field label={translateUi("Scope")} htmlFor="rr-merchant" help={translateUi("Global rules apply to every merchant")}>
             <select id="rr-merchant" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })}>
-              <option value="">Global (all merchants)</option>
-              {merchants.map((m) => (
+              <option value="">{translateUi("Global (all merchants)")}</option>
+              {translateUi(merchants.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
-              ))}
+              )))}
             </select>
           </Field>
-          <Field label="Strategy" htmlFor="rr-strategy" help={form.strategy === "ordered" ? "Try the accounts in the listed order" : form.strategy === "weighted" ? "Split traffic across accounts by weight" : "Rank accounts by cost, approval rate, uptime and latency"}>
+          <Field label={translateUi("Strategy")} htmlFor="rr-strategy" help={translateUi(form.strategy === "ordered" ? translateUi("Try the accounts in the listed order") : form.strategy === "weighted" ? translateUi("Split traffic across accounts by weight") : translateUi("Rank accounts by cost, approval rate, uptime and latency"))}>
             <select id="rr-strategy" className="input" value={form.strategy} onChange={(e) => setForm({ ...form, strategy: e.target.value })}>
-              <option value="ordered">ordered</option>
-              <option value="weighted">weighted</option>
-              <option value="score">score</option>
+              <option value="ordered">{translateUi("ordered")}</option>
+              <option value="weighted">{translateUi("weighted")}</option>
+              <option value="score">{translateUi("score")}</option>
             </select>
           </Field>
           <div className="flex items-end">
             <label className="flex items-center gap-2 pb-[7px] text-[13px] text-ink-800">
-              <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
-              Enabled
-            </label>
+              <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />{translateUi("Enabled")}</label>
           </div>
         </div>
       </Card>
 
       <Card
-        title="Conditions"
-        description="All conditions must match for the rule to apply. No conditions = always matches."
+        title={translateUi("Conditions")}
+        description={translateUi("All conditions must match for the rule to apply. No conditions = always matches.")}
         actions={
-          <Button type="button" size="sm" onClick={() => setConditions([...conditions, { field: "country", op: "eq", value: "", value2: "" }])}>
-            Add condition
-          </Button>
+          <Button type="button" size="sm" onClick={() => setConditions([...conditions, { field: "country", op: "eq", value: "", value2: "" }])}>{translateUi("Add condition")}</Button>
         }
       >
-        {conditions.length ? (
+        {translateUi(conditions.length ? (
           <div className="space-y-2">
-            {conditions.map((c, i) => (
+            {translateUi(conditions.map((c, i) => (
               <div key={i} className="flex flex-wrap items-end gap-2">
                 <div className="w-[170px]">
-                  <label className="label" htmlFor={`cond-f-${i}`}>
-                    Field
-                  </label>
+                  <label className="label" htmlFor={`cond-f-${i}`}>{translateUi("Field")}</label>
                   <select id={`cond-f-${i}`} className="input" value={c.field} onChange={(e) => setCondition(i, { field: e.target.value })}>
-                    {ROUTING_FIELDS.map((f) => (
+                    {translateUi(ROUTING_FIELDS.map((f) => (
                       <option key={f} value={f}>
-                        {f}
+                        {translateUi(f)}
                       </option>
-                    ))}
+                    )))}
                   </select>
                 </div>
                 <div className="w-[110px]">
-                  <label className="label" htmlFor={`cond-o-${i}`}>
-                    Operator
-                  </label>
+                  <label className="label" htmlFor={`cond-o-${i}`}>{translateUi("Operator")}</label>
                   <select id={`cond-o-${i}`} className="input" value={c.op} onChange={(e) => setCondition(i, { op: e.target.value })}>
-                    {ROUTING_OPS.map((o) => (
+                    {translateUi(ROUTING_OPS.map((o) => (
                       <option key={o} value={o}>
-                        {o}
+                        {translateUi(o)}
                       </option>
-                    ))}
+                    )))}
                   </select>
                 </div>
                 <div className="min-w-[200px] max-w-[420px] flex-1">
                   <label className="label" htmlFor={`cond-v-${i}`}>
-                    {c.op === "in" || c.op === "not_in" ? "Values (comma separated)" : c.op === "between" ? "From" : "Value"}
+                    {translateUi(c.op === "in" || c.op === "not_in" ? translateUi("Values (comma separated)") : c.op === "between" ? translateUi("From") : translateUi("Value"))}
                   </label>
-                  <input id={`cond-v-${i}`} className="input" value={c.value} onChange={(e) => setCondition(i, { value: e.target.value })} placeholder={c.op === "in" || c.op === "not_in" ? "VN, TH, ID" : FIELD_HINT[c.field] ?? ""} />
+                  <input id={`cond-v-${i}`} className="input" value={c.value} onChange={(e) => setCondition(i, { value: e.target.value })} placeholder={translateUi(c.op === "in" || c.op === "not_in" ? translateUi("VN, TH, ID") : FIELD_HINT[c.field] ?? "")} />
                 </div>
-                {c.op === "between" ? (
+                {translateUi(c.op === "between" ? (
                   <div className="w-[160px]">
-                    <label className="label" htmlFor={`cond-v2-${i}`}>
-                      To
-                    </label>
+                    <label className="label" htmlFor={`cond-v2-${i}`}>{translateUi("To")}</label>
                     <input id={`cond-v2-${i}`} className="input" value={c.value2} onChange={(e) => setCondition(i, { value2: e.target.value })} />
                   </div>
-                ) : null}
-                <Button type="button" variant="ghost" onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))}>
-                  Remove
-                </Button>
+                ) : null)}
+                <Button type="button" variant="ghost" onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))}>{translateUi("Remove")}</Button>
               </div>
-            ))}
-            <p className="text-[11px] text-ink-400">{FIELD_HINT[conditions[conditions.length - 1]?.field ?? ""] ? `${conditions[conditions.length - 1]!.field}: ${FIELD_HINT[conditions[conditions.length - 1]!.field]}` : "Values are matched against the transaction context at routing time."}</p>
+            )))}
+            <p className="text-[11px] text-ink-400">{translateUi(FIELD_HINT[conditions[conditions.length - 1]?.field ?? ""] ? `${conditions[conditions.length - 1]!.field}: ${FIELD_HINT[conditions[conditions.length - 1]!.field]}` : translateUi("Values are matched against the transaction context at routing time."))}</p>
           </div>
         ) : (
-          <p className="text-[13px] text-ink-500">No conditions — this rule matches every {form.transaction_type} in {form.mode} mode.</p>
-        )}
+          <p className="text-[13px] text-ink-500">{translateUi("No conditions — this rule matches every ")}{translateUi(form.transaction_type)}{translateUi(" in ")}{translateUi(form.mode)}{translateUi(" mode.")}</p>
+        ))}
       </Card>
 
-      <Card title="Provider chain" description="Accounts the rule routes to, in order. Fallbacks are used when an attempt fails with a retryable outcome." padded={false}>
+      <Card title={translateUi("Provider chain")} description={translateUi("Accounts the rule routes to, in order. Fallbacks are used when an attempt fails with a retryable outcome.")} padded={false}>
         <div className="divide-y divide-ink-100">
-          {routes.map((r, i) => {
+          {translateUi(routes.map((r, i) => {
             const a = byId.get(r.provider_account_id);
             return (
               <div key={r.provider_account_id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                <span className="w-6 text-[12px] text-ink-400">{i + 1}.</span>
+                <span className="w-6 text-[12px] text-ink-400">{translateUi(i + 1)}.</span>
                 <div className="min-w-[220px] flex-1">
-                  <Link className="text-[13px] font-medium text-brand-600 hover:underline" href={`/admin/provider-accounts/${r.provider_account_id}`}>{a ? a.provider_name ?? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.provider_name ?? r.provider_account_id}</Link>
+                  <Link className="text-[13px] font-medium text-brand-600 hover:underline" href={`/admin/provider-accounts/${r.provider_account_id}`}>{translateUi(a ? a.provider_name ?? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.provider_name ?? r.provider_account_id)}</Link>
                   <div className="text-[11px] text-ink-500">
-                    {a ? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.account_name ?? "Account"} · <Mono className="text-[11px]">{r.provider_account_id}</Mono>
-                    {a && a.mode !== form.mode ? <Tag tone="bad">{a.mode} account</Tag> : null}
+                    {translateUi(a ? a.name : rule?.routes.find(x=>x.provider_account_id===r.provider_account_id)?.account_name ?? "Account")} · <Mono className="text-[11px]">{translateUi(r.provider_account_id)}</Mono>
+                    {translateUi(a && a.mode !== form.mode ? <Tag tone="bad">{translateUi(a.mode)}{translateUi(" account")}</Tag> : null)}
                   </div>
                 </div>
-                {form.strategy === "weighted" ? (
-                  <label className="flex items-center gap-2 text-[12px] text-ink-500">
-                    Weight
-                    <input className="input !w-[90px] !py-[3px] text-[12px]" type="number" min={1} max={1000} value={r.weight} onChange={(e) => setRoutes(routes.map((x, idx) => (idx === i ? { ...x, weight: e.target.value } : x)))} />
+                {translateUi(form.strategy === "weighted" ? (
+                  <label className="flex items-center gap-2 text-[12px] text-ink-500">{translateUi("Weight")}<input className="input !w-[90px] !py-[3px] text-[12px]" type="number" min={1} max={1000} value={r.weight} onChange={(e) => setRoutes(routes.map((x, idx) => (idx === i ? { ...x, weight: e.target.value } : x)))} />
                   </label>
-                ) : null}
+                ) : null)}
                 <div className="flex items-center gap-1">
                   <Button type="button" size="sm" variant="ghost" disabled={i === 0} onClick={() => moveRoute(i, -1)}>
                     ↑
@@ -312,28 +302,24 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
                   <Button type="button" size="sm" variant="ghost" disabled={i === routes.length - 1} onClick={() => moveRoute(i, 1)}>
                     ↓
                   </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setRoutes(routes.filter((_, idx) => idx !== i))}>
-                    Remove
-                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setRoutes(routes.filter((_, idx) => idx !== i))}>{translateUi("Remove")}</Button>
                 </div>
               </div>
             );
-          })}
-          {routes.length ? null : <div className="px-4 py-6 text-center text-[13px] text-ink-500">{form.strategy === "score" ? "No explicit chain: score all eligible accounts in scope." : "Add at least one provider account to this chain."}</div>}
-          <div className="flex gap-2 px-4 py-3"><input className="input" aria-label="Find provider for chain" placeholder="Search all PSPs by name" value={providerSearch} onChange={e=>setProviderSearch(e.target.value)}/><Button type="button" loading={searchBusy} onClick={()=>void searchProviders()}>Find PSP</Button></div>
+          }))}
+          {translateUi(routes.length ? null : <div className="px-4 py-6 text-center text-[13px] text-ink-500">{translateUi(form.strategy === "score" ? translateUi("No explicit chain: score all eligible accounts in scope.") : translateUi("Add at least one provider account to this chain."))}</div>)}
+          <div className="flex gap-2 px-4 py-3"><input className="input" aria-label={translateUi("Find provider for chain")} placeholder={translateUi("Search all PSPs by name")} value={providerSearch} onChange={e=>setProviderSearch(e.target.value)}/><Button type="button" loading={searchBusy} onClick={()=>void searchProviders()}>{translateUi("Find PSP")}</Button></div>
           <div className="flex flex-wrap items-end gap-2 bg-ink-50 px-4 py-3">
             <div className="min-w-[280px] flex-1">
-              <label className="label" htmlFor="rr-add">
-                Add provider account ({form.mode} mode)
-              </label>
+              <label className="label" htmlFor="rr-add">{translateUi("Add provider account (")}{translateUi(form.mode)}{translateUi(" mode)")}</label>
               <select id="rr-add" className="input" value={addAccount} onChange={(e) => setAddAccount(e.target.value)}>
-                <option value="">Select an account…</option>
-                {available.map((a) => (
+                <option value="">{translateUi("Select an account…")}</option>
+                {translateUi(available.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.provider_name ?? "Provider"} — {a.name}
-                    {a.status !== "active" ? ` (${a.status})` : ""}
+                    {translateUi(a.provider_name ?? "Provider")} — {a.name}
+                    {translateUi(a.status !== "active" ? ` (${a.status})` : "")}
                   </option>
-                ))}
+                )))}
               </select>
             </div>
             <Button
@@ -344,20 +330,16 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
                 setRoutes([...routes, { provider_account_id: addAccount, weight: "100" }]);
                 setAddAccount("");
               }}
-            >
-              Add to chain
-            </Button>
+            >{translateUi("Add to chain")}</Button>
           </div>
         </div>
       </Card>
 
       <div className="flex items-center gap-2">
         <Button type="submit" variant="primary" loading={loading} disabled={!canManage}>
-          {!canManage ? "Save requires management access" : rule ? "Save rule" : "Create rule"}
+          {translateUi(!canManage ? translateUi("Save requires management access") : rule ? translateUi("Save rule") : translateUi("Create rule"))}
         </Button>
-        <LinkButton href="/admin/routing" variant="ghost">
-          Cancel
-        </LinkButton>
+        <LinkButton href="/admin/routing" variant="ghost">{translateUi("Cancel")}</LinkButton>
       </div>
     </fieldset></form>
   );

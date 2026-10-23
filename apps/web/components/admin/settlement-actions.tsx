@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -30,6 +32,8 @@ function isoOrNull(local: string): string | null {
 
 /** Builds settlements from a provider's report for a merchant, account and period. */
 export function ImportSettlement({ merchants, accounts }: { merchants: Array<{ id: string; name: string }>; accounts: AccountOption[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -69,13 +73,11 @@ export function ImportSettlement({ merchants, accounts }: { merchants: Array<{ i
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)} disabled={!merchants.length || !accounts.length}>
-        Import provider settlement report
-      </Button>
-      {open ? (
+      <Button variant="primary" onClick={() => setOpen(true)} disabled={!merchants.length || !accounts.length}>{translateUi("Import provider settlement report")}</Button>
+      {translateUi(open ? (
         <Modal
-          title="Import provider settlement report"
-          description="Creates one settlement per currency from the provider's report for this account and period. Funds are held and paid out by the provider's settlement entity; NATIO only records what the provider reports."
+          title={translateUi("Import provider settlement report")}
+          description={translateUi("Creates one settlement per currency from the provider's report for this account and period. Funds are held and paid out by the provider's settlement entity; NATIO only records what the provider reports.")}
           onClose={() => setOpen(false)}
           onSubmit={submit}
           submitLabel="Import settlement"
@@ -85,48 +87,48 @@ export function ImportSettlement({ merchants, accounts }: { merchants: Array<{ i
         >
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <Field label="Merchant" htmlFor="si-merchant">
+              <Field label={translateUi("Merchant")} htmlFor="si-merchant">
                 <select id="si-merchant" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })} required>
-                  {merchants.map((m) => (
+                  {translateUi(merchants.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name}
                     </option>
-                  ))}
+                  )))}
                 </select>
               </Field>
             </div>
             <div className="col-span-2">
-              <Field label="Provider account" htmlFor="si-account" help="Only transactions processed by this account are included">
+              <Field label={translateUi("Provider account")} htmlFor="si-account" help={translateUi("Only transactions processed by this account are included")}>
                 <select id="si-account" className="input" value={form.provider_account_id} onChange={(e) => setForm({ ...form, provider_account_id: e.target.value })} required>
-                  {accounts.map((a) => (
+                  {translateUi(accounts.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.provider} — {a.name} ({a.mode})
+                      {translateUi(a.provider)} — {a.name} ({translateUi(a.mode)})
                     </option>
-                  ))}
+                  )))}
                 </select>
               </Field>
             </div>
-            <Field label="Period start" htmlFor="si-start">
+            <Field label={translateUi("Period start")} htmlFor="si-start">
               <input id="si-start" type="datetime-local" className="input" value={form.period_start} onChange={(e) => setForm({ ...form, period_start: e.target.value })} required />
             </Field>
-            <Field label="Period end" htmlFor="si-end">
+            <Field label={translateUi("Period end")} htmlFor="si-end">
               <input id="si-end" type="datetime-local" className="input" value={form.period_end} onChange={(e) => setForm({ ...form, period_end: e.target.value })} required />
             </Field>
-            <Field label="Reference" htmlFor="si-ref" help="The provider's settlement reference (optional)">
-              <input id="si-ref" className="input" maxLength={120} value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder="STL-2026-04-01" />
+            <Field label={translateUi("Reference")} htmlFor="si-ref" help={translateUi("The provider's settlement reference (optional)")}>
+              <input id="si-ref" className="input" maxLength={120} value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} placeholder={translateUi("STL-2026-04-01")} />
             </Field>
-            <Field label="Source" htmlFor="si-source">
+            <Field label={translateUi("Source")} htmlFor="si-source">
               <select id="si-source" className="input" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
-                {SOURCES.map((s) => (
+                {translateUi(SOURCES.map((s) => (
                   <option key={s.value} value={s.value}>
-                    {s.label}
+                    {translateUi(s.label)}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }

@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import { FilterBar } from "@/components/dashboard/filters";
 import { PaymentsTable } from "@/components/dashboard/payments-table";
 import { CreateTestPayment } from "@/components/dashboard/create-test-payment";
@@ -12,13 +14,15 @@ const STATUSES = ["created", "pending", "processing", "authorized", "successful"
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"];
 
 export default async function PaymentsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const query = qs({ status: searchParams.status, currency: searchParams.currency, country: searchParams.country, payment_method: searchParams.payment_method, search: searchParams.search, from: searchParams.from ? new Date(searchParams.from).toISOString() : undefined, to: searchParams.to ? new Date(searchParams.to).toISOString() : undefined, cursor: searchParams.cursor, limit: 50 });
   const [page, scenarios] = await Promise.all([api.get<Paginated<Payment>>(`/dashboard/payments${query}`), api.get<{ data: Array<{ name: string; description: string }> }>("/dashboard/payments/scenarios")]);
 
   return (
     <>
-      <PageHeader title="Payments" subtitle="Every payment routed through NATIO, with provider, route and outcome." actions={api.mode === "test" ? <CreateTestPayment scenarios={scenarios.data} /> : null} />
+      <PageHeader title={translateUi("Payments")} subtitle={translateUi("Every payment routed through NATIO, with provider, route and outcome.")} actions={api.mode === "test" ? <CreateTestPayment scenarios={scenarios.data} /> : null} />
       <FilterBar
         filters={[
           { name: "search", label: "Search", type: "text", placeholder: "pay_…, reference, provider id" },

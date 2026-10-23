@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
@@ -17,8 +19,12 @@ export function AdminThemeProvider({ initialTheme, initialSidebar, children }: {
 }
 
 export function AdminThemeToggle() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const { theme, setTheme } = useContext(ThemeContext);
-  return <div className="admin-theme-toggle" role="group" aria-label="Color theme">{(["light", "dark", "mint"] as const).map(t => <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)} title={`${t === "light" ? "Light" : t === "dark" ? "Dark" : "Mint"} theme`}>{t === "light" ? "☀ Light" : t === "dark" ? "☾ Dark" : "◈ Mint"}</button>)}</div>;
+  return <div className="admin-theme-toggle" role="group" aria-label={translateUi("Color theme")}>{translateUi((["light", "dark", "mint"] as const).map(t => <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)} title={translateUi(`${t === "light" ? "Light" : t === "dark" ? "Dark" : "Mint"} theme`)}>{translateUi(t === "light" ? translateUi("☀ Light") : t === "dark" ? translateUi("☾ Dark") : translateUi("◈ Mint"))}</button>))}</div>;
 }
 
-export function SidebarThemeToggle(){const {theme,sidebar,setSidebar}=useContext(ThemeContext);if(theme!=='light')return null;return <div className="sidebar-tone px-3 py-3"><p className="mb-2 text-[10px] font-medium uppercase tracking-wider">Menu appearance</p><div role="group" aria-label="Sidebar appearance" className="flex rounded-lg border border-ink-200 p-1">{(['light','dark'] as const).map(s=><button key={s} type="button" aria-pressed={sidebar===s} onClick={()=>setSidebar(s)} className="flex-1 rounded-md px-2 py-1.5 text-xs">{s==='light'?'☀ Light menu':'☾ Dark menu'}</button>)}</div></div>}
+export function SidebarThemeToggle(){
+ const {t:translateUi,locale:uiLocale}=useI18n();
+const {theme,sidebar,setSidebar}=useContext(ThemeContext);if(theme!=='light')return null;return <div className="sidebar-tone px-3 py-3"><p className="mb-2 text-[10px] font-medium uppercase tracking-wider">{translateUi("Menu appearance")}</p><div role="group" aria-label={translateUi("Sidebar appearance")} className="flex rounded-lg border border-ink-200 p-1">{translateUi((['light','dark'] as const).map(s=><button key={s} type="button" aria-pressed={sidebar===s} onClick={()=>setSidebar(s)} className="flex-1 rounded-md px-2 py-1.5 text-xs">{translateUi(s==='light'?translateUi("☀ Light menu"):translateUi("☾ Dark menu"))}</button>))}</div></div>}

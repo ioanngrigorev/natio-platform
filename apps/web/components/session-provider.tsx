@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -25,6 +27,8 @@ interface Ctx extends SessionInfo {
 const SessionContext = createContext<Ctx | null>(null);
 
 export function SessionProvider({ session, children }: { session: SessionInfo; children: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const router = useRouter();
   const [toasts, setToasts] = useState<Array<{ id: number; msg: string; tone: "ok" | "bad" | "info" }>>([]);
 
@@ -64,15 +68,15 @@ export function SessionProvider({ session, children }: { session: SessionInfo; c
   return (
     <SessionContext.Provider value={value}>
       {children}
-      {toasts.length ? (
+      {translateUi(toasts.length ? (
         <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-          {toasts.map((t) => (
+          {translateUi(toasts.map((t) => (
             <div key={t.id} className={"pointer-events-auto rounded-md px-3 py-2 text-[13px] shadow-lg " + (t.tone === "ok" ? "bg-ok text-white" : t.tone === "bad" ? "bg-bad text-white" : "bg-ink-900 text-white")}>
-              {t.msg}
+              {translateUi(t.msg)}
             </div>
-          ))}
+          )))}
         </div>
-      ) : null}
+      ) : null)}
     </SessionContext.Provider>
   );
 }

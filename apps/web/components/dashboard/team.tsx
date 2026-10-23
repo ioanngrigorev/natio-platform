@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -18,6 +20,8 @@ const ROLE_HELP: Record<string, string> = {
 };
 
 export function InviteMember({ assignableRoles }: { assignableRoles: string[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -46,64 +50,58 @@ export function InviteMember({ assignableRoles }: { assignableRoles: string[] })
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Invite member
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Invite a team member" description="The invitee sets a password through a one-time link. Roles can be changed later.">
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Invite member")}</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={translateUi("Invite a team member")} description={translateUi("The invitee sets a password through a one-time link. Roles can be changed later.")}>
         <form onSubmit={submit}>
-          {error ? (
+          {translateUi(error ? (
             <div className="mt-3">
-              <Alert tone="bad">{error}</Alert>
+              <Alert tone="bad">{translateUi(error)}</Alert>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-4 space-y-3">
-            <Field label="Name" htmlFor="tm-name">
+            <Field label={translateUi("Name")} htmlFor="tm-name">
               <input id="tm-name" className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} maxLength={120} />
             </Field>
-            <Field label="Email" htmlFor="tm-email">
+            <Field label={translateUi("Email")} htmlFor="tm-email">
               <input id="tm-email" type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
             </Field>
-            <Field label="Role" htmlFor="tm-role" help={ROLE_HELP[form.role]}>
+            <Field label={translateUi("Role")} htmlFor="tm-role" help={translateUi(ROLE_HELP[form.role])}>
               <select id="tm-role" className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {assignableRoles.map((r) => (
+                {translateUi(assignableRoles.map((r) => (
                   <option key={r} value={r}>
-                    {r}
+                    {translateUi(r)}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
           </div>
           <div className="mt-5 flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Send invite
-            </Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Send invite")}</Button>
           </div>
         </form>
       </Modal>
-      {invite ? (
-        <Modal open onClose={() => setInvite(null)} title={`Invite created for ${invite.email}`} description="No email is sent automatically in this environment.">
+      {translateUi(invite ? (
+        <Modal open onClose={() => setInvite(null)} title={translateUi(`Invite created for ${invite.email}`)} description={translateUi("No email is sent automatically in this environment.")}>
           <div className="mt-4">
-            <Alert tone="warn">{invite.note}</Alert>
+            <Alert tone="warn">{translateUi(invite.note)}</Alert>
           </div>
           <div className="mt-3 flex items-center gap-2 rounded-md border border-ink-200 bg-ink-50 px-3 py-2">
             <code className="mono flex-1 select-all break-all text-ink-900">{invite.url}</code>
             <CopyButton value={invite.url} />
           </div>
           <div className="mt-5 flex justify-end">
-            <Button type="button" variant="primary" onClick={() => setInvite(null)}>
-              Done
-            </Button>
+            <Button type="button" variant="primary" onClick={() => setInvite(null)}>{translateUi("Done")}</Button>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
 
 export function MemberControls({ member, assignableRoles }: { member: TeamMember; assignableRoles: string[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -113,8 +111,8 @@ export function MemberControls({ member, assignableRoles }: { member: TeamMember
   if (!canManage) {
     return (
       <div className="flex items-center justify-end gap-2 text-[12px] text-ink-400">
-        <span className="capitalize">{member.role}</span>
-        <span>{isSelf ? "· you" : member.role === "owner" ? "· owner" : ""}</span>
+        <span className="capitalize">{translateUi(member.role)}</span>
+        <span>{translateUi(isSelf ? translateUi("· you") : member.role === "owner" ? translateUi("· owner") : "")}</span>
       </div>
     );
   }
@@ -135,12 +133,12 @@ export function MemberControls({ member, assignableRoles }: { member: TeamMember
   const disabled = member.status === "disabled";
   return (
     <div className="flex items-center justify-end gap-2">
-      <select className="input !w-auto !py-[3px] text-[12px]" value={member.role} disabled={busy !== null} onChange={(e) => void patch(`role set to ${e.target.value}`, { role: e.target.value })} aria-label={`Role for ${member.name}`}>
-        {assignableRoles.map((r) => (
+      <select className="input !w-auto !py-[3px] text-[12px]" value={member.role} disabled={busy !== null} onChange={(e) => void patch(`role set to ${e.target.value}`, { role: e.target.value })} aria-label={translateUi(`Role for ${member.name}`)}>
+        {translateUi(assignableRoles.map((r) => (
           <option key={r} value={r}>
-            {r}
+            {translateUi(r)}
           </option>
-        ))}
+        )))}
       </select>
       <Button
         size="sm"
@@ -150,7 +148,7 @@ export function MemberControls({ member, assignableRoles }: { member: TeamMember
           if (disabled || confirm(`Disable ${member.name}? Their sessions are revoked and they can no longer sign in.`)) void patch(disabled ? "enabled" : "disabled", { status: disabled ? "active" : "disabled" });
         }}
       >
-        {disabled ? "Enable" : "Disable"}
+        {translateUi(disabled ? translateUi("Enable") : translateUi("Disable"))}
       </Button>
     </div>
   );

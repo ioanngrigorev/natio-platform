@@ -1,3 +1,6 @@
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import type {ReactNode} from 'react';
 const shapes:Record<string,ReactNode>={
  ledger:<><path d="M5 3h14v18H5zM9 7h6M9 11h2m3 0h1m-6 4h2m3 0h1"/></>,
@@ -11,4 +14,6 @@ const shapes:Record<string,ReactNode>={
  support:<><path d="M4 13V11a8 8 0 0 1 16 0v2M4 12H2v6h4v-6H4Zm16 0h2v6h-4v-6h2Zm0 6v2h-6"/><circle cx="12" cy="20" r="1"/></>,
  api:<><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-14-2 18"/></>
 };
-export function ModuleIcon({id}:{id:string}){return <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-ink-50 text-brand-600" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">{shapes[id]||shapes.api}</svg></span>}
+export function ModuleIcon({id}:{id:string}){
+ const {t:translateUi,locale:uiLocale}=useI18n();
+return <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-ink-50 text-brand-600" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">{translateUi(shapes[id]||shapes.api)}</svg></span>}

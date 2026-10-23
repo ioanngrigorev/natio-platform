@@ -1,0 +1,10 @@
+import en from './en.json' with {type:'json'};
+import ru from './ru.json' with {type:'json'};
+import es from './es.json' with {type:'json'};
+import ar from './ar.json' with {type:'json'};
+import pt from './pt.json' with {type:'json'};
+export const locales=['en','ru','es','ar','pt'] as const;
+export type Locale=typeof locales[number];
+export const localeOf=(v:unknown):Locale=>locales.includes(v as Locale)?v as Locale:'en';
+const dictionaries:Record<Locale,Record<string,string>>={en,ru,es,ar,pt};
+export const localize=(text:string,locale:Locale='en')=>dictionaries[locale][text]??en[text as keyof typeof en]??text;

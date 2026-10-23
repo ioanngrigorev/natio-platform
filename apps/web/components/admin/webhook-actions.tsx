@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +10,8 @@ import { adminCan } from "@/lib/admin-permissions";
 
 /** Queues one more delivery attempt for a webhook delivery (POST /admin/webhooks/deliveries/{id}/resend). */
 export function ResendDelivery({ deliveryId, size = "sm" }: { deliveryId: string; size?: "sm" | "md" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -27,8 +31,6 @@ export function ResendDelivery({ deliveryId, size = "sm" }: { deliveryId: string
   }
 
   return (
-    <Button size={size} loading={busy} onClick={() => void resend()}>
-      Resend
-    </Button>
+    <Button size={size} loading={busy} onClick={() => void resend()}>{translateUi("Resend")}</Button>
   );
 }

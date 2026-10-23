@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -31,6 +33,8 @@ function summary(b: ReconBatch): string {
 // Sandbox run: reconciles a demo provider's own ledger against NATIO's
 // ---------------------------------------------------------------------------
 export function RunSandboxReconciliation({ accounts, merchants }: { accounts: AccountOption[]; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -58,13 +62,11 @@ export function RunSandboxReconciliation({ accounts, merchants }: { accounts: Ac
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} disabled={!accounts.length}>
-        Run demo reconciliation
-      </Button>
-      {open ? (
+      <Button onClick={() => setOpen(true)} disabled={!accounts.length}>{translateUi("Run demo reconciliation")}</Button>
+      {translateUi(open ? (
         <Modal
-          title="Run demo reconciliation"
-          description="Sandbox only: builds the provider's report from the demo provider's own ledger and matches it against NATIO's transactions. No file needed."
+          title={translateUi("Run demo reconciliation")}
+          description={translateUi("Sandbox only: builds the provider's report from the demo provider's own ledger and matches it against NATIO's transactions. No file needed.")}
           onClose={() => setOpen(false)}
           onSubmit={submit}
           submitLabel="Run reconciliation"
@@ -72,28 +74,28 @@ export function RunSandboxReconciliation({ accounts, merchants }: { accounts: Ac
           error={error}
         >
           <div className="space-y-3">
-            <Field label="Provider account" htmlFor="rs-account">
+            <Field label={translateUi("Provider account")} htmlFor="rs-account">
               <select id="rs-account" className="input" value={form.provider_account_id} onChange={(e) => setForm({ ...form, provider_account_id: e.target.value })} required>
-                {accounts.map((a) => (
+                {translateUi(accounts.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.provider} — {a.name}
+                    {translateUi(a.provider)} — {a.name}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Merchant" htmlFor="rs-merchant" help="Optional: limit the batch to one merchant's transactions">
+            <Field label={translateUi("Merchant")} htmlFor="rs-merchant" help={translateUi("Optional: limit the batch to one merchant's transactions")}>
               <select id="rs-merchant" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })}>
-                <option value="">All merchants</option>
-                {merchants.map((m) => (
+                <option value="">{translateUi("All merchants")}</option>
+                {translateUi(merchants.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
@@ -102,6 +104,8 @@ export function RunSandboxReconciliation({ accounts, merchants }: { accounts: Ac
 // CSV upload
 // ---------------------------------------------------------------------------
 export function UploadProviderCsv({ accounts, merchants }: { accounts: AccountOption[]; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -142,13 +146,11 @@ export function UploadProviderCsv({ accounts, merchants }: { accounts: AccountOp
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)} disabled={!accounts.length}>
-        Upload provider CSV
-      </Button>
-      {open ? (
+      <Button variant="primary" onClick={() => setOpen(true)} disabled={!accounts.length}>{translateUi("Upload provider CSV")}</Button>
+      {translateUi(open ? (
         <Modal
-          title="Upload a provider report"
-          description="Every row of the provider's CSV is matched against NATIO's ledger for that provider account; differences are flagged for follow-up."
+          title={translateUi("Upload a provider report")}
+          description={translateUi("Every row of the provider's CSV is matched against NATIO's ledger for that provider account; differences are flagged for follow-up.")}
           onClose={() => setOpen(false)}
           onSubmit={submit}
           submitLabel="Run reconciliation"
@@ -157,39 +159,39 @@ export function UploadProviderCsv({ accounts, merchants }: { accounts: AccountOp
           width={560}
         >
           <div className="space-y-3">
-            <Field label="Provider account" htmlFor="ru-account">
+            <Field label={translateUi("Provider account")} htmlFor="ru-account">
               <select id="ru-account" className="input" value={form.provider_account_id} onChange={(e) => setForm({ ...form, provider_account_id: e.target.value })} required>
-                {accounts.map((a) => (
+                {translateUi(accounts.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.provider} — {a.name}
+                    {translateUi(a.provider)} — {a.name}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Merchant" htmlFor="ru-merchant" help="Optional: limit the batch to one merchant's transactions">
+            <Field label={translateUi("Merchant")} htmlFor="ru-merchant" help={translateUi("Optional: limit the batch to one merchant's transactions")}>
               <select id="ru-merchant" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })}>
-                <option value="">All merchants</option>
-                {merchants.map((m) => (
+                <option value="">{translateUi("All merchants")}</option>
+                {translateUi(merchants.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Period start (optional)" htmlFor="ru-from">
+              <Field label={translateUi("Period start (optional)")} htmlFor="ru-from">
                 <input id="ru-from" type="datetime-local" className="input" value={form.period_start} onChange={(e) => setForm({ ...form, period_start: e.target.value })} />
               </Field>
-              <Field label="Period end (optional)" htmlFor="ru-to">
+              <Field label={translateUi("Period end (optional)")} htmlFor="ru-to">
                 <input id="ru-to" type="datetime-local" className="input" value={form.period_end} onChange={(e) => setForm({ ...form, period_end: e.target.value })} />
               </Field>
             </div>
-            <Field label="CSV file" htmlFor="ru-file" help="Columns: provider_reference, natio_reference, type, amount, currency, status. Header names are matched case-insensitively.">
+            <Field label={translateUi("CSV file")} htmlFor="ru-file" help={translateUi("Columns: provider_reference, natio_reference, type, amount, currency, status. Header names are matched case-insensitively.")}>
               <input id="ru-file" type="file" accept=".csv,text/csv" className="input" onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
@@ -198,6 +200,8 @@ export function UploadProviderCsv({ accounts, merchants }: { accounts: AccountOp
 // Resolve one flagged item
 // ---------------------------------------------------------------------------
 export function ResolveReconItem({ item }: { item: { id: string; status: string; resolved_at: string | null } }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -205,7 +209,7 @@ export function ResolveReconItem({ item }: { item: { id: string; status: string;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!adminCan(session.user.role, "reconciliation.manage")) return <span className="text-[11px] text-ink-400">—</span>;
-  if (item.resolved_at) return <span className="text-[11px] text-ink-400">resolved</span>;
+  if (item.resolved_at) return <span className="text-[11px] text-ink-400">{translateUi("resolved")}</span>;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -226,24 +230,22 @@ export function ResolveReconItem({ item }: { item: { id: string; status: string;
 
   return (
     <>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-        Resolve
-      </Button>
-      {open ? (
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>{translateUi("Resolve")}</Button>
+      {translateUi(open ? (
         <Modal
-          title="Resolve reconciliation item"
-          description="Records how this difference was handled. The note is stored on the item and written to the audit log; it does not change the ledger."
+          title={translateUi("Resolve reconciliation item")}
+          description={translateUi("Records how this difference was handled. The note is stored on the item and written to the audit log; it does not change the ledger.")}
           onClose={() => setOpen(false)}
           onSubmit={submit}
           submitLabel="Mark resolved"
           loading={loading}
           error={error}
         >
-          <Field label="Resolution note" htmlFor="rr-note" help="Required, max 500 characters">
-            <textarea id="rr-note" className="input" rows={3} required minLength={1} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Provider confirmed the transaction settles in the next report." />
+          <Field label={translateUi("Resolution note")} htmlFor="rr-note" help={translateUi("Required, max 500 characters")}>
+            <textarea id="rr-note" className="input" rows={3} required minLength={1} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={translateUi("Provider confirmed the transaction settles in the next report.")} />
           </Field>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }

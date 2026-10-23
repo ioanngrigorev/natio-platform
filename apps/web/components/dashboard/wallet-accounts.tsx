@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -23,6 +25,8 @@ interface Registered {
 }
 
 export function AddWalletAccount() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -63,30 +67,26 @@ export function AddWalletAccount() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Add settlement key</Button>
+      <Button onClick={() => setOpen(true)}>{translateUi("Add settlement key")}</Button>
 
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Add a settlement key"
-        description="Payments on this key settle straight to your wallet. NATIO never holds the funds and never holds a key that could move them."
+        title={translateUi("Add a settlement key")}
+        description={translateUi("Payments on this key settle straight to your wallet. NATIO never holds the funds and never holds a key that could move them.")}
         width="max-w-[560px]"
       >
         <form onSubmit={submit} className="space-y-4">
-          {error ? <Alert tone="bad">{error}</Alert> : null}
+          {translateUi(error ? <Alert tone="bad">{translateUi(error)}</Alert> : null)}
 
-          <Alert tone="warn">
-            Paste an <strong>extended public key</strong> — one starting <Mono>xpub</Mono>, <Mono>ypub</Mono> or <Mono>zpub</Mono>. Never a
-            private key and never a recovery phrase. NATIO refuses those, but a key you have pasted anywhere should be treated as
-            compromised regardless of who refused it.
-          </Alert>
+          <Alert tone="warn">{translateUi("Paste an ")}<strong>{translateUi("extended public key")}</strong>{translateUi(" — one starting ")}<Mono>{translateUi("xpub")}</Mono>, <Mono>{translateUi("ypub")}</Mono>{translateUi(" or ")}<Mono>{translateUi("zpub")}</Mono>{translateUi(". Never a private key and never a recovery phrase. NATIO refuses those, but a key you have pasted anywhere should be treated as compromised regardless of who refused it.")}</Alert>
 
-          <Field label="Label" htmlFor="wa-label" help="How you will recognise this key in reports.">
-            <input id="wa-label" className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} required minLength={2} maxLength={80} placeholder="Main USDT treasury" />
+          <Field label={translateUi("Label")} htmlFor="wa-label" help={translateUi("How you will recognise this key in reports.")}>
+            <input id="wa-label" className="input" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} required minLength={2} maxLength={80} placeholder={translateUi("Main USDT treasury")} />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Network" htmlFor="wa-network" help={selected.hint}>
+            <Field label={translateUi("Network")} htmlFor="wa-network" help={translateUi(selected.hint)}>
               <select
                 id="wa-network"
                 className="input"
@@ -96,28 +96,25 @@ export function AddWalletAccount() {
                   setForm({ ...form, network: n.value, asset: n.asset });
                 }}
               >
-                {NETWORKS.map((n) => (
+                {translateUi(NETWORKS.map((n) => (
                   <option key={n.value} value={n.value}>
-                    {n.label}
-                    {n.observable ? "" : " — addresses only, not yet watched"}
+                    {translateUi(n.label)}
+                    {translateUi(n.observable ? "" : translateUi(" — addresses only, not yet watched"))}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
 
-            <Field label="Asset" htmlFor="wa-asset" help="Ticker as it settles, e.g. USDT or BTC.">
+            <Field label={translateUi("Asset")} htmlFor="wa-asset" help={translateUi("Ticker as it settles, e.g. USDT or BTC.")}>
               <input id="wa-asset" className="input" value={form.asset} onChange={(e) => setForm({ ...form, asset: e.target.value })} required maxLength={12} />
             </Field>
           </div>
 
-          {!selected.observable ? (
-            <Alert tone="warn">
-              Addresses on {selected.label} are derived correctly, but NATIO does not watch this chain yet — a payment to one would not be
-              noticed automatically. Said plainly here rather than discovered later.
-            </Alert>
-          ) : null}
+          {translateUi(!selected.observable ? (
+            <Alert tone="warn">{translateUi("Addresses on ")}{translateUi(selected.label)}{translateUi(" are derived correctly, but NATIO does not watch this chain yet — a payment to one would not be noticed automatically. Said plainly here rather than discovered later.")}</Alert>
+          ) : null)}
 
-          <Field label="Extended public key" htmlFor="wa-key" help="Exported from your wallet as the account-level public key.">
+          <Field label={translateUi("Extended public key")} htmlFor="wa-key" help={translateUi("Exported from your wallet as the account-level public key.")}>
             <textarea
               id="wa-key"
               className="input font-mono text-[12.5px]"
@@ -128,17 +125,13 @@ export function AddWalletAccount() {
               minLength={20}
               maxLength={256}
               spellCheck={false}
-              placeholder="xpub6C…"
+              placeholder={translateUi("xpub6C…")}
             />
           </Field>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={loading}>
-              Register key
-            </Button>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" loading={loading}>{translateUi("Register key")}</Button>
           </div>
         </form>
       </Modal>
@@ -154,44 +147,38 @@ export function AddWalletAccount() {
       <Modal
         open={!!registered}
         onClose={() => setRegistered(null)}
-        title="Check this address before taking payments"
-        description="This is the first address NATIO derived from your key. Open your own wallet and confirm it appears there."
+        title={translateUi("Check this address before taking payments")}
+        description={translateUi("This is the first address NATIO derived from your key. Open your own wallet and confirm it appears there.")}
         width="max-w-[560px]"
       >
-        {registered ? (
+        {translateUi(registered ? (
           <div className="space-y-4">
             <div className="rounded-lg border border-ink-200 bg-ink-50 p-4">
-              <div className="text-[11px] uppercase tracking-[0.12em] text-ink-500">First derived address</div>
-              <div className="mt-2 break-all font-mono text-[13.5px] text-ink-900">{registered.probe_address}</div>
+              <div className="text-[11px] uppercase tracking-[0.12em] text-ink-500">{translateUi("First derived address")}</div>
+              <div className="mt-2 break-all font-mono text-[13.5px] text-ink-900">{translateUi(registered.probe_address)}</div>
             </div>
 
-            <Alert tone="warn">
-              If this address is not in your wallet, the key is wrong. Archive it and register the right one. Payments to addresses derived
-              from a wrong key go somewhere nobody controls, and nothing downstream will look unusual until a merchant asks where their
-              money is.
-            </Alert>
+            <Alert tone="warn">{translateUi("If this address is not in your wallet, the key is wrong. Archive it and register the right one. Payments to addresses derived from a wrong key go somewhere nobody controls, and nothing downstream will look unusual until a merchant asks where their money is.")}</Alert>
 
-            <div className="text-[13px] leading-[1.7] text-ink-600">
-              Registered as <Mono>{registered.asset}</Mono> on <Mono>{registered.network}</Mono>
-              {registered.scriptType ? (
-                <>
-                  , script type <Mono>{registered.scriptType}</Mono>
+            <div className="text-[13px] leading-[1.7] text-ink-600">{translateUi("Registered as ")}<Mono>{translateUi(registered.asset)}</Mono>{translateUi(" on ")}<Mono>{translateUi(registered.network)}</Mono>
+              {translateUi(registered.scriptType ? (
+                <>{translateUi(", script type ")}<Mono>{translateUi(registered.scriptType)}</Mono>
                 </>
-              ) : null}
-              . NATIO stores this key encrypted and can only ever read from it.
-            </div>
+              ) : null)}{translateUi(". NATIO stores this key encrypted and can only ever read from it.")}</div>
 
             <div className="flex justify-end pt-1">
-              <Button onClick={() => setRegistered(null)}>I have checked it</Button>
+              <Button onClick={() => setRegistered(null)}>{translateUi("I have checked it")}</Button>
             </div>
           </div>
-        ) : null}
+        ) : null)}
       </Modal>
     </>
   );
 }
 
 export function ArchiveWalletAccount({ id, label }: { id: string; label: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -209,8 +196,6 @@ export function ArchiveWalletAccount({ id, label }: { id: string; label: string 
   }
 
   return (
-    <Button variant="secondary" onClick={archive} loading={loading}>
-      Archive
-    </Button>
+    <Button variant="secondary" onClick={archive} loading={loading}>{translateUi("Archive")}</Button>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +10,8 @@ import { currencyExponent, formatMoney } from "@/lib/format";
 import type { Payment } from "@/lib/types";
 
 export function PaymentActions({ payment: p }: { payment: Payment }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -38,42 +42,32 @@ export function PaymentActions({ payment: p }: { payment: Payment }) {
 
   return (
     <div className="flex items-center gap-2">
-      {canCapture ? (
-        <Button variant="primary" onClick={() => { setAmount((p.amount / 10 ** exp).toFixed(exp)); setDialog("capture"); }}>
-          Capture
-        </Button>
-      ) : null}
-      {canRefund ? (
-        <Button onClick={() => { setAmount((refundable / 10 ** exp).toFixed(exp)); setDialog("refund"); }}>
-          Refund
-        </Button>
-      ) : null}
-      {canCancel ? (
-        <Button variant="danger" loading={busy === "Cancel"} onClick={() => { if (confirm("Cancel this payment?")) void run("Cancel", `/dashboard/payments/${p.id}/cancel`, { reason: "cancelled_from_dashboard" }); }}>
-          Cancel
-        </Button>
-      ) : null}
-      {dialog ? (
+      {translateUi(canCapture ? (
+        <Button variant="primary" onClick={() => { setAmount((p.amount / 10 ** exp).toFixed(exp)); setDialog("capture"); }}>{translateUi("Capture")}</Button>
+      ) : null)}
+      {translateUi(canRefund ? (
+        <Button onClick={() => { setAmount((refundable / 10 ** exp).toFixed(exp)); setDialog("refund"); }}>{translateUi("Refund")}</Button>
+      ) : null)}
+      {translateUi(canCancel ? (
+        <Button variant="danger" loading={busy === "Cancel"} onClick={() => { if (confirm("Cancel this payment?")) void run("Cancel", `/dashboard/payments/${p.id}/cancel`, { reason: "cancelled_from_dashboard" }); }}>{translateUi("Cancel")}</Button>
+      ) : null)}
+      {translateUi(dialog ? (
         <div className="fixed inset-0 z-40 flex items-start justify-center bg-ink-900/40 px-4 py-10" onClick={() => setDialog(null)}>
           <div className="w-full max-w-[420px] rounded-lg bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-[15px] font-semibold">{dialog === "refund" ? "Refund payment" : "Capture payment"}</h2>
-            <p className="mt-1 text-[12.5px] text-ink-500">{dialog === "refund" ? `Up to ${formatMoney(refundable, p.currency)} can be refunded via ${p.route.provider?.name ?? "the provider"}.` : `Authorized amount ${formatMoney(p.amount, p.currency)}. Partial capture is allowed.`}</p>
+            <h2 className="text-[15px] font-semibold">{translateUi(dialog === "refund" ? translateUi("Refund payment") : translateUi("Capture payment"))}</h2>
+            <p className="mt-1 text-[12.5px] text-ink-500">{translateUi(dialog === "refund" ? `Up to ${formatMoney(refundable, p.currency)} can be refunded via ${p.route.provider?.name ?? "the provider"}.` : `Authorized amount ${formatMoney(p.amount, p.currency)}. Partial capture is allowed.`)}</p>
             <div className="mt-4">
-              <Field label={`Amount (${p.currency})`} htmlFor="amount">
+              <Field label={translateUi(`Amount (${p.currency})`)} htmlFor="amount">
                 <input id="amount" className="input" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </Field>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setDialog(null)}>
-                Close
-              </Button>
-              <Button variant="primary" loading={busy !== null} onClick={() => void run(dialog === "refund" ? "Refund" : "Capture", `/dashboard/payments/${p.id}/${dialog}`, { amount: toMinor(amount), ...(dialog === "refund" ? { reason: "requested_by_merchant" } : {}) })}>
-                Confirm
-              </Button>
+              <Button variant="ghost" onClick={() => setDialog(null)}>{translateUi("Close")}</Button>
+              <Button variant="primary" loading={busy !== null} onClick={() => void run(dialog === "refund" ? "Refund" : "Capture", `/dashboard/payments/${p.id}/${dialog}`, { amount: toMinor(amount), ...(dialog === "refund" ? { reason: "requested_by_merchant" } : {}) })}>{translateUi("Confirm")}</Button>
             </div>
           </div>
         </div>
-      ) : null}
+      ) : null)}
     </div>
   );
 }

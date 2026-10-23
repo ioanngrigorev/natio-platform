@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import { EntityLink } from "@/components/admin/entity-link";
 
 import { useRouter } from "next/navigation";
@@ -6,7 +8,8 @@ import { Fragment, useState, type FormEvent } from "react";
 import { LevelTag } from "@/components/admin/condition-chips";
 import { Modal } from "@/components/admin/modal";
 import { errorMessage, useSession } from "@/components/session-provider";
-import { Button, EmptyState, Field, Mono, StatusBadge, Table, Tag, cx } from "@/components/ui";
+import {Button, EmptyState, Field, Mono, StatusBadge, Table, Tag} from "@/components/ui";
+import {cx} from "@/lib/classnames";
 import { adminCan } from "@/lib/admin-permissions";
 import type { HealthCheckResult, SystemEvent } from "@/lib/admin-types";
 import { formatDateTime, formatMoney, formatMs, formatNumber, formatPercent } from "@/lib/format";
@@ -18,6 +21,8 @@ const OUTCOMES = ["provider_unavailable", "timeout", "technical_error", "soft_de
 // Provider enable / disable
 // ---------------------------------------------------------------------------
 export function ProviderStatusButton({ provider }: { provider: Pick<Provider, "id" | "name" | "status"> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -47,15 +52,15 @@ export function ProviderStatusButton({ provider }: { provider: Pick<Provider, "i
   return (
     <>
       <Button size="sm" variant={next === "disabled" ? "danger" : "primary"} onClick={() => setOpen(true)}>
-        {next === "disabled" ? "Disable provider" : "Enable provider"}
+        {translateUi(next === "disabled" ? translateUi("Disable provider") : translateUi("Enable provider"))}
       </Button>
-      {open ? (
-        <Modal title={`${next === "disabled" ? "Disable" : "Enable"} ${provider.name}`} description={next === "disabled" ? "All accounts of this provider become ineligible for routing immediately. Payments in flight continue. The reason is written to the audit log and a system event is emitted." : "Accounts of this provider become eligible for routing again."} onClose={() => setOpen(false)} onSubmit={submit} submitLabel={next === "disabled" ? "Disable" : "Enable"} submitVariant={next === "disabled" ? "danger" : "primary"} loading={loading} error={error}>
-          <Field label="Reason" htmlFor="preason" help="Optional, max 300 characters">
-            <input id="preason" className="input" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. scheduled maintenance window" />
+      {translateUi(open ? (
+        <Modal title={translateUi(`${next === "disabled" ? "Disable" : "Enable"} ${provider.name}`)} description={translateUi(next === "disabled" ? translateUi("All accounts of this provider become ineligible for routing immediately. Payments in flight continue. The reason is written to the audit log and a system event is emitted.") : translateUi("Accounts of this provider become eligible for routing again."))} onClose={() => setOpen(false)} onSubmit={submit} submitLabel={next === "disabled" ? "Disable" : "Enable"} submitVariant={next === "disabled" ? "danger" : "primary"} loading={loading} error={error}>
+          <Field label={translateUi("Reason")} htmlFor="preason" help={translateUi("Optional, max 300 characters")}>
+            <input id="preason" className="input" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={translateUi("e.g. scheduled maintenance window")} />
           </Field>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
@@ -85,6 +90,8 @@ function parseCurrencies(s: string): string[] {
 }
 
 export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const canManage = adminCan(session.user.role, "providers.manage");
@@ -175,27 +182,27 @@ export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
     }
   }
 
-  if (!accounts.length) return <EmptyState title="No accounts" description="Add a provider account to make this provider routable." />;
+  if (!accounts.length) return <EmptyState title={translateUi("No accounts")} description={translateUi("Add a provider account to make this provider routable.")} />;
 
   return (
     <>
       <Table>
         <thead>
           <tr>
-            <th>Account</th>
-            <th>Mode</th>
-            <th>Status</th>
-            <th className="num">Priority</th>
-            <th className="num">Fee</th>
-            <th>Limits</th>
-            <th>Currencies</th>
-            <th>Health</th>
-            <th>Simulation</th>
-            {canManage ? <th></th> : null}
+            <th>{translateUi("Account")}</th>
+            <th>{translateUi("Mode")}</th>
+            <th>{translateUi("Status")}</th>
+            <th className="num">{translateUi("Priority")}</th>
+            <th className="num">{translateUi("Fee")}</th>
+            <th>{translateUi("Limits")}</th>
+            <th>{translateUi("Currencies")}</th>
+            <th>{translateUi("Health")}</th>
+            <th>{translateUi("Simulation")}</th>
+            {translateUi(canManage ? <th></th> : null)}
           </tr>
         </thead>
         <tbody>
-          {accounts.map((a) => {
+          {translateUi(accounts.map((a) => {
             const sim = a.config.simulation?.forceOutcome ?? "";
             const isBusy = (label: string) => busy === `${a.id}:${label}`;
             return (
@@ -205,137 +212,131 @@ export function AccountsTable({ accounts }: { accounts: ProviderAccount[] }) {
                     <EntityLink kind="provider-accounts" id={a.id}>{a.name} →</EntityLink>
                     <div className="text-[11px] text-ink-500">
                       <Mono className="text-[11px]">{a.id}</Mono>
-                      {a.merchant_id ? ` · dedicated to ${a.merchant_id}` : " · shared"}
-                      {a.has_credentials ? "" : " · no credentials"}
+                      {translateUi(a.merchant_id ? ` · dedicated to ${a.merchant_id}` : translateUi(" · shared"))}
+                      {translateUi(a.has_credentials ? "" : translateUi(" · no credentials"))}
                     </div>
                   </td>
                   <td>
-                    <StatusBadge status={a.mode} label={a.mode === "test" ? "Test" : "Live"} />
+                    <StatusBadge status={a.mode} label={translateUi(a.mode === "test" ? translateUi("Test") : translateUi("Live"))} />
                   </td>
                   <td>
                     <StatusBadge status={a.status} />
                   </td>
-                  <td className="num">{a.priority}</td>
+                  <td className="num">{translateUi(a.priority)}</td>
                   <td className="num">
-                    {a.fee_percent}%{a.fee_fixed_minor ? ` + ${a.fee_fixed_minor}` : ""}
+                    {translateUi(a.fee_percent)}%{translateUi(a.fee_fixed_minor ? ` + ${a.fee_fixed_minor}` : "")}
                   </td>
                   <td className="text-[12px] text-ink-600">
-                    {a.limits.minAmount != null || a.limits.maxAmount != null ? `${a.limits.minAmount != null ? formatNumber(a.limits.minAmount) : "0"} – ${a.limits.maxAmount != null ? formatNumber(a.limits.maxAmount) : "∞"}` : <span className="text-ink-400">none</span>}
+                    {translateUi(a.limits.minAmount != null || a.limits.maxAmount != null ? `${a.limits.minAmount != null ? formatNumber(a.limits.minAmount) : "0"} – ${a.limits.maxAmount != null ? formatNumber(a.limits.maxAmount) : "∞"}` : <span className="text-ink-400">{translateUi("none")}</span>)}
                   </td>
-                  <td className="text-[12px] text-ink-600">{a.currencies.length ? (a.currencies.length > 4 ? `${a.currencies.slice(0, 4).join(", ")} +${a.currencies.length - 4}` : a.currencies.join(", ")) : <span className="text-ink-400">provider default</span>}</td>
+                  <td className="text-[12px] text-ink-600">{translateUi(a.currencies.length ? (a.currencies.length > 4 ? `${a.currencies.slice(0, 4).join(", ")} +${a.currencies.length - 4}` : a.currencies.join(", ")) : <span className="text-ink-400">{translateUi("provider default")}</span>)}</td>
                   <td className="text-[12px]">
-                    {a.health && a.health.attempts ? (
+                    {translateUi(a.health && a.health.attempts ? (
                       <span>
-                        {formatNumber(a.health.attempts)} att · {formatPercent(a.health.approval_rate, 0)} appr · {formatPercent(a.health.uptime, 0)} up · {formatMs(a.health.avg_latency_ms)}
+                        {translateUi(formatNumber(a.health.attempts))}{translateUi(" att · ")}{translateUi(formatPercent(a.health.approval_rate, 0))}{translateUi(" appr · ")}{translateUi(formatPercent(a.health.uptime, 0))}{translateUi(" up · ")}{translateUi(formatMs(a.health.avg_latency_ms))}
                       </span>
                     ) : (
-                      <span className="text-ink-400">no traffic</span>
-                    )}
+                      <span className="text-ink-400">{translateUi("no traffic")}</span>
+                    ))}
                   </td>
                   <td>
-                    {canManage ? (
-                      <select className="input h-7 w-[170px] py-0 text-[12px]" value={sim} disabled={isBusy("simulation")} onChange={(e) => void patch(a, "simulation", { config: { simulation: { ...(a.config.simulation ?? {}), forceOutcome: e.target.value || null } } })} aria-label="Simulate outcome">
-                        <option value="">none (normal)</option>
-                        {OUTCOMES.map((o) => (
-                          <option key={o} value={o}>
-                            force {o.replace(/_/g, " ")}
+                    {translateUi(canManage ? (
+                      <select className="input h-7 w-[170px] py-0 text-[12px]" value={sim} disabled={isBusy("simulation")} onChange={(e) => void patch(a, "simulation", { config: { simulation: { ...(a.config.simulation ?? {}), forceOutcome: e.target.value || null } } })} aria-label={translateUi("Simulate outcome")}>
+                        <option value="">{translateUi("none (normal)")}</option>
+                        {translateUi(OUTCOMES.map((o) => (
+                          <option key={o} value={o}>{translateUi("force ")}{translateUi(o.replace(/_/g, " "))}
                           </option>
-                        ))}
+                        )))}
                       </select>
                     ) : sim ? (
-                      <Tag tone="warn">force {sim}</Tag>
+                      <Tag tone="warn">{translateUi("force ")}{translateUi(sim)}</Tag>
                     ) : (
-                      <span className="text-ink-400">none</span>
-                    )}
+                      <span className="text-ink-400">{translateUi("none")}</span>
+                    ))}
                   </td>
-                  {canManage ? (
+                  {translateUi(canManage ? (
                     <td>
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="sm" variant="ghost" loading={isBusy("health")} onClick={() => void healthCheck(a)}>
-                          Health check
-                        </Button>
+                        <Button size="sm" variant="ghost" loading={isBusy("health")} onClick={() => void healthCheck(a)}>{translateUi("Health check")}</Button>
                         <Button size="sm" variant="ghost" onClick={() => toggleEvents(a.id)}>
-                          {expanded === a.id ? "Hide events" : "Events"}
+                          {translateUi(expanded === a.id ? translateUi("Hide events") : translateUi("Events"))}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setError(null); setEditing(a); setForm(toForm(a)); }}>
-                          Edit
-                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => { setError(null); setEditing(a); setForm(toForm(a)); }}>{translateUi("Edit")}</Button>
                         <Button size="sm" variant={a.status === "active" ? "danger" : "primary"} loading={isBusy("status")} onClick={() => void patch(a, a.status === "active" ? "disabled" : "enabled", { status: a.status === "active" ? "disabled" : "active" })}>
-                          {a.status === "active" ? "Disable" : "Enable"}
+                          {translateUi(a.status === "active" ? translateUi("Disable") : translateUi("Enable"))}
                         </Button>
                       </div>
                     </td>
-                  ) : null}
+                  ) : null)}
                 </tr>
-                {expanded === a.id ? (
+                {translateUi(expanded === a.id ? (
                   <tr className="bg-ink-50">
                     <td colSpan={canManage ? 10 : 9} className="!whitespace-normal">
                       <EventsList items={events[a.id]} />
                     </td>
                   </tr>
-                ) : null}
+                ) : null)}
               </Fragment>
             );
-          })}
+          }))}
         </tbody>
       </Table>
-      {!canManage ? (
-        <div className="border-t border-ink-100 px-4 py-2 text-[11px] text-ink-400">
-          Read-only: your role cannot manage provider accounts.{" "}
-          <button className="underline" onClick={() => accounts[0] && toggleEvents(accounts[0].id)}>
-            Show recent events of the first account
-          </button>
+      {translateUi(!canManage ? (
+        <div className="border-t border-ink-100 px-4 py-2 text-[11px] text-ink-400">{translateUi("Read-only: your role cannot manage provider accounts.")}{translateUi(" ")}
+          <button className="underline" onClick={() => accounts[0] && toggleEvents(accounts[0].id)}>{translateUi("Show recent events of the first account")}</button>
         </div>
-      ) : null}
+      ) : null)}
 
-      {editing && form ? (
-        <Modal title={`Edit ${editing.name}`} description="Fees drive the cost factor in score-based routing; limits and currencies drive eligibility." onClose={() => setEditing(null)} onSubmit={saveEdit} loading={busy === `${editing.id}:edit`} error={error}>
+      {translateUi(editing && form ? (
+        <Modal title={translateUi(`Edit ${editing.name}`)} description={translateUi("Fees drive the cost factor in score-based routing; limits and currencies drive eligibility.")} onClose={() => setEditing(null)} onSubmit={saveEdit} loading={busy === `${editing.id}:edit`} error={error}>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <Field label="Name" htmlFor="an">
+              <Field label={translateUi("Name")} htmlFor="an">
                 <input id="an" className="input" minLength={2} maxLength={80} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </Field>
             </div>
-            <Field label="Priority" htmlFor="ap" help="Lower = preferred when no rule applies">
+            <Field label={translateUi("Priority")} htmlFor="ap" help={translateUi("Lower = preferred when no rule applies")}>
               <input id="ap" className="input" type="number" min={0} max={10000} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
             </Field>
-            <Field label="Fee percent" htmlFor="af" help="e.g. 2.4">
+            <Field label={translateUi("Fee percent")} htmlFor="af" help={translateUi("e.g. 2.4")}>
               <input id="af" className="input" type="number" step="0.01" min={0} max={100} value={form.fee_percent} onChange={(e) => setForm({ ...form, fee_percent: e.target.value })} />
             </Field>
-            <Field label="Fixed fee (minor units)" htmlFor="aff">
+            <Field label={translateUi("Fixed fee (minor units)")} htmlFor="aff">
               <input id="aff" className="input" type="number" min={0} value={form.fee_fixed_minor} onChange={(e) => setForm({ ...form, fee_fixed_minor: e.target.value })} />
             </Field>
-            <Field label="Currencies" htmlFor="ac" help="Comma separated; empty = provider default">
-              <input id="ac" className="input" placeholder="USD, EUR" value={form.currencies} onChange={(e) => setForm({ ...form, currencies: e.target.value })} />
+            <Field label={translateUi("Currencies")} htmlFor="ac" help={translateUi("Comma separated; empty = provider default")}>
+              <input id="ac" className="input" placeholder={translateUi("USD, EUR")} value={form.currencies} onChange={(e) => setForm({ ...form, currencies: e.target.value })} />
             </Field>
-            <Field label="Min amount (minor)" htmlFor="amin" help="Empty = no minimum">
+            <Field label={translateUi("Min amount (minor)")} htmlFor="amin" help={translateUi("Empty = no minimum")}>
               <input id="amin" className="input" type="number" min={0} value={form.min_amount} onChange={(e) => setForm({ ...form, min_amount: e.target.value })} />
             </Field>
-            <Field label="Max amount (minor)" htmlFor="amax" help="Empty = no maximum">
+            <Field label={translateUi("Max amount (minor)")} htmlFor="amax" help={translateUi("Empty = no maximum")}>
               <input id="amax" className="input" type="number" min={1} value={form.max_amount} onChange={(e) => setForm({ ...form, max_amount: e.target.value })} />
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
 
 function EventsList({ items }: { items: SystemEvent[] | "loading" | undefined }) {
-  if (!items || items === "loading") return <div className="px-1 py-2 text-[12px] text-ink-500">Loading events…</div>;
-  if (!items.length) return <div className="px-1 py-2 text-[12px] text-ink-500">No system events for this account.</div>;
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
+  if (!items || items === "loading") return <div className="px-1 py-2 text-[12px] text-ink-500">{translateUi("Loading events…")}</div>;
+  if (!items.length) return <div className="px-1 py-2 text-[12px] text-ink-500">{translateUi("No system events for this account.")}</div>;
   return (
     <ul className="divide-y divide-ink-100 py-1">
-      {items.map((e) => (
+      {translateUi(items.map((e) => (
         <li key={e.id} className="flex flex-wrap items-center gap-2 py-1.5 text-[12px]">
           <LevelTag level={e.level} />
-          <Mono className="text-[11px]">{e.type}</Mono>
-          <span className="text-ink-700">{e.message}</span>
+          <Mono className="text-[11px]">{translateUi(e.type)}</Mono>
+          <span className="text-ink-700">{translateUi(e.message)}</span>
           <span className="ml-auto text-[11px] text-ink-400">
-            {e.source} · {formatDateTime(e.createdAt)}
+            {translateUi(e.source)} · {translateUi(formatDateTime(e.createdAt))}
           </span>
         </li>
-      ))}
+      )))}
     </ul>
   );
 }
@@ -344,6 +345,8 @@ function EventsList({ items }: { items: SystemEvent[] | "loading" | undefined })
 // Add provider account
 // ---------------------------------------------------------------------------
 export function AddProviderAccount({ providers, merchants }: { providers: Array<Pick<Provider, "id" | "name" | "status">>; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -392,65 +395,63 @@ export function AddProviderAccount({ providers, merchants }: { providers: Array<
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Add provider account
-      </Button>
-      {open ? (
-        <Modal title="Add provider account" description="A concrete integration (MID / credentials) for a provider in one mode. Credentials are encrypted at rest and never returned by the API." onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create account" loading={loading} error={error} width={560}>
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Add provider account")}</Button>
+      {translateUi(open ? (
+        <Modal title={translateUi("Add provider account")} description={translateUi("A concrete integration (MID / credentials) for a provider in one mode. Credentials are encrypted at rest and never returned by the API.")} onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create account" loading={loading} error={error} width={560}>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Provider" htmlFor="np">
+            <Field label={translateUi("Provider")} htmlFor="np">
               <select id="np" className="input" value={form.provider_id} onChange={(e) => setForm({ ...form, provider_id: e.target.value })} required>
-                {providers.map((p) => (
+                {translateUi(providers.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
-                    {p.status !== "active" ? ` (${p.status})` : ""}
+                    {translateUi(p.status !== "active" ? ` (${p.status})` : "")}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Mode" htmlFor="nm">
+            <Field label={translateUi("Mode")} htmlFor="nm">
               <select id="nm" className="input" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })}>
-                <option value="test">test</option>
-                <option value="live">live</option>
+                <option value="test">{translateUi("test")}</option>
+                <option value="live">{translateUi("live")}</option>
               </select>
             </Field>
             <div className="col-span-2">
-              <Field label="Name" htmlFor="nn">
-                <input id="nn" className="input" minLength={2} maxLength={80} required placeholder="Acquirer A · Live EU" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Field label={translateUi("Name")} htmlFor="nn">
+                <input id="nn" className="input" minLength={2} maxLength={80} required placeholder={translateUi("Acquirer A · Live EU")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </Field>
             </div>
             <div className="col-span-2">
-              <Field label="Dedicated merchant" htmlFor="nmer" help="Leave empty for a shared platform account">
+              <Field label={translateUi("Dedicated merchant")} htmlFor="nmer" help={translateUi("Leave empty for a shared platform account")}>
                 <select id="nmer" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })}>
-                  <option value="">Shared (all merchants)</option>
-                  {merchants.map((m) => (
+                  <option value="">{translateUi("Shared (all merchants)")}</option>
+                  {translateUi(merchants.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name}
                     </option>
-                  ))}
+                  )))}
                 </select>
               </Field>
             </div>
-            <Field label="Priority" htmlFor="npr">
+            <Field label={translateUi("Priority")} htmlFor="npr">
               <input id="npr" className="input" type="number" min={0} max={10000} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
             </Field>
-            <Field label="Currencies" htmlFor="nc" help="Comma separated; empty = provider default">
-              <input id="nc" className="input" placeholder="USD, EUR" value={form.currencies} onChange={(e) => setForm({ ...form, currencies: e.target.value })} />
+            <Field label={translateUi("Currencies")} htmlFor="nc" help={translateUi("Comma separated; empty = provider default")}>
+              <input id="nc" className="input" placeholder={translateUi("USD, EUR")} value={form.currencies} onChange={(e) => setForm({ ...form, currencies: e.target.value })} />
             </Field>
-            <Field label="Fee percent" htmlFor="nf">
+            <Field label={translateUi("Fee percent")} htmlFor="nf">
               <input id="nf" className="input" type="number" step="0.01" min={0} max={100} value={form.fee_percent} onChange={(e) => setForm({ ...form, fee_percent: e.target.value })} />
             </Field>
-            <Field label="Fixed fee (minor units)" htmlFor="nff">
+            <Field label={translateUi("Fixed fee (minor units)")} htmlFor="nff">
               <input id="nff" className="input" type="number" min={0} value={form.fee_fixed_minor} onChange={(e) => setForm({ ...form, fee_fixed_minor: e.target.value })} />
             </Field>
             <div className="col-span-2">
-              <Field label="Credentials (JSON, write-only)" htmlFor="ncred" help="Provider API keys / MID as a JSON object. Stored encrypted; cannot be read back.">
+              <Field label={translateUi("Credentials (JSON, write-only)")} htmlFor="ncred" help={translateUi("Provider API keys / MID as a JSON object. Stored encrypted; cannot be read back.")}>
                 <textarea id="ncred" className="input mono" rows={4} spellCheck={false} value={form.credentials} onChange={(e) => setForm({ ...form, credentials: e.target.value })} />
               </Field>
             </div>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }

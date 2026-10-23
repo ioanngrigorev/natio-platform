@@ -1,3 +1,4 @@
+import {localeOf} from '../../modules/localization/service.js';
 import {trafficAnalytics} from '../../modules/analytics/traffic.js';
 import {biQuery} from '../../modules/analytics/bi.js';
 import {greetingQuotes,searchQuotes} from '../../modules/quotes/service.js';
@@ -8,7 +9,7 @@ import { parse } from '../validate.js';
 import { getPool } from '../../db/client.js';
 import { Errors } from '../../lib/errors.js';
 import { loadConfig } from '../../config.js';
-import { knowledge, knowledgeVersion, searchKnowledge } from '../../modules/assistant/knowledge.js';
+import { knowledge, localizedKnowledge, knowledgeVersion, searchKnowledge } from '../../modules/assistant/knowledge.js';
 import { assistantInput, dashboardSpec, connectionSpec } from '../../modules/assistant/schemas.js';
 import {validateAttachment,type Attachment} from '../../modules/assistant/attachments.js';
 import {billingActor,meteredAi} from '../../modules/plans/billing.js';
@@ -32,7 +33,7 @@ export async function registerWorkspaceRoutes(app:FastifyInstance){
   return reply.header('content-disposition','attachment; filename="natio-risk.xlsx"').type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(Buffer.from(await wb.xlsx.writeBuffer()));
  });
  app.get("/admin/risk-dashboard",{preHandler:guard},async(req)=>{parse(riskQuery,req.query);parse(riskThresholds,req.query);return snapshots.get(JSON.stringify([req.dashboardMode,req.query]),()=>riskDashboard(req.query,req.dashboardMode!));});
- app.get('/admin/knowledge',{preHandler:guard},async(req)=>{const q=parse(z.object({q:z.string().max(300).default(''),category:z.string().max(60).optional()}),req.query);return {version:knowledgeVersion,categories:[...new Set(knowledge.map(a=>a.category))],data:searchKnowledge(q.q,q.category)};});
+ app.get('/admin/knowledge',{preHandler:guard},async(req)=>{const q=parse(z.object({q:z.string().max(300).default(''),category:z.string().max(60).optional()}),req.query);const locale=localeOf(req.cookies.natio_locale);return {version:knowledgeVersion,locale,categories:[...new Set(localizedKnowledge(locale).map(a=>a.category))],data:searchKnowledge(q.q,q.category,locale)};});
  app.get('/admin/bi/traffic',{preHandler:guard},async req=>trafficAnalytics(parse(biQuery,req.query),req.dashboardMode));
  app.get('/admin/greeting-quotes',{preHandler:guard},async()=>({data:greetingQuotes}));
  app.get('/admin/quotes',{preHandler:guard},async req=>{const b=parse(z.object({q:z.string().max(200).default(''),topic:z.string().max(60).default(''),page:z.coerce.number().int().min(1).max(10000).default(1)}),req.query);return searchQuotes(b.q,b.topic,b.page)});

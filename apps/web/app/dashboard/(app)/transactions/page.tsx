@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import { FilterBar } from "@/components/dashboard/filters";
 import { TransactionsTable } from "@/components/dashboard/transactions-table";
 import { Card, PageHeader, Pagination } from "@/components/ui";
@@ -12,6 +14,8 @@ const STATUSES = ["pending", "successful", "failed", "cancelled"];
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local", "bank_account", "card_token"];
 
 export default async function TransactionsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const query = qs({
     search: searchParams.search,
@@ -29,7 +33,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
 
   return (
     <>
-      <PageHeader title="Transactions" subtitle="Ledger view of every payment, refund and payout processed through NATIO, with provider, fee and settlement state." />
+      <PageHeader title={translateUi("Transactions")} subtitle={translateUi("Ledger view of every payment, refund and payout processed through NATIO, with provider, fee and settlement state.")} />
       <FilterBar
         filters={[
           { name: "search", label: "Search", type: "text", placeholder: "txn_…, pay_…, provider ref" },

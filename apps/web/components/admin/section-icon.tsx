@@ -1,3 +1,6 @@
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import type { ReactNode } from 'react';
 const shapes:Record<string,ReactNode>={
  Operations:<><path d="M4 7h14m-4-4 4 4-4 4M20 17H6m4-4-4 4 4 4"/></>,
@@ -8,4 +11,6 @@ const shapes:Record<string,ReactNode>={
  Platform:<><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></>,
  Support:<><path d="M12 6c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Zm0 0v15"/></>,
 };
-export function SectionIcon({name}:{name:string}){return <span className="nav-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{shapes[name]||<path d="M4 18V9m8 9V4m8 14v-6"/>}</svg></span>}
+export function SectionIcon({name}:{name:string}){
+ const {t:translateUi,locale:uiLocale}=useI18n();
+return <span className="nav-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{translateUi(shapes[name]||<path d="M4 18V9m8 9V4m8 14v-6"/>)}</svg></span>}

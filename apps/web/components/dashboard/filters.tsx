@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -14,6 +16,8 @@ export interface FilterDef {
 
 /** URL-driven filter bar: submits to the same route with query params (server components re-render). */
 export function FilterBar({ filters }: { filters: FilterDef[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -39,43 +43,41 @@ export function FilterBar({ filters }: { filters: FilterDef[] }) {
 
   return (
     <form onSubmit={submit} className="mb-4 flex flex-wrap items-end gap-2">
-      {filters.map((f) => (
+      {translateUi(filters.map((f) => (
         <div key={f.name} className="min-w-[140px]">
           <label className="label" htmlFor={`f-${f.name}`}>
-            {f.label}
+            {translateUi(f.label)}
           </label>
-          {f.type === "select" ? (
+          {translateUi(f.type === "select" ? (
             <select id={`f-${f.name}`} className="input" value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })}>
-              <option value="">All</option>
-              {f.options?.map((o) => (
+              <option value="">{translateUi("All")}</option>
+              {translateUi(f.options?.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {translateUi(o.label)}
                 </option>
-              ))}
+              )))}
             </select>
           ) : (
-            <input id={`f-${f.name}`} type={f.type === "date" ? "datetime-local" : "text"} className="input" placeholder={f.placeholder} value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
-          )}
+            <input id={`f-${f.name}`} type={f.type === "date" ? "datetime-local" : "text"} className="input" placeholder={translateUi(f.placeholder)} value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
+          ))}
         </div>
-      ))}
-      <Button type="submit" variant="primary">
-        Apply
-      </Button>
-      <Button type="button" variant="ghost" onClick={reset}>
-        Reset
-      </Button>
+      )))}
+      <Button type="submit" variant="primary">{translateUi("Apply")}</Button>
+      <Button type="button" variant="ghost" onClick={reset}>{translateUi("Reset")}</Button>
     </form>
   );
 }
 
 /** Single query-param select that preserves the other params (e.g. currency next to a PeriodPicker). */
 export function QuerySelect({ name, label, current, options, allLabel = "All" }: { name: string; label: string; current?: string; options: Array<{ value: string; label: string }>; allLabel?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   return (
     <label className="flex items-center gap-2 text-[12px] text-ink-500">
-      <span>{label}</span>
+      <span>{translateUi(label)}</span>
       <select
         className="input !w-auto !py-[3px] text-[12px]"
         value={current ?? ""}
@@ -86,18 +88,20 @@ export function QuerySelect({ name, label, current, options, allLabel = "All" }:
           router.push(`${pathname}${u.toString() ? `?${u.toString()}` : ""}`);
         }}
       >
-        <option value="">{allLabel}</option>
-        {options.map((o) => (
+        <option value="">{translateUi(allLabel)}</option>
+        {translateUi(options.map((o) => (
           <option key={o.value} value={o.value}>
-            {o.label}
+            {translateUi(o.label)}
           </option>
-        ))}
+        )))}
       </select>
     </label>
   );
 }
 
 export function PeriodPicker({ current, demo = false }: { current: string; demo?: boolean }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -109,8 +113,8 @@ export function PeriodPicker({ current, demo = false }: { current: string; demo?
     { value: "90", label: "90d" },
   ];
   return (
-    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="group" aria-label={demo ? "Period within demo year 2025" : "Reporting period"}>
-      {options.map((o) => (
+    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="group" aria-label={translateUi(demo ? translateUi("Period within demo year 2025") : translateUi("Reporting period"))}>
+      {translateUi(options.map((o) => (
         <button
           key={o.value}
           type="button"
@@ -123,9 +127,9 @@ export function PeriodPicker({ current, demo = false }: { current: string; demo?
           }}
           className={"rounded px-2.5 py-[3px] font-medium " + (current === o.value ? "bg-brand-600 text-white" : "text-ink-500 hover:text-ink-900")}
         >
-          {o.label}
+          {translateUi(o.label)}
         </button>
-      ))}
+      )))}
     </div>
   );
 }
