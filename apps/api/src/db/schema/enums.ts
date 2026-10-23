@@ -14,7 +14,7 @@ export const merchantRoleEnum = pgEnum("merchant_role", [
   "viewer",
 ]);
 export const userStatusEnum = pgEnum("user_status", ["invited", "active", "disabled"]);
-export const adminRoleEnum = pgEnum("admin_role", ["superadmin", "operations", "support", "readonly"]);
+export const adminRoleEnum = pgEnum("admin_role", ["superadmin", "administrator", "technical", "finance", "operations", "support", "readonly"]);
 export const sessionKindEnum = pgEnum("session_kind", ["merchant", "admin"]);
 
 export const providerTypeEnum = pgEnum("provider_type", [

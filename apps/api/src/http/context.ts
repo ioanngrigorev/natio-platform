@@ -1,4 +1,5 @@
 import "@fastify/cookie";
+import {loadConfig} from '../config.js';
 import type { ApiKeyPrincipal } from "../modules/api-keys/service.js";
 import type { AdminPrincipal, MerchantPrincipal } from "../modules/auth/service.js";
 import type { Actor } from "../modules/audit/service.js";
@@ -42,6 +43,8 @@ export function actorFromRequest(req: {
 }
 
 export const COOKIES = {
-  merchant: "natio_session",
-  admin: "natio_admin_session",
+  // Production cookies may have a parent domain. Distinct host-only demo
+  // cookie names prevent either environment from replacing the other's login.
+  get merchant() { return loadConfig().NATIO_SANDBOX_ONLY ? "natio_demo_session" : "natio_session"; },
+  get admin() { return loadConfig().NATIO_SANDBOX_ONLY ? "natio_demo_admin_session" : "natio_admin_session"; },
 } as const;

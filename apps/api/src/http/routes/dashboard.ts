@@ -27,7 +27,7 @@ import { assertProviderAccountVisible, getBatchDetail, listBatches, parseProvide
 import { createEndpoint, deleteEndpoint, getDeliveryDetail, listDeliveries, listEndpoints, resendDelivery, rotateEndpointSecret, sendTestEvent, serializeEndpoint, updateEndpoint } from "../../modules/webhooks/service.js";
 import { listProvidersWithAccounts, providerHealth } from "../../modules/providers/service.js";
 import { listRulesAdmin } from "../../modules/routing/service.js";
-import { actorFromRequest } from "../context.js";
+import { COOKIES, actorFromRequest } from "../context.js";
 import { requireMerchant, checkCsrf } from "../guards.js";
 import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie } from "../helpers.js";
 import { parse, parseQuery } from "../validate.js";
@@ -77,7 +77,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     });
 
     d.post("/auth/logout", async (req, reply) => {
-      const token = req.cookies?.natio_session;
+      const token = req.cookies?.[COOKIES.merchant];
       if (token) {
         const { resolveMerchantSession } = await import("../../modules/auth/service.js");
         const principal = await resolveMerchantSession(db, token);
@@ -105,7 +105,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       m.get("/auth/me", async (req) => {
         const { user, merchant, session } = me(req);
         const projects = await listProjects(db, merchant.id);
-        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, mode: req.dashboardMode, plan: await merchantPlan(merchant.id,req.dashboardMode) };
+        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, sandbox: cfg.NATIO_SANDBOX_ONLY, mode: req.dashboardMode, plan: await merchantPlan(merchant.id,req.dashboardMode) };
       });
 
       m.post("/auth/password", async (req) => {

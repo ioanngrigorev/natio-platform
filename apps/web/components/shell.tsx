@@ -89,13 +89,13 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="ml-auto flex items-center gap-3">
             {translateUi(session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">{translateUi("Support ↗")}</Link><AdminThemeToggle /></> : null)}
             <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">{translateUi("＋ Suggest improvement")}</Link>
-            <DevelopmentNotifications/>
+            {session.kind === 'admin'?<button type="button" className="btn-secondary whitespace-nowrap !border-brand-600 !text-brand-600" onClick={()=>window.dispatchEvent(new CustomEvent('natio:ask',{detail:''}))}>{translateUi("✦ Ask AI")}</button>:null}<DevelopmentNotifications/>
             <LanguagePicker compact/><ModeToggle />
             <button type="button" onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
           </div>
         </header>
         {translateUi(opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">{translateUi("Opening ")}{translateUi(opening)}…</div> : null)}
-        <main className="natio-workspace flex-1 px-4 py-6 md:px-6">
+        {session.sandbox?<div role="status" className="border-b border-ink-200 bg-ink-50 px-6 py-2 text-xs text-ink-600">{translateUi("Isolated demo · Synthetic data · No real payments")}</div>:null}<main className="natio-workspace flex-1 px-4 py-6 md:px-6">
           <div className="mx-auto max-w-[1280px]">{translateUi(session.kind === "admin" ? <AdminGreeting/> : null)}{children}</div>
         </main>
       </div>
@@ -111,7 +111,7 @@ export function ModeToggle() {
   return (
     <div className="mode-toggle flex shrink-0 items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="radiogroup" aria-label={translateUi("Data mode")}>
       {translateUi((["test", "live"] as const).map((m) => (
-        <button key={m} role="radio" aria-label={translateUi(m === "test" ? "Test data" : "Live data")} aria-checked={session.mode === m} onClick={() => session.setMode(m)} className={cx("whitespace-nowrap rounded px-2.5 py-[3px] font-medium", session.mode === m ? (m === "live" ? "bg-ok text-white" : "bg-warn text-white") : "text-ink-500 hover:text-ink-900")}>
+        <button key={m} role="radio" disabled={session.sandbox&&m==='live'} aria-label={translateUi(m === "test" ? "Test data" : "Live data")} aria-checked={session.mode === m} onClick={() => session.setMode(m)} className={cx("whitespace-nowrap rounded px-2.5 py-[3px] font-medium", session.mode === m ? (m === "live" ? "bg-ok text-white" : "bg-warn text-white") : "text-ink-500 hover:text-ink-900")}>
           {translateUi(m === "test" ? "Test" : "Live")}
         </button>
       )))}

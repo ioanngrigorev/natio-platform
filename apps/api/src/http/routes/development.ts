@@ -2,6 +2,7 @@ import type { FastifyInstance,FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
+import {hasAdminPermission} from '../../modules/auth/permissions.js';
 import { requireAdmin,requireMerchant } from '../guards.js';
 import { parse } from '../validate.js';
 import { getPool } from '../../db/client.js';
@@ -14,7 +15,7 @@ import {billingActor,meteredAi} from '../../modules/plans/billing.js';
 import { transcribeAudio } from '../../modules/assistant/client.js';
 import { requirePlan,merchantPlan,planFeatures } from '../../modules/plans/service.js';
 const param=z.object({id:z.string().uuid()}),v=z.number().int().positive();
-function actor(req:FastifyRequest,admin:boolean):Actor{return admin?{kind:'admin',id:req.admin!.admin.id,manager:['superadmin','operations'].includes(req.admin!.admin.role),mode:req.dashboardMode!}:{kind:'merchant',id:req.merchantUser!.user.id,merchantId:req.merchantUser!.merchant.id,manager:false,mode:req.dashboardMode!}}
+function actor(req:FastifyRequest,admin:boolean):Actor{return admin?{kind:'admin',id:req.admin!.admin.id,manager:hasAdminPermission(req.admin!.admin.role,'development.manage'),mode:req.dashboardMode!}:{kind:'merchant',id:req.merchantUser!.user.id,merchantId:req.merchantUser!.merchant.id,manager:false,mode:req.dashboardMode!}}
 async function premium(a:Actor){if(a.merchantId)await requirePlan(a.merchantId,'development',a.mode)}
 export async function registerDevelopmentRoutes(app:FastifyInstance){
  const p=getPool();

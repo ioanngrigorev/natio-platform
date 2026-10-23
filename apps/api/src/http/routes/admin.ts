@@ -19,7 +19,7 @@ import { platformOverview, providerComparison } from "../../modules/analytics/se
 import { SnapshotCache } from "../../modules/analytics/snapshot-cache.js";
 import { listAudit, listSystemEvents, recordAudit } from "../../modules/audit/service.js";
 import { loginAdmin, revokeSession } from "../../modules/auth/service.js";
-import { ADMIN_ROLES, hasAdminPermission, type AdminPermission, type AdminRole } from "../../modules/auth/permissions.js";
+import { ADMIN_ROLES, adminPermissions, hasAdminPermission, type AdminPermission, type AdminRole } from "../../modules/auth/permissions.js";
 import { adminListMerchants, adminSetKyb, adminSetMerchantStatus, listProjects, listUsers, serializeMerchant, serializeProject, serializeUser } from "../../modules/merchants/service.js";
 import { listPaymentsQuerySchema } from "../../modules/payments/schemas.js";
 import { getPaymentDetail, getPaymentRow, getPaymentTimeline, listPayments, reviewPayment } from "../../modules/payments/service.js";
@@ -37,7 +37,7 @@ import { getBatchDetail, listBatches, parseProviderCsv, resolveItem, runReconcil
 import { getDeliveryDetail, listDeliveries, resendDelivery } from "../../modules/webhooks/service.js";
 import { chainHealth } from "../../modules/wallets/watcher.js";
 import { getDb as _db } from "../../db/client.js";
-import { actorFromRequest } from "../context.js";
+import { COOKIES, actorFromRequest } from "../context.js";
 import { requireAdmin, checkCsrf } from "../guards.js";
 import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie } from "../helpers.js";
 import { parse, parseQuery } from "../validate.js";
@@ -62,7 +62,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       return { admin: { id: principal.admin.id, email: principal.admin.email, name: principal.admin.name, role: principal.admin.role }, csrf_token: principal.session.csrfToken };
     });
     a.post("/auth/logout", async (req, reply) => {
-      const token = req.cookies?.natio_admin_session;
+      const token = req.cookies?.[COOKIES.admin];
       if (token) {
         const { resolveAdminSession } = await import("../../modules/auth/service.js");
         const p = await resolveAdminSession(db, token);
@@ -85,7 +85,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         if (!hasAdminPermission(admin(req).role, p)) throw Errors.forbidden(`Requires admin permission ${p}`);
       };
 
-      r.get("/auth/me", async (req) => ({ admin: { id: admin(req).id, email: admin(req).email, name: admin(req).name, role: admin(req).role }, csrf_token: req.admin!.session.csrfToken, mode: req.dashboardMode }));
+      r.get("/auth/me", async (req) => ({ admin: { id: admin(req).id, email: admin(req).email, name: admin(req).name, role: admin(req).role }, sandbox: cfg.NATIO_SANDBOX_ONLY, permissions: adminPermissions(admin(req).role), csrf_token: req.admin!.session.csrfToken, mode: req.dashboardMode }));
 
       // ---------------------------------------------------------------- overview
       r.get("/overview", async (req) => {

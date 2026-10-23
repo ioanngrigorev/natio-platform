@@ -126,6 +126,7 @@ services:
       SITE_DOMAIN: ${SITE_DOMAIN:?set in .env}
       ACME_EMAIL: ${ACME_EMAIL:?set in .env}
     depends_on: [api, web]
+    networks: [default, demo_edge]
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
@@ -183,3 +184,7 @@ volumes:
   redisdata:
   caddydata:
   caddyconfig:
+
+networks:
+  demo_edge:
+    name: natio_demo_edge

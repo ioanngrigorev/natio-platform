@@ -5,6 +5,8 @@ import { API_KEY_PATTERN, generateApiKey, sha256Hex } from "../../lib/crypto.js"
 import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { recordAudit, type Actor } from "../audit/service.js";
+import {loadConfig} from '../../config.js';
+import {logger} from '../../lib/logger.js';
 
 export interface ApiKeyPrincipal {
   apiKey: typeof apiKeys.$inferSelect;
@@ -30,6 +32,7 @@ export async function createApiKey(
   db: Db,
   input: { merchantId: string; projectId: string; mode: "test" | "live"; name: string; actor: Actor },
 ): Promise<{ key: typeof apiKeys.$inferSelect; secret: string }> {
+  if (loadConfig().NATIO_SANDBOX_ONLY && input.mode === 'live') throw Errors.forbidden('Live keys are disabled in the demo environment');
   const [project] = await db
     .select()
     .from(projects)
@@ -107,7 +110,9 @@ export async function authenticateApiKey(db: DbOrTx, secret: string): Promise<Ap
   // Best-effort last_used tracking (throttled to once per minute to avoid write amplification).
   const last = row.apiKey.lastUsedAt?.getTime() ?? 0;
   if (Date.now() - last > 60_000) {
-    void db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.apiKey.id));
+    // Drizzle queries are lazy: execute the write and handle a best-effort
+    // tracking failure without turning valid authentication into an outage.
+    void db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.apiKey.id)).then(()=>undefined).catch(()=>logger.warn({keyId:row.apiKey.id},'API key usage timestamp could not be updated'));
   }
   return { apiKey: row.apiKey, merchant: row.merchant, project: row.project, mode: row.apiKey.mode };
 }

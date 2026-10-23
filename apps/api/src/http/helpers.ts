@@ -10,13 +10,13 @@ export function setSessionCookie(reply: FastifyReply, kind: "merchant" | "admin"
     secure: cfg.COOKIE_SECURE,
     sameSite: "lax",
     maxAge: ttlHours * 3600,
-    ...(cfg.COOKIE_DOMAIN ? { domain: cfg.COOKIE_DOMAIN } : {}),
+    ...(!cfg.NATIO_SANDBOX_ONLY && cfg.COOKIE_DOMAIN ? { domain: cfg.COOKIE_DOMAIN } : {}),
   });
 }
 
 export function clearSessionCookie(reply: FastifyReply, kind: "merchant" | "admin") {
   const cfg = loadConfig();
-  reply.clearCookie(COOKIES[kind], { path: "/", ...(cfg.COOKIE_DOMAIN ? { domain: cfg.COOKIE_DOMAIN } : {}) });
+  reply.clearCookie(COOKIES[kind], { path: "/", ...(!cfg.NATIO_SANDBOX_ONLY && cfg.COOKIE_DOMAIN ? { domain: cfg.COOKIE_DOMAIN } : {}) });
 }
 
 export function idempotencyKeyOf(req: FastifyRequest): string | undefined {
