@@ -5,7 +5,7 @@
  */
 import type { Mode, Payment, Provider, ProviderAccount, Refund, TimelineEvent } from "./types";
 
-export type AdminRole = "superadmin" | "operations" | "support" | "readonly";
+export type AdminRole = "superadmin" | "administrator" | "technical" | "finance" | "operations" | "support" | "readonly";
 
 export interface AdminMerchant {
   id: string;

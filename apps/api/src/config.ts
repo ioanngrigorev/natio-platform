@@ -19,6 +19,8 @@ const hexKey = z
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NATIO_PROCESS_ROLE: z.enum(["api", "worker", "all"]).default("all"),
+  /** Dedicated demo deployment: separate database/queues/keys plus server-side live-payment lock. */
+  NATIO_SANDBOX_ONLY: bool,
   API_PORT: int(4000),
   API_HOST: z.string().default("0.0.0.0"),
   LOG_LEVEL: z.string().default("info"),

@@ -1,0 +1,84 @@
+# Isolated role-testing environment. No production DB, queue, or signing keys.
+# Create the shared edge network through the production proxy compose first.
+name: natio-demo
+x-api: &api
+  image: natio/api:demo
+  env_file: [.env]
+  environment:
+    DATABASE_URL: postgres://natio_demo:${POSTGRES_PASSWORD:?set demo password}@demo-postgres:5432/natio_demo
+    REDIS_URL: redis://demo-redis:6379
+    NATIO_SANDBOX_ONLY: "true"
+    NATIO_PROCESS_ROLE: all
+    DATABASE_POOL_MAX: "4"
+    COOKIE_DOMAIN: ""
+    COOKIE_SECURE: "true"
+    API_HOST: 0.0.0.0
+  networks: [private, edge]
+  logging:
+    driver: json-file
+    options: {max-size: "5m", max-file: "2"}
+services:
+  demo-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: natio_demo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set demo password}
+      POSTGRES_DB: natio_demo
+    command: [postgres, -c, shared_buffers=32MB, -c, max_connections=30]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U natio_demo -d natio_demo"]
+      interval: 5s
+      retries: 20
+    mem_limit: 256m
+  demo-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: [redis-server, --appendonly, "yes", --maxmemory, 64mb, --maxmemory-policy, noeviction]
+    volumes: [redisdata:/data]
+    networks: [private]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      retries: 20
+    mem_limit: 96m
+  demo-api:
+    <<: *api
+    restart: unless-stopped
+    depends_on:
+      demo-postgres: {condition: service_healthy}
+      demo-redis: {condition: service_healthy}
+    mem_limit: 384m
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:4000/health]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  demo-web:
+    image: natio/web:demo
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://demo-api:4000
+    networks: [edge]
+    mem_limit: 384m
+  migrate:
+    <<: *api
+    profiles: [tools]
+    command: [node, dist/db/migrate.js]
+  provision:
+    <<: *api
+    profiles: [tools]
+    volumes: [./private:/run/natio-demo]
+    command: [node, dist/db/provision-demo.js]
+volumes:
+  pgdata:
+  redisdata:
+networks:
+  private:
+    internal: true
+  edge:
+    external: true
+    name: natio_demo_edge

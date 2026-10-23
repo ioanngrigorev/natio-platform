@@ -152,6 +152,7 @@ export async function updateProviderAccount(
   const [before] = await db.select().from(providerAccounts).where(eq(providerAccounts.id, accountId)).limit(1);
   if (!before) throw Errors.notFound("Provider account", accountId);
   const cfg = loadConfig();
+  if (cfg.NATIO_SANDBOX_ONLY && before.mode === 'live') throw Errors.forbidden('Live provider accounts are disabled in the demo environment');
   const [after] = await db
     .update(providerAccounts)
     .set({
@@ -193,6 +194,9 @@ export async function createProviderAccount(
   const [provider] = await db.select().from(providers).where(eq(providers.id, input.providerId)).limit(1);
   if (!provider) throw Errors.notFound("Provider", input.providerId);
   const cfg = loadConfig();
+  if (cfg.NATIO_SANDBOX_ONLY && (input.mode === 'live' || !['mock_acquirer', 'mock_qr'].includes(provider.adapterKey))) {
+    throw Errors.forbidden('Only simulated test providers can be connected in the demo environment');
+  }
   const [account] = await db
     .insert(providerAccounts)
     .values({

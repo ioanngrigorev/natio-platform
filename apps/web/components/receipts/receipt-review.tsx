@@ -8,7 +8,7 @@ import { useSession, errorMessage } from "@/components/session-provider";
 import { adminCan } from "@/lib/admin-permissions";
 import { Button, Card, Grid, Kpi, PageHeader } from "@/components/ui";
 
-type Claim = { reference: string | null; amount: number | null; currency: string | null; date: string | null };
+type Claim = { reference: string | null; amount: number | null; currency: string | null; date: string | null; app_transaction_id?: string | null; recipient?: string | null; recipient_address?: string | null; account_last4?: string | null; local_time?: string | null; claimed_status?: string | null };
 type Assessment = { outcome: string; claim: Claim; evidence: (Claim & { status: string; source: string }) | null; findings: { code: string; level: string; message: string }[]; checked_at: string };
 type Receipt = { id: string; payment_id: string; merchant_name: string; amount: number; currency: string; state: string; decision: string | null; assessment: Assessment; created_at: string; updated_at: string; version: number; pages: number; sha256: string; assignee: string | null; events: { id: number; action: string; actor: string; note: string; created_at: string }[] };
 type Sample = { slug: string; title: string; payment_id: string };
@@ -40,7 +40,8 @@ function EvidencePanel({ assessment }: { assessment: Assessment }) {
     ["PSP reference", a.claim.reference, a.evidence?.reference],
     ["Amount", money(a.claim.amount, a.claim.currency), a.evidence ? money(a.evidence.amount, a.evidence.currency) : null],
     ["Currency", a.claim.currency, a.evidence?.currency],
-    ["Paid date (UTC)", a.claim.date, a.evidence?.date],
+    [a.claim.local_time ? "Receipt date (local)" : "Paid date (UTC)", a.claim.date, a.evidence?.date],
+    ...([ ["Local time (zone unverified)", a.claim.local_time], ["App transaction ID", a.claim.app_transaction_id], ["Beneficiary", a.claim.recipient], ["Beneficiary address", a.claim.recipient_address], ["Debited account · last 4", a.claim.account_last4], ["Claimed status", a.claim.claimed_status] ].filter(([,value]) => value).map(([label,value]) => [label,value,null])),
   ];
   return <div className="space-y-4">
     <Card title={translateUi("Verification result")} actions={<Badge value={a.outcome} />}>
@@ -49,7 +50,7 @@ function EvidencePanel({ assessment }: { assessment: Assessment }) {
     </Card>
     <Card title={translateUi("Receipt ↔ PSP")} description={translateUi(a.evidence?.source || "No independent PSP confirmation available")} padded={false}>
       <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-ink-50 text-xs text-ink-500"><tr><th className="p-3">{translateUi("Field")}</th><th className="p-3">{translateUi("Uploaded receipt")}</th><th className="p-3">{translateUi("PSP record")}</th></tr></thead><tbody>{translateUi(rows.map(([label, claim, psp]) => <tr key={label} className="border-t border-ink-100"><th className="p-3 font-medium">{translateUi(label)}</th><td className={`break-all p-3 ${psp && claim !== psp ? "text-bad" : ""}`}>{translateUi(claim || "Not extracted")}</td><td className="break-all p-3">{translateUi(psp || "Unavailable")}</td></tr>))}</tbody></table></div>
-      <p className="border-t border-ink-100 p-3 text-xs text-ink-500">{translateUi("PSP status: ")}<strong>{translateUi(a.evidence?.status || "unavailable")}</strong>{translateUi(" · Exact amount, currency, reference and UTC date comparison.")}</p>
+      <p className="border-t border-ink-100 p-3 text-xs text-ink-500">{translateUi("PSP status: ")}<strong>{translateUi(a.evidence?.status || "unavailable")}</strong>{translateUi(" · Compare bank reference, amount and currency. Confirm the time zone before comparing dates.")}</p>
     </Card>
     <Card title={translateUi("Evidence & risk signals")}><ul className="space-y-3">{translateUi(a.findings.map(f => <li key={f.code} className="flex gap-3 text-sm"><span aria-hidden className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${f.level === "risk" ? "bg-bad-bg text-bad" : f.level === "pass" ? "bg-ok-bg text-ok" : "bg-brand-50 text-brand-700"}`}>{translateUi(f.level === "pass" ? "✓" : "!")}</span><span>{translateUi(f.message)}</span></li>))}</ul></Card>
   </div>;

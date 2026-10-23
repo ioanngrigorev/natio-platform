@@ -1,11 +1,12 @@
 import { requirePlan, featureForPermission } from '../modules/plans/service.js';
+import {loadConfig} from '../config.js';
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getDb } from "../db/client.js";
 import { Errors } from "../lib/errors.js";
 import { safeEqual } from "../lib/crypto.js";
 import { authenticateApiKey } from "../modules/api-keys/service.js";
 import { resolveAdminSession, resolveMerchantSession } from "../modules/auth/service.js";
-import { hasAdminPermission, hasPermission, type AdminPermission, type Permission } from "../modules/auth/permissions.js";
+import { adminReadPermission, hasAdminPermission, hasPermission, type AdminPermission, type Permission } from "../modules/auth/permissions.js";
 import { COOKIES } from "./context.js";
 import { isIpAllowed } from "../lib/net.js";
 
@@ -16,6 +17,7 @@ export async function requireApiKey(req: FastifyRequest, _reply: FastifyReply): 
   const secret = header.slice(7).trim();
   const principal = await authenticateApiKey(getDb(), secret);
   if (!principal) throw Errors.invalidApiKey();
+  if (loadConfig().NATIO_SANDBOX_ONLY && principal.mode === 'live') throw Errors.forbidden('Live payments are disabled in this demo environment');
   const allowed = principal.project.settings.allowedIps ?? [];
   if (allowed.length && !isIpAllowed(req.ip, allowed)) throw Errors.ipNotAllowed();
   await requirePlan(principal.merchant.id, 'integrations',principal.mode);
@@ -23,6 +25,7 @@ export async function requireApiKey(req: FastifyRequest, _reply: FastifyReply): 
 }
 
 function readMode(req: FastifyRequest): "test" | "live" {
+  if (loadConfig().NATIO_SANDBOX_ONLY) return 'test';
   const h = String(req.headers["x-natio-mode"] ?? "").toLowerCase();
   if (h === "live" || h === "test") return h;
   const q = (req.query as Record<string, unknown> | undefined)?.mode;
@@ -57,6 +60,7 @@ export function requireAdmin(permission: AdminPermission = "admin.read") {
     const principal = await resolveAdminSession(getDb(), token);
     if (!principal) throw Errors.unauthorized("Session expired. Please sign in again.");
     checkCsrf(req, principal.session.csrfToken);
+    if (!hasAdminPermission(principal.admin.role, adminReadPermission(req.url))) throw Errors.forbidden("This section is not available to your role");
     if (!hasAdminPermission(principal.admin.role, permission)) throw Errors.forbidden(`Requires admin permission ${permission}`);
     req.admin = principal;
     req.dashboardMode = readMode(req);

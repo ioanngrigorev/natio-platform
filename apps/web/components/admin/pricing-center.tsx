@@ -104,7 +104,7 @@ export function PricingCenter({
  const {t:translateUi,locale:uiLocale}=useI18n();
 
   const session = useSession(),
-    can = adminCan(session.user.role, "providers.manage");
+    can = adminCan(session.user.role, "pricing.manage");
   const [plans, setPlans] = useState(initial),
     [selected, setSelected] = useState<PricePlan | null>(null),
     [terms, setTerms] = useState<Terms>(initial[0]?.terms ?? fresh()),

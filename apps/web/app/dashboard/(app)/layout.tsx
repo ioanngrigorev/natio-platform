@@ -31,7 +31,7 @@ export default async function DashboardAppLayout({ children }: { children: React
   return (
     <SessionProvider
       session={{
-        kind: "merchant",
+        kind: "merchant", sandbox: session.sandbox,
         plan: session.plan,
         csrf: session.csrf_token,
         mode: session.mode,

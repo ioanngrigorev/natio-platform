@@ -65,7 +65,7 @@ export async function registerPricingRoutes(app: FastifyInstance) {
   }));
   app.post(
     "/admin/pricing",
-    { preHandler: requireAdmin("providers.manage") },
+    { preHandler: requireAdmin("pricing.manage") },
     async (req, reply) => {
       const body = parse(
         z.object({ terms: priceTermsSchema, cloneId: z.string().optional() }),
@@ -86,7 +86,7 @@ export async function registerPricingRoutes(app: FastifyInstance) {
   );
   app.patch(
     "/admin/pricing/:id",
-    { preHandler: requireAdmin("providers.manage") },
+    { preHandler: requireAdmin("pricing.manage") },
     async (req) => {
       const { id } = parse(z.object({ id: z.string().max(100) }), req.params);
       const b = parse(

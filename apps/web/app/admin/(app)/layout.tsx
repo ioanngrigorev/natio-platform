@@ -1,3 +1,5 @@
+import {adminCan,adminReadPermission,adminPermissions} from "@/lib/admin-permissions";
+import type {AdminRole} from "@/lib/admin-types";
 import { redirect } from "next/navigation";
 import { SessionProvider } from "@/components/session-provider";
 import { Shell, type NavItem } from "@/components/shell";
@@ -29,6 +31,7 @@ const NAV: NavItem[] = [
   { href: "/admin/development", label: "Development Center", section: "Development" },
   { href: "/admin/plans", label: "Plans & monetisation", section: "Development" },
   { href: "/admin/system-events", label: "System events", section: "Platform" },
+  { href: "/admin/access", label: "My access", section: "Platform" },
   { href: "/admin/audit", label: "Audit log", section: "Platform" },
   { href: "/admin/knowledge", label: "Knowledge base", section: "Support" },
   { href: "/admin/support", label: "Contact support", section: "Support" },
@@ -40,8 +43,8 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   return (
-    <SessionProvider session={{ kind: "admin", csrf: session.csrf_token, mode: session.mode, permissions: [], user: session.admin }}>
-      <Shell nav={NAV} brand={{ title: "Admin", subtitle: session.mode === "test" ? "Investor demo · 2025" : "NATIO internal operations" }}>
+    <SessionProvider session={{ kind: "admin", sandbox: session.sandbox, csrf: session.csrf_token, mode: session.mode, permissions: session.permissions ?? adminPermissions(session.admin.role as AdminRole), user: session.admin }}>
+      <Shell nav={NAV.filter(item => adminCan(session.admin.role, /^\/admin\/(providers|catalog)(?:\/|$)/.test(item.href) ? "integrations.read" : item.href === "/admin/audit" ? "audit.read" : adminReadPermission(item.href)))} brand={{ title: "Admin", subtitle: session.mode === "test" ? "Investor demo · 2025" : "NATIO internal operations" }}>
         {children}
       </Shell>
     </SessionProvider>

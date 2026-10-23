@@ -113,6 +113,13 @@
       "when": 1792752000001,
       "tag": "0015_webhook_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792752000002,
+      "tag": "0016_admin_roles",
+      "breakpoints": true
     }
   ]
 }

@@ -64,6 +64,21 @@ www.{$SITE_DOMAIN} {
 	redir https://{$SITE_DOMAIN}{uri} permanent
 }
 
+# Dedicated sandbox. Its API and browser never route to production services.
+demo.{$SITE_DOMAIN} {
+	import hardening
+	handle_path /api/* {
+		reverse_proxy demo-api:4000
+	}
+	@demo_api path /v1/* /health /openapi.json /providers/webhooks/* /sandbox/* /public/*
+	handle @demo_api {
+		reverse_proxy demo-api:4000
+	}
+	handle {
+		reverse_proxy demo-web:3000
+	}
+}
+
 # --- Dedicated API host ----------------------------------------------------
 api.{$SITE_DOMAIN} {
 	import hardening
