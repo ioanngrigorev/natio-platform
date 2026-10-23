@@ -129,3 +129,7 @@
 .volume-navigator .recharts-brush-texts text { fill:var(--chart-axis); font-size:10px; }
 .volume-navigator .recharts-brush-traveller:focus { outline:2px solid var(--chart-1); outline-offset:3px; }
 @media (max-width:640px) { .volume-month-scale > :nth-child(even) { visibility:hidden; } .volume-tooltip { max-width:280px; padding:12px; } }
+
+.volume-tool { min-width:30px; height:30px; border-radius:6px; border:1px solid var(--chart-grid); font-size:16px; }
+.volume-tool:hover:not(:disabled) { background:var(--chart-grid); }
+.volume-tool:disabled { opacity:.3; cursor:default; }

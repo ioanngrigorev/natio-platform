@@ -61,9 +61,9 @@ Validation: API and web production builds pass. Nine new unit tests cover aliase
 
 ## Payment timeline refinement · 23 October 2026
 
-- Daily mode defaults to a labelled trailing seven-calendar-day average, with an Off switch for exact daily totals. The first six days use available history. Days with no operations contribute zero. Source amounts and exports are unchanged.
+- Daily mode shows exact daily values with monotone interpolation. Optional MA 7 overlays a dashed trailing seven-calendar-day average without hiding actual values. The first six days use available history. Days with no operations contribute zero. Source amounts and exports are unchanged.
 - Daily, Monday-based weekly and monthly intervals. Partial edge buckets include only selected dates, shown in tooltips.
-- Lower timeline preview with draggable/keyboard handles and 30/90/180-day and All shortcuts anchored to the report end. Zoom affects only the payment-volume chart; report filters and exports remain unchanged.
+- Lower timeline preview with draggable/keyboard handles and 7/30/90/180-day and All shortcuts anchored to the report end. Zoom affects only the payment-volume chart; report filters and exports remain unchanged.
 - The amount above the chart is the exact total of original daily values within the visible range. Tooltips expose both original amounts and the displayed average.
 - Quiet grid, thinner curve, subtle gradient and theme-aware tooltip/navigator; reduced-motion handling retained.
 - Unit checks cover zero-filled dates, rolling-window boundaries, calendar-year/week boundaries, leap days, partial buckets, exact minor units, empty data and historical zoom presets.
@@ -85,3 +85,13 @@ Hosting check: natio.me, api.natio.me and app.natio.me resolve to 95.179.244.175
 Validation before release: all 448 tests across 33 files pass on an isolated PostgreSQL 17 test cluster. Financial comparisons against the unchanged production database match the prior implementation for default BI, merchant/date/currency/status filters, empty results and both merchant modes. Server-side BI calculation: 3370 → 2600 ms; merchant list: 4791 → 1352 ms. These are individual measurements, not load-test percentiles. Production response timings will be recorded separately after rollout.
 
 References: [PostgreSQL grouping sets](https://www.postgresql.org/docs/16/queries-table-expressions.html#QUERIES-GROUPING-SETS), [React request-scoped cache](https://react.dev/reference/react/cache), [Recharts timeline navigator](https://recharts.github.io/en-US/api/Brush/).
+
+
+## Chart detail update · 23 October 2026
+
+- Actual values are the primary line; MA 7 is optional and off by default. Long reports open at the last 90 days, with exact visible dates and sum displayed; All restores the complete report.
+- Auto scale fits visible minimum/maximum with padding, preserves zeros/outliers and explicitly labels a non-zero baseline. From zero remains available. High/Low refer to the selected aggregation interval within the visible range.
+- Right-hand value scale, compact interval toolbar, 7/30/90/180-day presets, zoom in/out and bounded earlier/later panning. Main chart takes full width below 1536px. Navigator and all three themes retained.
+- Visual reference: [Bybit chart navigation and display controls](https://www.bybit.com/en/help-center/article/Bybit-Trading-Chart-FAQ). No trading candles or price data are fabricated from payment totals.
+- Regression: ten volume-series tests cover accounting, scale edge cases and bounded navigation; local browser checks verify actual/MA overlays, range totals, zoom and themes.
+- Production measurements (sequential requests from the same client; full HTML response; not load-test percentiles): repeated Overview 6.811 → 1.718 seconds; BI 5.143 → 1.809 seconds; Providers 6.788 → 1.927 seconds. First BI response after cache expiry was 4.328 seconds and Providers 6.395 seconds. Merchant list 4.996 → 2.702 seconds on first measured page request. Network distance and the single-vCPU database remain relevant for cold analytics.

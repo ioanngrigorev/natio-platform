@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyVolume, groupVolume, volumeWindow } from "../../../web/lib/volume-series.js";
+import { adjustVolumeWindow, dailyVolume, groupVolume, volumeDomain, volumeWindow } from "../../../web/lib/volume-series.js";
 
 function report(from: string, to: string, amounts: Array<[string, number]>) {
   return { period: { from, to }, daily: amounts.map(([day, volume]) => ({ day, volume, transactions: 2, successful: 1, failed: 1, pending: 0, fees: 0, payouts: 0, ledger_net: 0, settled: 0 })) };
@@ -53,5 +53,36 @@ describe("payment volume chart accounting", () => {
     expect(volumeWindow(days.slice(0, 1), 30)).toEqual({ startIndex: 0, endIndex: 0 });
     expect(dailyVolume(report("2025-01-01", "2025-12-31", []))).toEqual([]);
     expect(groupVolume([], "week")).toEqual([]);
+  });
+});
+
+
+describe("chart value scale and navigation", () => {
+  it("fits visible variation with padding and preserves zero and outlier values", () => {
+    const [low, high] = volumeDomain([40000, 50000, 60000]);
+    expect(low).toBeGreaterThan(0);
+    expect(low).toBeLessThan(40000);
+    expect(high).toBeGreaterThan(60000);
+    expect(volumeDomain([0, 50000])[0]).toBe(0);
+    expect(volumeDomain([50000, 1000000])[1]).toBeGreaterThan(1000000);
+    expect(volumeDomain([40000, 60000], true)[0]).toBe(0);
+  });
+  it("gives constant, tiny, empty and non-finite series a finite non-zero scale", () => {
+    for (const values of [[], [0], [100], [0.01], [NaN, Infinity]]) {
+      const [low, high] = volumeDomain(values);
+      expect(Number.isFinite(low) && Number.isFinite(high)).toBe(true);
+      expect(high).toBeGreaterThan(low);
+    }
+  });
+  it("zooms around the center and pans without changing the selected count", () => {
+    expect(adjustVolumeWindow(365, {startIndex:275,endIndex:364}, .5)).toEqual({startIndex:297,endIndex:341});
+    expect(adjustVolumeWindow(365, {startIndex:275,endIndex:364}, 2)).toEqual({startIndex:185,endIndex:364});
+    expect(adjustVolumeWindow(365, {startIndex:275,endIndex:364}, 1, -1)).toEqual({startIndex:230,endIndex:319});
+    expect(adjustVolumeWindow(365, {startIndex:0,endIndex:89}, 1, -1)).toEqual({startIndex:0,endIndex:89});
+  });
+  it("clamps navigation at both boundaries and handles one or no dates", () => {
+    expect(adjustVolumeWindow(7, {startIndex:4,endIndex:6}, .5)).toEqual({startIndex:4,endIndex:6});
+    expect(adjustVolumeWindow(1, {startIndex:0,endIndex:0}, 2, 1)).toEqual({startIndex:0,endIndex:0});
+    expect(adjustVolumeWindow(0, {startIndex:0,endIndex:0})).toEqual({startIndex:0,endIndex:0});
   });
 });

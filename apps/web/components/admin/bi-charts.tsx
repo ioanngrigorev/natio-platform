@@ -23,10 +23,10 @@ export function BiCharts({ report:r, overview=false }: {report:BiReport; overvie
   const points=groupVolume(dailyVolume(r),grain).map(p=>({...p,approval:p.successful+p.failed?100*p.successful/(p.successful+p.failed):0}));
   const tick=(v:string)=>new Date(v+"T00:00Z").toLocaleDateString("en-GB",grain==="month"?{month:"short",timeZone:"UTC"}:{day:"numeric",month:"short",timeZone:"UTC"});
   return <>
-    {r.analytics_snapshot_at && <p className="mb-2 text-xs text-ink-500">Analytics as of {new Date(r.analytics_snapshot_at).toLocaleTimeString("en-GB", {timeZone:"UTC"})} UTC · up to 15 seconds behind. Exports use current data.</p>}
+    {r.analytics_snapshot_at && <p className="mb-2 text-xs text-ink-500">Analytics as of {new Date(r.analytics_snapshot_at).toLocaleTimeString("en-GB", {timeZone:"UTC"})} UTC · reload to refresh. Snapshots may be cached for 15 seconds; exports use current data.</p>}
     <div className="mb-3 flex justify-end gap-2 text-xs text-ink-500"><button type="button" aria-pressed={motion} onClick={()=>setMotion(!motion)} className="rounded-lg border border-ink-200 px-3 py-2">Animation: {motion?"On":"Off"}</button><button type="button" disabled={!motion} onClick={()=>setReplay(v=>v+1)} className="rounded-lg border border-ink-200 px-3 py-2 disabled:opacity-40">Replay ↻</button></div>
     <div key={`${replay}-${r.period.from}-${r.period.to}-${r.currency}`} className={motion?"bi-motion":""}>
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+    <div className="grid items-start gap-5 2xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <PaymentVolumeChart report={r} motion={motion} grain={grain} onGrain={setGrain}/>
       <Card title="Transaction outcomes" description="All operations within the selected filters">
         {r.statuses.length ? <><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={r.statuses} dataKey="transactions" nameKey="label" innerRadius={70} outerRadius={100} paddingAngle={3} stroke="none" {...animated}>{r.statuses.map((s,i)=><Cell key={s.label} fill={colors[i%colors.length]}/>)}</Pie><Tooltip contentStyle={tipStyle} formatter={(v:number)=>formatNumber(v)}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/></PieChart></ResponsiveContainer>
