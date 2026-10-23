@@ -1,4 +1,5 @@
 "use client";
+import {valueAxisPadding} from '@/lib/chart-layout';
 import {useI18n} from '@/lib/i18n/provider';
 
 
@@ -90,7 +91,7 @@ export function PaymentVolumeChart({ report, motion, grain, onGrain }: { report:
             <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.18}/><stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.015}/></linearGradient></defs>
             <CartesianGrid stroke="var(--chart-grid)" vertical={false} strokeDasharray="3 5"/>
             <XAxis dataKey="date" ticks={ticks} tickFormatter={value => dateLabel(value, grain === "month" || (grain === "day" && visible.length > 90))} tick={axis} axisLine={false} tickLine={false} minTickGap={32} tickMargin={12} height={38}/>
-            <YAxis orientation="right" tickFormatter={value => compact(value / 10 ** currencyExponent(report.currency))} tick={axis} axisLine={false} tickLine={false} width={58} tickCount={6} domain={domain} allowDataOverflow/>
+            <YAxis padding={valueAxisPadding} orientation="right" tickFormatter={value => compact(value / 10 ** currencyExponent(report.currency))} tick={axis} axisLine={false} tickLine={false} width={58} tickCount={6} domain={domain} allowDataOverflow/>
             <Tooltip content={<VolumeTooltip currency={report.currency} smooth={smooth}/>} cursor={{ stroke: "var(--chart-axis)", strokeWidth: 1, strokeDasharray: "3 4" }} />
             <Area key={grain} type="monotoneX" dataKey="volume" stroke="var(--chart-1)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill={`url(#${gradientId})`} dot={points.length === 1 ? { r: 4 } : false} activeDot={{ r: 4, stroke: "var(--surface)", strokeWidth: 3 }} {...animate}/>
             {translateUi(smooth && <Line type="monotoneX" dataKey="trend" name={translateUi("7-day average")} stroke="var(--chart-axis)" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={false} {...animate}/>)}

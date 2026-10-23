@@ -1,4 +1,5 @@
 "use client";
+import {valueAxisPadding,horizontalValuePadding} from '@/lib/chart-layout';
 import {useI18n} from '@/lib/i18n/provider';
 
 
@@ -8,8 +9,8 @@ import type { BreakdownRow, TimeseriesPoint } from "@/lib/types";
 
 export const CATEGORICAL = ["#2b4ba8", "#0e8c7a", "#c2620f", "#8a4bdb"];
 const OTHER = "#7c8798";
-const GRID = "#e8ebf0";
-const AXIS = "#7c8798";
+const GRID = "var(--chart-grid)";
+const AXIS = "var(--chart-axis)";
 
 function tickDate(t: string, bucket: "hour" | "day") {
   const d = new Date(t);
@@ -49,7 +50,7 @@ export function VolumeChart({ points, currency, bucket = "day", height = 220 }: 
         </defs>
         <CartesianGrid stroke={GRID} vertical={false} />
         <XAxis dataKey="t" tickFormatter={(t) => tickDate(t, bucket)} tick={{ fontSize: 11, fill: AXIS }} axisLine={{ stroke: GRID }} tickLine={false} minTickGap={24} />
-        <YAxis tickFormatter={(v) => (currency ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v / 10 ** exp) : String(v))} tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} width={48} />
+        <YAxis padding={valueAxisPadding} tickFormatter={(v) => (currency ? new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v / 10 ** exp) : String(v))} tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} width={48} />
         <Tooltip
           cursor={{ stroke: AXIS, strokeDasharray: "3 3" }}
           content={({ active, payload }) => {
@@ -58,7 +59,7 @@ export function VolumeChart({ points, currency, bucket = "day", height = 220 }: 
             return <TooltipBox title={translateUi(tickDate(p.t, bucket))} rows={[{ label: "Volume", value: formatMoney(p.tpv, currency ?? "") }, { label: "Transactions", value: formatNumber(p.transactions) }, { label: "Success rate", value: formatPercent(p.success_rate) }]} />;
           }}
         />
-        <Area type="monotone" dataKey="tpv" stroke={CATEGORICAL[0]} strokeWidth={2} fill="url(#tpvFill)" dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
+        <Area type="monotone" dataKey="tpv" stroke={CATEGORICAL[0]} strokeWidth={2} fill="url(#tpvFill)" dot={points.length===1?{r:4}:false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -67,14 +68,14 @@ export function VolumeChart({ points, currency, bucket = "day", height = 220 }: 
 export function SuccessRateChart({ points, bucket = "day", height = 200 }: { points: TimeseriesPoint[]; bucket?: "hour" | "day"; height?: number }) {
  const {t:translateUi,locale:uiLocale}=useI18n();
 
-  const data = points.filter((p) => p.success_rate !== null);
-  if (!data.length) return <div className="flex h-[200px] items-center justify-center text-[13px] text-ink-400">{translateUi("No decided payments in this period")}</div>;
+  const data = points;
+  if (!data.some(p => p.success_rate !== null)) return <div className="flex h-[200px] items-center justify-center text-[13px] text-ink-400">{translateUi("No decided payments in this period")}</div>;
   return (
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid stroke={GRID} vertical={false} />
         <XAxis dataKey="t" tickFormatter={(t) => tickDate(t, bucket)} tick={{ fontSize: 11, fill: AXIS }} axisLine={{ stroke: GRID }} tickLine={false} minTickGap={24} />
-        <YAxis domain={[0, 1]} tickFormatter={(v) => `${Math.round(v * 100)}%`} tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} width={40} />
+        <YAxis padding={valueAxisPadding} domain={[0, 1]} tickFormatter={(v) => `${Math.round(v * 100)}%`} tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} width={40} />
         <Tooltip
           cursor={{ stroke: AXIS, strokeDasharray: "3 3" }}
           content={({ active, payload }) => {
@@ -83,7 +84,7 @@ export function SuccessRateChart({ points, bucket = "day", height = 200 }: { poi
             return <TooltipBox title={translateUi(tickDate(p.t, bucket))} rows={[{ label: "Success rate", value: formatPercent(p.success_rate) }, { label: "Successful", value: formatNumber(p.successful) }, { label: "Failed", value: formatNumber(p.failed) }]} />;
           }}
         />
-        <Line type="monotone" dataKey="success_rate" stroke={CATEGORICAL[1]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
+        <Line type="monotone" dataKey="success_rate" stroke={CATEGORICAL[1]} strokeWidth={2} dot={data.filter(p=>p.success_rate!==null).length===1?{r:4}:false} connectNulls={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -100,8 +101,8 @@ export function BreakdownChart({ rows, metric = "transactions", currency, height
     <ResponsiveContainer width="100%" height={h}>
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }} barCategoryGap={6}>
         <CartesianGrid stroke={GRID} horizontal={false} />
-        <XAxis type="number" hide />
-        <YAxis type="category" dataKey="key" width={96} tick={{ fontSize: 11, fill: "#3f4a5f" }} axisLine={false} tickLine={false} />
+        <XAxis padding={horizontalValuePadding} type="number" hide />
+        <YAxis type="category" dataKey="key" width={96} tick={{ fontSize: 11, fill: AXIS }} axisLine={false} tickLine={false} />
         <Tooltip
           cursor={{ fill: "#f4f6f9" }}
           content={({ active, payload }) => {
