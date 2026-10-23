@@ -1,3 +1,2 @@
-import {QuoteLibrary} from '@/components/admin/quote-library';
-export const metadata={title:'Perspectives · NATIO'};
-export default QuoteLibrary;
+import {redirect} from 'next/navigation';
+export default function Perspectives(){redirect('/admin')}

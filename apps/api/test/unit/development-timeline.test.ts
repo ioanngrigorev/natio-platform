@@ -12,3 +12,9 @@ describe('Gantt calendar geometry',()=>{
  it('renders same-day tasks with a day width and clips dates without stretching them',()=>{const w=timelineWindow('2025-01-01','month','','');expect(intervalPosition('2025-01-01','2025-01-01',w)?.width).toBeCloseTo(100/31);expect(intervalPosition('2024-12-20','2025-01-02',w)).toMatchObject({left:0,clippedStart:true});expect(intervalPosition('2025-02-01','2025-02-05',w)).toBeNull()});
  it('uses weekly ticks and includes the final day in fit view',()=>{const w=timelineWindow('2025-01-01','all','2025-01-01','2025-01-01');expect(w.end-w.start).toBe(DAY);const m=timelineWindow('2025-01-01','month','','');const ticks=timelineTicks(m,'month');expect(ticks.at(-1)).toBe(m.end);for(const t of ticks.slice(1,-1))expect(new Date(t).getUTCDay()).toBe(1)});
 });
+
+import {dependencyPath,phaseStyles} from '../../../web/lib/development-timeline.js';
+it('routes dependencies orthogonally and uses a distinct pastel background for every phase',()=>{
+ const path=dependencyPath(200,28,360,116);expect(path).toBe('M 200 28 H 212 V 66 H 348 V 116 H 360');
+ expect(new Set(Object.values(phaseStyles).map(p=>p.background)).size).toBe(5);
+});
