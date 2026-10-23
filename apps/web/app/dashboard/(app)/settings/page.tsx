@@ -10,8 +10,8 @@ import type { Merchant, Project } from "@/lib/types";
 export const metadata = { title: "Settings" };
 
 /** Same visual weight as PageHeader, but an h2: the page already has one h1. */
-function SectionHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function SectionHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -33,9 +33,9 @@ const KYB_EXPLANATION: Record<string, string> = {
 };
 
 export default async function SettingsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [merchant, projects, session] = await Promise.all([api.get<Merchant>("/dashboard/merchant"), api.get<{ data: Project[] }>("/dashboard/projects"), getMerchantSession()]);
 
   const permissions = session?.permissions ?? [];

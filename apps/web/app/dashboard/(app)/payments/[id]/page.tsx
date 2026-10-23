@@ -12,10 +12,11 @@ import type { Payment, Refund, TimelineEvent, WebhookDelivery } from "@/lib/type
 
 type Detail = Payment & { timeline: TimelineEvent[]; refunds: Refund[]; webhook_deliveries: WebhookDelivery[] };
 
-export default async function PaymentDetailPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PaymentDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let p: Detail;
   try {
     p = await api.get<Detail>(`/dashboard/payments/${params.id}`);

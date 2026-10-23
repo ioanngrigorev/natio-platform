@@ -14,10 +14,11 @@ import type { AdminOverview } from "@/lib/admin-types";
 
 export const metadata = { title: "Admin overview" };
 
-export default async function AdminOverviewPage({ searchParams }: { searchParams: { days?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminOverviewPage(props: { searchParams: Promise<{ days?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const {days, from, to, label} = await getAdminPeriod(searchParams.days);
   const [o,bi] = await Promise.all([api.get<AdminOverview>(`/admin/overview?from=${from}&to=${to}`),api.get<BiReport>(`/admin/bi?from=${from.slice(0,10)}&to=${to.slice(0,10)}&currency=EUR`)]);
   const accounts = o.providers.flatMap((p) => p.accounts.map((a) => ({ ...a, provider: p })));

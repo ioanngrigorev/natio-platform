@@ -24,12 +24,12 @@ export async function requireApiKey(req: FastifyRequest, _reply: FastifyReply): 
 
 function readMode(req: FastifyRequest): "test" | "live" {
   const h = String(req.headers["x-natio-mode"] ?? "").toLowerCase();
-  if (h === "live") return "live";
+  if (h === "live" || h === "test") return h;
   const q = (req.query as Record<string, unknown> | undefined)?.mode;
   return q === "live" ? "live" : "test";
 }
 
-function checkCsrf(req: FastifyRequest, csrfToken: string) {
+export function checkCsrf(req: FastifyRequest, csrfToken: string) {
   if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") return;
   const header = String(req.headers["x-csrf-token"] ?? "");
   if (!header || !safeEqual(header, csrfToken)) throw Errors.forbidden("Missing or invalid CSRF token");

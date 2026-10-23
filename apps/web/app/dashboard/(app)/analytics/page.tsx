@@ -10,8 +10,8 @@ import type { AnalyticsOverview, BreakdownRow, Breakdowns, ProviderComparisonRow
 
 export const metadata = { title: "Analytics" };
 
-function BreakdownTable({ rows, currency, dimension }: { rows: BreakdownRow[]; currency: string | null; dimension: string }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function BreakdownTable({ rows, currency, dimension }: { rows: BreakdownRow[]; currency: string | null; dimension: string }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   if (!rows.length) return null;
   return (
@@ -40,10 +40,11 @@ function BreakdownTable({ rows, currency, dimension }: { rows: BreakdownRow[]; c
   );
 }
 
-export default async function AnalyticsPage({ searchParams }: { searchParams: { days?: string; currency?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AnalyticsPage(props: { searchParams: Promise<{ days?: string; currency?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const days = searchParams.days ?? "7";
   const from = isoDaysAgo(Number(days) || 7);
   const bucket = days === "1" ? "hour" : "day";

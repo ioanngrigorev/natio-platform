@@ -4,7 +4,7 @@ WORKDIR /repo
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/api/package.json apps/api/
-RUN pnpm install --filter @natio/api... --frozen-lockfile || pnpm install --filter @natio/api...
+RUN pnpm install --filter @natio/api... --frozen-lockfile
 COPY apps/api apps/api
 RUN pnpm --filter @natio/api run build
 

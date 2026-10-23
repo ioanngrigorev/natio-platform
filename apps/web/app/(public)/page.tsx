@@ -59,8 +59,8 @@ const CLIENTS = [
   { title: "International merchants", body: "Add countries and payment methods by configuration rather than by new integrations." },
 ];
 
-export default function HomePage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function HomePage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

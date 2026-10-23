@@ -3,14 +3,14 @@ import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import { getPool } from '../../db/client.js';
 import { Errors } from '../../lib/errors.js';
-import { developmentData,priority,transitions,hasCycle,type Stage } from './model.js';
+import { developmentData,engineeringCost,priority,transitions,hasCycle,type Stage } from './model.js';
 export type Actor={kind:'admin'|'merchant';id:string;merchantId?:string;manager:boolean;mode:'test'|'live'};
 export const owns=(r:any,a:Actor)=>r.owner_kind===a.kind&&r.owner_id===a.id;
 export const scope=(a:Actor)=>({sql:'mode=$1 AND ($2::boolean OR visibility=\'shared\' OR (owner_kind=$3 AND owner_id=$4))',args:[a.mode,a.kind==='admin',a.kind,a.id]});
 export function view(r:any,a:Actor){
  const privateAccess=a.kind==='admin'||owns(r,a), data={...r.data};
  if(!privateAccess){for(const k of ['request','source_path','spec','evidence','completion_evidence','realized_usd'])delete data[k];}
- return {...r,data,owner_id:privateAccess?r.owner_id:undefined,merchant_id:undefined,can_edit:a.manager||(owns(r,a)&&['draft','idea','backlog','todo','rejected','archived'].includes(r.status)),private_access:privateAccess,can_manage:a.manager};
+ return {...r,data,cost_estimate:engineeringCost(data.effort_hours ?? 8),owner_id:privateAccess?r.owner_id:undefined,merchant_id:undefined,can_edit:a.manager||(owns(r,a)&&['draft','idea','backlog','todo','rejected','archived'].includes(r.status)),private_access:privateAccess,can_manage:a.manager};
 }
 export async function atomic<T>(mode:string,fn:(c:PoolClient)=>Promise<T>){const c=await getPool().connect();try{await c.query('BEGIN');await c.query("SELECT pg_advisory_xact_lock(hashtext('development:'||$1))",[mode]);const r=await fn(c);await c.query('COMMIT');return r}catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}
 export async function item(c:PoolClient|ReturnType<typeof getPool>,id:string,a:Actor,lock=false){const s=scope(a),r=(await c.query(`SELECT * FROM development_items WHERE id=$5 AND ${s.sql} ${lock?'FOR UPDATE':''}`,[...s.args,id])).rows[0];if(!r)throw Errors.notFound('Development item');return r}

@@ -25,7 +25,6 @@ class MemoryQueue<T> implements JobQueue<T> {
   private timers = new Set<NodeJS.Timeout>();
   private inflight = 0;
   private seq = 0;
-  private waiters: Array<() => void> = [];
 
   constructor(public readonly name: string) {}
 
@@ -52,7 +51,6 @@ class MemoryQueue<T> implements JobQueue<T> {
       logger.error({ err, queue: this.name, job: job.name }, "memory queue job failed");
     } finally {
       this.inflight--;
-      this.notify();
     }
   }
 
@@ -62,26 +60,18 @@ class MemoryQueue<T> implements JobQueue<T> {
     for (const job of backlog) void this.run(job);
   }
 
-  private notify() {
-    if (this.inflight === 0 && this.timers.size === 0) {
-      const w = this.waiters.splice(0);
-      for (const r of w) r();
-    }
-  }
-
   async drain(): Promise<void> {
     // Give scheduled timers a chance to fire (retries with delay are bounded in tests).
     while (this.inflight > 0 || this.timers.size > 0) {
-      await new Promise<void>((resolve) => {
-        this.waiters.push(resolve);
-        setTimeout(resolve, 25);
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 25));
     }
   }
 
   async close(): Promise<void> {
     for (const t of this.timers) clearTimeout(t);
     this.timers.clear();
+    this.pending = [];
+    while (this.inflight > 0) await new Promise<void>((resolve) => setTimeout(resolve, 25));
   }
 }
 
@@ -94,10 +84,14 @@ class RedisQueue<T> implements JobQueue<T> {
     private readonly connection: Redis,
   ) {
     this.queue = new Queue(name, { connection, defaultJobOptions: { removeOnComplete: 1000, removeOnFail: 5000, attempts: 1 } });
+    this.queue.on("error", (err) => logger.error({ err, queue: name }, "queue connection error"));
   }
 
   async add(name: string, data: T, opts?: { delayMs?: number; jobId?: string }): Promise<void> {
-    await this.queue.add(name, data, { delay: opts?.delayMs, jobId: opts?.jobId });
+    // Producers must fail promptly during an outage. BullMQ's ready wait can
+    // otherwise outlive ioredis commandTimeout. Jobs may still reach Redis after
+    // this deadline, so consumers must claim durable state idempotently.
+    await withDeadline(this.queue.add(name, data, { delay: opts?.delayMs, jobId: opts?.jobId }), 2_500);
   }
 
   async process(handler: JobHandler<T>, concurrency = 5): Promise<void> {
@@ -106,8 +100,9 @@ class RedisQueue<T> implements JobQueue<T> {
       async (job: Job) => {
         await handler(job.data as T, { id: String(job.id), name: job.name });
       },
-      { connection: this.connection, concurrency },
+      { connection: workerConnection(), concurrency },
     );
+    this.worker.on("error", (err) => logger.error({ err, queue: this.name }, "worker connection error"));
     this.worker.on("failed", (job, err) => logger.error({ err, queue: this.name, job: job?.name }, "job failed"));
   }
 
@@ -122,6 +117,40 @@ class RedisQueue<T> implements JobQueue<T> {
 }
 
 let redis: Redis | null = null;
+let workerRedis: Redis | null = null;
+
+/** A worker waits for Redis to recover; an HTTP producer must not wait forever. */
+function workerConnection(): Redis {
+  if (!workerRedis) {
+    workerRedis = new Redis(loadConfig().REDIS_URL!, { maxRetriesPerRequest: null, enableReadyCheck: false });
+    workerRedis.on("error", (err) => logger.error({ err }, "worker redis error"));
+  }
+  return workerRedis;
+}
+
+function producerConnection(): Redis {
+  if (!redis) {
+    const url = loadConfig().REDIS_URL;
+    if (!url) throw new Error("REDIS_URL is required when QUEUE_DRIVER=redis");
+    redis = new Redis(url, { maxRetriesPerRequest: 1, connectTimeout: 1_000, commandTimeout: 2_000, enableOfflineQueue: false });
+    redis.on("error", (err) => logger.error({ err }, "producer redis error"));
+  }
+  return redis;
+}
+
+export async function withDeadline<T>(operation: Promise<T>, milliseconds: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([operation, new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Dependency operation timed out")), milliseconds);
+    })]);
+  } finally { clearTimeout(timer); }
+}
+
+export async function checkQueueHealth(): Promise<void> {
+  if (loadConfig().QUEUE_DRIVER === "memory") return;
+  if (await withDeadline(producerConnection().ping(), 1_500) !== "PONG") throw new Error("Redis probe failed");
+}
 const queues = new Map<string, JobQueue<unknown>>();
 
 export function getQueue<T>(name: string): JobQueue<T> {
@@ -132,12 +161,7 @@ export function getQueue<T>(name: string): JobQueue<T> {
   if (cfg.QUEUE_DRIVER === "memory") {
     q = new MemoryQueue<T>(name);
   } else {
-    if (!redis) {
-      if (!cfg.REDIS_URL) throw new Error("REDIS_URL is required when QUEUE_DRIVER=redis");
-      redis = new Redis(cfg.REDIS_URL, { maxRetriesPerRequest: null, enableReadyCheck: false });
-      redis.on("error", (err: Error) => logger.error({ err }, "redis error"));
-    }
-    q = new RedisQueue<T>(name, redis);
+    q = new RedisQueue<T>(name, producerConnection());
   }
   queues.set(name, q as JobQueue<unknown>);
   return q;
@@ -150,10 +174,11 @@ export async function drainQueues(): Promise<void> {
 export async function closeQueues(): Promise<void> {
   for (const q of queues.values()) await q.close();
   queues.clear();
-  if (redis) {
-    await redis.quit();
-    redis = null;
-  }
+  // No pending commands should keep shutdown stuck while Redis is unavailable.
+  redis?.disconnect();
+  workerRedis?.disconnect();
+  redis = null;
+  workerRedis = null;
 }
 
 export const QUEUE_NAMES = {

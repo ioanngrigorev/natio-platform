@@ -72,8 +72,8 @@ const RETRY = `async function callNatio(path, init, attempt = 0) {
   return res;
 }`;
 
-export default function AuthenticationPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AuthenticationPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

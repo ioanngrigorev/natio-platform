@@ -1,5 +1,5 @@
 "use client";
-import {useI18n} from '@/lib/i18n/provider';
+import {LanguagePicker,useI18n} from '@/lib/i18n/provider';
 
 
 import Link from "next/link";
@@ -40,6 +40,7 @@ export function LoginForm({ kind }: { kind: "merchant" | "admin" }) {
         <h1 className="text-[18px] font-semibold tracking-tight">{translateUi(kind === "admin" ? translateUi("NATIO internal admin") : translateUi("Sign in to your dashboard"))}</h1>
         <p className="mt-1 text-[13px] text-ink-500">{translateUi(kind === "admin" ? translateUi("Restricted to NATIO operations staff.") : translateUi("Payment operations, routing insight and developer tools."))}</p>
       </div>
+      <div className="flex justify-end"><LanguagePicker compact/></div>
       {translateUi(error ? <Alert tone="bad">{translateUi(error)}</Alert> : null)}
       <Field label={translateUi("Email")} htmlFor="email">
         <input id="email" className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

@@ -30,10 +30,11 @@ function groupRules(rules: RoutingRule[]): Group[] {
   return [...groups.values()].sort((a, b) => a.mode.localeCompare(b.mode) || a.transactionType.localeCompare(b.transactionType));
 }
 
-export default async function RoutingRulesPage({ searchParams }: { searchParams: { merchant_id?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function RoutingRulesPage(props: { searchParams: Promise<{ merchant_id?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [rules, merchants] = await Promise.all([api.get<{ data: RoutingRule[] }>(`/admin/routing/rules?mode=${api.mode}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const merchantName = new Map(merchants.data.map((m) => [m.id, m.name]));
   const scoped = searchParams.merchant_id ? rules.data.filter((r) => r.merchantId === searchParams.merchant_id || r.merchantId === null) : rules.data;

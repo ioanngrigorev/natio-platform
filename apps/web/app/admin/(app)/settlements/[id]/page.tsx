@@ -11,10 +11,11 @@ import type { Settlement } from "@/lib/types";
 
 type Detail = Settlement & { items: NonNullable<Settlement["items"]> };
 
-export default async function AdminSettlementDetailPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminSettlementDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let s: Detail;
   try {
     s = await api.get<Detail>(`/admin/settlements/${params.id}`);

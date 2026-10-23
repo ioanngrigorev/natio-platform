@@ -10,9 +10,9 @@ import type { ApiKey, SystemStatus, TestScenario, WebhookEndpoint } from "@/lib/
 export const metadata = { title: "Developers" };
 
 export default async function DevelopersPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
   const [session, scenarios, status, keys, endpoints] = await Promise.all([
     getMerchantSession(),

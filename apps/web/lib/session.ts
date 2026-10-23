@@ -19,17 +19,17 @@ export interface AdminSession {
   mode: Mode;
 }
 
-export function cookieHeader(): string {
-  return headers().get("cookie") ?? "";
+export async function cookieHeader(): Promise<string> {
+  return (await headers()).get("cookie") ?? "";
 }
 
-export function currentMode(): Mode {
-  return cookies().get("natio_mode")?.value === "live" ? "live" : "test";
+export async function currentMode(): Promise<Mode> {
+  return (await cookies()).get("natio_mode")?.value === "live" ? "live" : "test";
 }
 
 export async function getMerchantSession(): Promise<MerchantSession | null> {
   try {
-    return await apiServer<MerchantSession>("/dashboard/auth/me", { cookie: cookieHeader(), mode: currentMode() });
+    return await apiServer<MerchantSession>("/dashboard/auth/me", { cookie: (await cookieHeader()), mode: (await currentMode()) });
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) return null;
     throw err;
@@ -38,7 +38,7 @@ export async function getMerchantSession(): Promise<MerchantSession | null> {
 
 export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
   try {
-    return await apiServer<AdminSession>("/admin/auth/me", { cookie: cookieHeader(), mode: currentMode() });
+    return await apiServer<AdminSession>("/admin/auth/me", { cookie: (await cookieHeader()), mode: (await currentMode()) });
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) return null;
     throw err;
@@ -46,9 +46,9 @@ export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
 });
 
 /** Fetch helper bound to the current request's cookies and mode. */
-export function serverApi() {
-  const cookie = cookieHeader();
-  const mode = currentMode();
+export async function serverApi() {
+  const cookie = (await cookieHeader());
+  const mode = (await currentMode());
   return {
     mode,
     get: async <T>(path: string) => { try { return await apiServer<T>(path, { cookie, mode }); } catch (e) { if (e instanceof ApiRequestError && e.code === "upgrade_required") redirect("/dashboard/plans"); throw e; } },

@@ -111,8 +111,8 @@ const COMPLIANCE_NOT_BUILT: Array<{ term: string; detail: string }> = [
   },
 ];
 
-export default function BusinessPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function BusinessPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

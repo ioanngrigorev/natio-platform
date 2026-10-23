@@ -14,10 +14,14 @@ import type { ReconBatch, ReconItem } from "@/lib/types";
 
 type Detail = ReconBatch & { items: ReconItem[]; error?: string | null };
 
-export default async function AdminReconciliationBatchPage({ params, searchParams }: { params: { id: string }; searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminReconciliationBatchPage(
+  props: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | undefined>> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let b: Detail;
   try {
     b = await api.get<Detail>(`/admin/reconciliation/batches/${params.id}${qs({ status: searchParams.status })}`);

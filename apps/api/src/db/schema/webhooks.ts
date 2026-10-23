@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { modeEnum, webhookDeliveryStatusEnum, webhookEndpointStatusEnum } from "./enums.js";
 import { merchants, projects } from "./merchants.js";
 
@@ -80,6 +80,8 @@ export const webhookDeliveries = pgTable(
     attemptCount: integer("attempt_count").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(6),
     nextAttemptAt: ts("next_attempt_at"),
+    /** Durable flag: a manual resend must survive loss of the Redis job. */
+    manualRequested: boolean("manual_requested").notNull().default(false),
     lastResponseStatus: integer("last_response_status"),
     lastResponseBody: text("last_response_body"),
     lastError: text("last_error"),

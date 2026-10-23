@@ -44,3 +44,9 @@ export function priority(d:Pick<DevelopmentData,'monthly_revenue_usd'|'monthly_s
 export const priorityFormula='max(0, 3 × (monthly revenue + monthly savings) − one-time cost) × confidence × (0.5 + 0.5 × market evidence) ÷ (engineering hours × (1 + 0.15 × (complexity − 1)))';
 export const transitions:Record<Stage,Stage[]>={draft:['idea','backlog','rejected','archived'],idea:['draft','backlog','rejected','archived'],backlog:['idea','todo','rejected','archived'],todo:['backlog','in_progress','archived'],in_progress:['todo','review'],review:['in_progress','test'],test:['in_progress','done'],done:['backlog','archived'],rejected:['idea','archived'],archived:['idea']};
 export function hasCycle(id:string,deps:string[],graph:Map<string,string[]>){const walk=(node:string,seen:Set<string>):boolean=>{if(node===id)return true;if(seen.has(node))return false;seen.add(node);return (graph.get(node)||[]).some(n=>walk(n,seen))};return deps.some(d=>walk(d,new Set()));}
+
+// Planning cost is separate from expected business value and never initiates a charge.
+export const ENGINEERING_RATE_USD = 30;
+export function engineeringCost(hours: number) {
+ return {currency:'USD' as const,hourly_rate:ENGINEERING_RATE_USD,estimated_hours:hours,estimated_cost:Math.round(hours*ENGINEERING_RATE_USD*100)/100};
+}

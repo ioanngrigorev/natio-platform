@@ -13,10 +13,11 @@ export const metadata = { title: "Payments" };
 const STATUSES = ["created", "pending", "processing", "authorized", "successful", "failed", "cancelled", "refunded", "partially_refunded"];
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"];
 
-export default async function AdminPaymentsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminPaymentsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({
     provider_account_id: searchParams.provider_account_id,
     merchant_id: searchParams.merchant_id,

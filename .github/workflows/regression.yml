@@ -1,0 +1,47 @@
+name: Regression
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts-and-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: natio
+          POSTGRES_PASSWORD: natio
+          POSTGRES_DB: natio_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U natio -d natio_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # Destructive integration tests are restricted to this disposable DB.
+      NATIO_E2E_DATABASE_URL: postgres://natio:natio@127.0.0.1:5432/natio_test
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install disposable Redis test runtime
+        run: sudo apt-get update -qq && sudo apt-get install -y redis-server poppler-utils tesseract-ocr fonts-liberation
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod
+      - run: pnpm typecheck
+      - name: API, web, real HTTP and Redis outage regressions
+        run: pnpm test
+      - name: Production builds
+        run: pnpm build
+        env:
+          API_INTERNAL_URL: http://api:4000

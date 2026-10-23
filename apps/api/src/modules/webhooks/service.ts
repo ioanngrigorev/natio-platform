@@ -1,4 +1,4 @@
-import { and, desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { Db, DbOrTx } from "../../db/client.js";
 import { webhookDeliveries, webhookDeliveryAttempts, webhookEndpoints, WEBHOOK_EVENT_TYPES } from "../../db/schema/index.js";
@@ -7,7 +7,7 @@ import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { logger } from "../../lib/logger.js";
 import { validateOutboundUrl } from "../../lib/net.js";
-import { getQueue, QUEUE_NAMES } from "../../lib/queue.js";
+import { getQueue, QUEUE_NAMES, withDeadline } from "../../lib/queue.js";
 import { recordAudit, type Actor } from "../audit/service.js";
 import { emitEvent, enqueueDeliveries, type WebhookJob } from "../events/service.js";
 
@@ -214,12 +214,13 @@ export async function resendDelivery(db: Db, input: { deliveryId: string; mercha
     .where(and(...conds))
     .limit(1);
   if (!d) throw Errors.notFound("Webhook delivery", input.deliveryId);
-  await db
-    .update(webhookDeliveries)
-    .set({ status: "pending", nextAttemptAt: new Date(), maxAttempts: d.attemptCount + 1, updatedAt: new Date() })
-    .where(eq(webhookDeliveries.id, d.id));
+  const reset = await db.update(webhookDeliveries)
+    .set({ status: "pending", nextAttemptAt: new Date(), manualRequested: true, maxAttempts: d.attemptCount + 1, updatedAt: new Date() })
+    .where(and(eq(webhookDeliveries.id, d.id), eq(webhookDeliveries.attemptCount, d.attemptCount), sql`${webhookDeliveries.status} != 'delivering'`))
+    .returning({ id: webhookDeliveries.id });
+  if (!reset.length) throw Errors.conflict("delivery_in_progress", "This webhook is already being delivered. Wait for its result before resending.");
   await recordAudit(db, { actor: input.actor, merchantId: d.merchantId, action: "webhook_delivery.resent", entityType: "webhook_delivery", entityId: d.id });
-  await getQueue<WebhookJob>(QUEUE_NAMES.webhooks).add("deliver", { deliveryId: d.id, manual: true } as WebhookJob, { jobId: `${d.id}-manual-${Date.now()}` });
+  await enqueueDeliveries([d.id]);
 }
 
 /** POST /v1/webhooks/test — emits a synthetic event to all endpoints of the project/mode. */
@@ -260,33 +261,35 @@ export async function deliverWebhook(db: Db, job: WebhookJob & { manual?: boolea
     .limit(1);
   if (!row) return;
   const { d, ep } = row;
+  const manual = d.manualRequested || Boolean(job.manual);
   if (d.status === "succeeded" || d.status === "exhausted") return;
-  if (ep.status !== "active" && !job.manual) {
-    await db.update(webhookDeliveries).set({ status: "failed", lastError: "endpoint disabled", updatedAt: new Date() }).where(eq(webhookDeliveries.id, d.id));
-    return;
-  }
-  // Claim the delivery (prevents duplicate concurrent sends).
+  if (ep.status !== "active" && !manual) return;
+  // Reserve the attempt BEFORE sending. A process crash consumes its attempt;
+  // lease recovery is at-least-once, so receivers must deduplicate natio-event-id.
+  const leaseAt = new Date();
+  const attemptNumber = d.attemptCount + 1;
   const claimed = await db
     .update(webhookDeliveries)
-    .set({ status: "delivering", updatedAt: new Date() })
-    .where(and(eq(webhookDeliveries.id, d.id), sql`${webhookDeliveries.status} in ('pending','failed')`))
+    .set({ status: "delivering", attemptCount: attemptNumber, updatedAt: leaseAt })
+    .where(and(eq(webhookDeliveries.id, d.id), eq(webhookDeliveries.attemptCount, d.attemptCount), lt(webhookDeliveries.attemptCount, webhookDeliveries.maxAttempts), lte(webhookDeliveries.nextAttemptAt, leaseAt), inArray(webhookDeliveries.status, ["pending", "failed"])))
     .returning({ id: webhookDeliveries.id });
   if (!claimed.length) return;
+  // Fence completion writes: a delayed worker cannot overwrite a newer attempt.
+  const ownsLease = and(eq(webhookDeliveries.id, d.id), eq(webhookDeliveries.status, "delivering"), eq(webhookDeliveries.attemptCount, attemptNumber), eq(webhookDeliveries.updatedAt, leaseAt));
 
   // Re-check the destination at send time. The URL was validated when it was registered, but DNS
   // can be repointed at a private address afterwards (stored SSRF / DNS rebinding).
-  const urlProblem = await validateOutboundUrl(ep.url, { allowPrivate: cfg.WEBHOOK_ALLOW_PRIVATE_URLS, allowHttp: !cfg.isProduction });
+  const urlProblem = await withDeadline(validateOutboundUrl(ep.url, { allowPrivate: cfg.WEBHOOK_ALLOW_PRIVATE_URLS, allowHttp: !cfg.isProduction }), 5_000);
   if (urlProblem) {
     await db
       .update(webhookDeliveries)
       .set({ status: "exhausted", lastError: `endpoint rejected: ${urlProblem}`, nextAttemptAt: null, updatedAt: new Date() })
-      .where(eq(webhookDeliveries.id, d.id));
+      .where(ownsLease);
     await db.update(webhookEndpoints).set({ status: "disabled", updatedAt: new Date() }).where(eq(webhookEndpoints.id, ep.id));
     logger.warn({ deliveryId: d.id, endpointId: ep.id, reason: urlProblem }, "webhook endpoint disabled: destination is not allowed");
     return;
   }
 
-  const attemptNumber = d.attemptCount + 1;
   const body = JSON.stringify(d.payload);
   const secret = decryptString(ep.secretEnc, cfg.NATIO_ENCRYPTION_KEY);
   const signature = signWebhookPayload(secret, body);
@@ -310,7 +313,7 @@ export async function deliverWebhook(db: Db, job: WebhookJob & { manual?: boolea
     try {
       const res = await fetch(ep.url, { method: "POST", headers, body, signal: controller.signal, redirect: "manual" });
       status = res.status;
-      responseBody = (await res.text()).slice(0, 2000);
+      responseBody = await readResponsePreview(res);
     } finally {
       clearTimeout(timer);
     }
@@ -320,44 +323,73 @@ export async function deliverWebhook(db: Db, job: WebhookJob & { manual?: boolea
   const duration = Date.now() - t0;
   const ok = status !== null && status >= 200 && status < 300;
 
-  await db.insert(webhookDeliveryAttempts).values({
-    id: newId("webhookAttempt"),
-    deliveryId: d.id,
-    attemptNumber,
-    requestHeaders: { ...headers, "natio-signature": signature.slice(0, 12) + "…" },
-    responseStatus: status,
-    responseBody,
-    error,
-    durationMs: duration,
-    manual: job.manual ? "true" : null,
-  });
-
-  if (ok) {
-    await db
-      .update(webhookDeliveries)
-      .set({ status: "succeeded", attemptCount: attemptNumber, lastResponseStatus: status, lastResponseBody: responseBody, lastError: null, deliveredAt: new Date(), nextAttemptAt: null, updatedAt: new Date() })
-      .where(eq(webhookDeliveries.id, d.id));
-    return;
-  }
-
   const exhausted = attemptNumber >= d.maxAttempts;
-  const nextAt = exhausted ? null : new Date(Date.now() + backoffMs(attemptNumber));
-  await db
-    .update(webhookDeliveries)
-    .set({
-      status: exhausted ? "exhausted" : "failed",
-      attemptCount: attemptNumber,
-      lastResponseStatus: status,
-      lastResponseBody: responseBody,
-      lastError: error ?? `HTTP ${status}`,
-      nextAttemptAt: nextAt,
-      updatedAt: new Date(),
-    })
-    .where(eq(webhookDeliveries.id, d.id));
-  if (!exhausted) {
-    const delayMs = cfg.isTest ? 50 : backoffMs(attemptNumber);
-    await getQueue<WebhookJob>(QUEUE_NAMES.webhooks).add("deliver", { deliveryId: d.id }, { delayMs, jobId: `${d.id}-${attemptNumber + 1}` });
-  } else {
-    logger.warn({ deliveryId: d.id, endpoint: ep.url }, "webhook delivery exhausted");
+  const delayMs = cfg.isTest ? 50 : backoffMs(attemptNumber);
+  const nextAt = ok || exhausted ? null : new Date(Date.now() + delayMs);
+  const saved = await db.transaction(async (tx) => {
+    const updated = await tx.update(webhookDeliveries).set({
+      status: ok ? "succeeded" : exhausted ? "exhausted" : "failed",
+      manualRequested: false,
+      lastResponseStatus: status, lastResponseBody: responseBody,
+      lastError: ok ? null : error ?? `HTTP ${status}`,
+      deliveredAt: ok ? new Date() : null, nextAttemptAt: nextAt, updatedAt: new Date(),
+    }).where(ownsLease).returning({ id: webhookDeliveries.id });
+    if (!updated.length) return false;
+    await tx.insert(webhookDeliveryAttempts).values({
+      id: newId("webhookAttempt"), deliveryId: d.id, attemptNumber,
+      requestHeaders: { ...headers, "natio-signature": signature.slice(0, 12) + "…" },
+      responseStatus: status, responseBody, error, durationMs: duration, manual: manual ? "true" : null,
+    });
+    return true;
+  });
+  if (saved && nextAt) {
+    try {
+      await getQueue<WebhookJob>(QUEUE_NAMES.webhooks).add("deliver", { deliveryId: d.id }, { delayMs, jobId: `${d.id}-${attemptNumber + 1}` });
+    } catch (err) {
+      logger.warn({ err, deliveryId: d.id }, "webhook retry deferred to outbox recovery");
+    }
+  } else if (saved && !ok) {
+    logger.warn({ deliveryId: d.id, endpointId: ep.id }, "webhook delivery exhausted");
   }
+}
+
+/** Read only the stored preview, not an arbitrarily large response into memory. */
+async function readResponsePreview(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  try {
+    while (bytes < 2_000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = value.subarray(0, 2_000 - bytes);
+      chunks.push(chunk); bytes += chunk.length;
+    }
+  } finally { await reader.cancel().catch(() => undefined); }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+/** Recover committed deliveries whose queue publication or worker was lost.
+ * A five-minute lease exceeds the bounded network timeout. Completion is fenced
+ * by attempt number + lease timestamp; a resumed old worker cannot change state.
+ * This is at-least-once delivery, not a claim of exactly-once HTTP side effects.
+ */
+export async function recoverWebhookOutbox(db: Db, now = new Date()): Promise<number> {
+  const leaseCutoff = new Date(now.getTime() - 5 * 60_000);
+  await db.update(webhookDeliveries).set({
+    status: sql`case when attempt_count >= max_attempts then 'exhausted'::webhook_delivery_status else 'failed'::webhook_delivery_status end`,
+    lastError: "Worker lease expired; delivery outcome unknown",
+    nextAttemptAt: now, updatedAt: now,
+  }).where(and(eq(webhookDeliveries.status, "delivering"), lt(webhookDeliveries.updatedAt, leaseCutoff)));
+  const due = await db.select({ id: webhookDeliveries.id }).from(webhookDeliveries)
+    .innerJoin(webhookEndpoints, eq(webhookEndpoints.id, webhookDeliveries.endpointId))
+    .where(and(inArray(webhookDeliveries.status, ["pending", "failed"]),
+      lt(webhookDeliveries.attemptCount, webhookDeliveries.maxAttempts), lte(webhookDeliveries.nextAttemptAt, now),
+      or(eq(webhookEndpoints.status, "active"), eq(webhookDeliveries.manualRequested, true))))
+    .orderBy(asc(webhookDeliveries.nextAttemptAt), asc(webhookDeliveries.id)).limit(100);
+  const queue = getQueue<WebhookJob>(QUEUE_NAMES.webhooks);
+  // Epoch suffix also recovers a failed/completed Bull job retained under its old id.
+  for (const row of due) await queue.add("deliver", { deliveryId: row.id }, { jobId: `${row.id}-recover-${Math.floor(now.getTime() / 30_000)}` });
+  return due.length;
 }

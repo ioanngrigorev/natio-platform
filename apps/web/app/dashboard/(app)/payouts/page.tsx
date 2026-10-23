@@ -13,10 +13,11 @@ export const metadata = { title: "Payouts" };
 
 const STATUSES = ["created", "pending", "processing", "successful", "failed", "cancelled"];
 
-export default async function PayoutsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PayoutsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({
     status: searchParams.status,
     currency: searchParams.currency,

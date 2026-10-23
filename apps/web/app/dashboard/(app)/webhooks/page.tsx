@@ -14,10 +14,11 @@ export const metadata = { title: "Webhooks" };
 
 const DELIVERY_STATUSES = ["pending", "delivering", "succeeded", "failed", "exhausted"];
 
-export default async function WebhooksPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function WebhooksPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ status: searchParams.status, event_type: searchParams.event_type, endpoint_id: searchParams.endpoint_id, cursor: searchParams.cursor, limit: 50 });
   const [endpoints, deliveries] = await Promise.all([api.get<{ data: WebhookEndpoint[]; event_types: string[] }>("/dashboard/webhooks/endpoints"), api.get<Paginated<WebhookDelivery>>(`/dashboard/webhooks/deliveries${query}`)]);
 

@@ -9,7 +9,7 @@ const API_INTERNAL_URL = process.env.API_INTERNAL_URL || "http://localhost:4000"
 
 export async function GET(): Promise<Response> {
   try {
-    const res = await fetch(`${API_INTERNAL_URL}/openapi.json`, { cache: "no-store", headers: { accept: "application/json" } });
+    const res = await fetch(`${API_INTERNAL_URL}/openapi.json`, { cache: "no-store", headers: { accept: "application/json" }, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) throw new Error(`upstream responded ${res.status}`);
     const body = await res.text();
     return new Response(body, {

@@ -5,9 +5,9 @@ import { PageHeader, LinkButton } from "@/components/ui";
 import { serverApi } from "@/lib/session";
 export const metadata = { title: "Routing studio" };
 export default async function RoutingStudioPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const merchants = await api.get<{ data: { id: string; name: string }[] }>(
     "/admin/merchants?fields=options&limit=500",
   );

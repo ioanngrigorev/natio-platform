@@ -14,10 +14,11 @@ export const metadata = { title: "Payouts" };
 
 const STATUSES = ["created", "pending", "processing", "successful", "failed", "cancelled"];
 
-export default async function AdminPayoutsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminPayoutsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ merchant_id: searchParams.merchant_id, status: searchParams.status, currency: searchParams.currency, search: searchParams.search, cursor: searchParams.cursor, limit: 50 });
   const [page, merchants] = await Promise.all([api.get<Paginated<Payout>>(`/admin/payouts${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 

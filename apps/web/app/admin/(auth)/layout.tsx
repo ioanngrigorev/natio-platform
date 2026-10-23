@@ -6,7 +6,7 @@ import { getAdminSession } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAuthLayout({ children }: { children: React.ReactNode }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const session = await getAdminSession();
   if (session) redirect("/admin");

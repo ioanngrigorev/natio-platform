@@ -1,9 +1,10 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, isNotNull, lt } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { Db } from "../../db/client.js";
 import { idempotencyKeys } from "../../db/schema/index.js";
 import { stableRequestHash } from "../../lib/crypto.js";
-import { Errors } from "../../lib/errors.js";
+import { ApiError, Errors } from "../../lib/errors.js";
+import { logger } from "../../lib/logger.js";
 import { newId } from "../../lib/ids.js";
 
 export interface IdempotencyScope {
@@ -25,7 +26,11 @@ const LOCK_STALE_MS = 60_000;
  * - First request with a key: a lock row is inserted (UNIQUE), the handler runs and the response is stored.
  * - Same key + same payload: the stored response is replayed (never re-executed).
  * - Same key + different payload: 422 idempotency_key_reused.
- * - Same key while the first request is still running: 409 idempotency_in_progress.
+ * - Concurrent requests: 409. An abandoned lock requires reconciliation, never a new charge.
+ * - Deterministic 4xx errors are replayed; unknown failures keep the reservation.
+ *
+ * A timeout is not proof of rollback: the PSP or our transaction may already have
+ * committed. Deleting the lock on an exception would turn a retry into a second payment.
  */
 export async function withIdempotency<T extends StoredResponse>(
   db: Db,
@@ -75,12 +80,17 @@ export async function withIdempotency<T extends StoredResponse>(
     if (!existing) throw Errors.idempotencyInProgress();
     if (existing.requestHash !== requestHash) throw Errors.idempotencyMismatch();
     if (existing.responseStatus == null) {
-      // Lock held by a concurrent request. If it is stale (crashed process), let the caller retry later.
+      // Age only changes the diagnostic. It is NEVER authority to repeat a monetary side effect.
       const lockedAt = existing.lockedAt?.getTime() ?? 0;
       if (Date.now() - lockedAt > LOCK_STALE_MS) {
-        await db.delete(idempotencyKeys).where(eq(idempotencyKeys.id, existing.id));
+        throw new ApiError(409, "idempotency_error", "idempotency_recovery_required", "The outcome of this request needs reconciliation. Check the operation status or contact support; do not submit it with a new key.");
       }
       throw Errors.idempotencyInProgress();
+    }
+    const storedError = (existing.responseBody as ReturnType<ApiError["toJSON"]> | null)?.error;
+    if (existing.responseStatus >= 400 && storedError) {
+      // Re-throw so the HTTP boundary attaches this request's correlation id.
+      throw new ApiError(existing.responseStatus, storedError.type, storedError.code, storedError.message, storedError);
     }
     return { status: existing.responseStatus, body: existing.responseBody, replayed: true } as T & { replayed: boolean };
   }
@@ -94,8 +104,14 @@ export async function withIdempotency<T extends StoredResponse>(
       .where(eq(idempotencyKeys.id, rowId));
     return { ...result, replayed: false };
   } catch (err) {
-    // Release the lock so the client can retry after fixing the request.
-    await db.delete(idempotencyKeys).where(eq(idempotencyKeys.id, rowId));
+    if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+      await db.update(idempotencyKeys)
+        .set({ responseStatus: err.status, responseBody: err.toJSON() })
+        .where(eq(idempotencyKeys.id, rowId));
+    } else {
+      // Log the reservation id, never the raw key, request payload or PSP credentials.
+      logger.error({ reservationId: rowId, scope: scope.scope }, "idempotent operation requires reconciliation");
+    }
     throw err;
   }
 }
@@ -108,6 +124,7 @@ function extractId(body: unknown): string | null {
 }
 
 export async function purgeExpiredIdempotencyKeys(db: Db): Promise<number> {
-  const deleted = await db.delete(idempotencyKeys).where(lt(idempotencyKeys.expiresAt, new Date())).returning({ id: idempotencyKeys.id });
+  // Retention expiry only permits recycling completed requests. Unknown outcomes remain protected.
+  const deleted = await db.delete(idempotencyKeys).where(and(lt(idempotencyKeys.expiresAt, new Date()), isNotNull(idempotencyKeys.responseStatus))).returning({ id: idempotencyKeys.id });
   return deleted.length;
 }

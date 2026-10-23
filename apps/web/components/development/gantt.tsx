@@ -22,7 +22,8 @@ export function Gantt({items,onSelect}:{items:Item[];onSelect:(i:Item)=>void}){
  function phaseBar(phase:Item['data']['phases'][number]){
   const p=intervalPosition(phase.start,phase.end,window);if(!p)return null;const style=phaseStyles[phase.kind];
   return <><span className="absolute top-3 flex h-7 items-center justify-center rounded border text-[10px] font-medium" style={{left:p.left+'%',width:p.width+'%',background:style.background,color:style.ink,borderColor:style.color}} title={`${phase.name} · ${date(phase.start)} — ${date(phase.end)} · ${phase.progress}%`}>
-   {p.width>=5?<span className="whitespace-nowrap px-1">{duration(phase.start,phase.end)}{t(' days')}</span>:null}
+   {/* Short phases retain their true duration; put the label beside the bar instead of hiding it. */}
+   <span data-phase-duration className={p.width>=8?'whitespace-nowrap px-1':'absolute whitespace-nowrap text-ink-700'} style={p.width>=8?undefined:p.left+p.width>80?{right:'calc(100% + 6px)'}:{left:'calc(100% + 6px)'}}>{duration(phase.start,phase.end)}{t(' days')}</span>
    <span className="absolute bottom-0 left-0 h-0.5 rounded" style={{width:phase.progress+'%',background:style.color}}/>
   </span><span className="absolute top-11 whitespace-nowrap text-[10px] text-ink-500" style={{left:Math.min(p.left,85)+'%'}}>{date(phase.start)} — {date(phase.end)}{p.clippedEnd?' →':''}</span></>;
  }

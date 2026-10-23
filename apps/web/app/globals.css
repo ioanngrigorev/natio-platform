@@ -242,3 +242,5 @@ body:has(.natio-sidebar) .global-language-picker{display:none}
 [dir=rtl] input[type=email],[dir=rtl] input[type=url],[dir=rtl] input[type=number],[dir=rtl] input[type=date],[dir=rtl] pre,[dir=rtl] code,[dir=rtl] .recharts-wrapper,[dir=rtl] .payment-volume-chart,[dir=rtl] .delivery-gantt{direction:ltr}
 [dir=rtl] .font-mono{unicode-bidi:plaintext}
 @media print{.global-language-picker,.language-picker{display:none!important}}
+
+body:has(form .language-picker) .global-language-picker{display:none}

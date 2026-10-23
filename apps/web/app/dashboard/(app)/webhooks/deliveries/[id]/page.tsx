@@ -16,10 +16,11 @@ function truncate(s: string | null, n = 160): string {
   return s.length > n ? `${s.slice(0, n)}…` : s;
 }
 
-export default async function WebhookDeliveryPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function WebhookDeliveryPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let d: Detail;
   try {
     d = await api.get<Detail>(`/dashboard/webhooks/deliveries/${params.id}`);

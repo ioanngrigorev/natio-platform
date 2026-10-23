@@ -12,6 +12,8 @@ export class ApiRequestError extends Error {
   type: string;
   details?: unknown;
   requestId?: string;
+  /** Server-supplied backoff hint. Callers decide whether an operation is safe to repeat. */
+  retryAfterMs?: number;
   constructor(status: number, body: { error?: { code?: string; message?: string; type?: string; details?: unknown }; request_id?: string } | null) {
     super(body?.error?.message ?? `Request failed with status ${status}`);
     this.name = "ApiRequestError";
@@ -28,6 +30,7 @@ export type Mode = "test" | "live";
 const INTERNAL_URL = process.env.API_INTERNAL_URL || "http://localhost:4000";
 
 async function parseResponse<T>(res: Response): Promise<T> {
+  if (res.status === 204 || res.status === 205) return undefined as T;
   const text = await res.text();
   let body: unknown = null;
   try {
@@ -35,8 +38,48 @@ async function parseResponse<T>(res: Response): Promise<T> {
   } catch {
     body = null;
   }
-  if (!res.ok) throw new ApiRequestError(res.status, body as never);
+  if (!res.ok) {
+    const error = new ApiRequestError(res.status, body as never);
+    error.requestId ??= res.headers.get('x-request-id') ?? undefined;
+    const retryAfter = res.headers.get('retry-after');
+    if (retryAfter) {
+      const milliseconds = /^\d+$/.test(retryAfter) ? Number(retryAfter) * 1000 : Date.parse(retryAfter) - Date.now();
+      if (Number.isFinite(milliseconds)) error.retryAfterMs = Math.max(0, milliseconds);
+    }
+    throw error;
+  }
+  // A proxy can return a login/error HTML page with HTTP 200. Treating that as
+  // null makes the next render fail far away from the actual integration fault.
+  if (body === null) throw new ApiRequestError(502, { error: { code: 'invalid_response', type: 'transport_error', message: 'The server returned an invalid response. Please try again.' }, request_id: res.headers.get('x-request-id') ?? undefined });
   return body as T;
+}
+
+const DEFAULT_TIMEOUT_MS = 30_000;
+
+/** One deadline covers connection, headers AND body consumption. There are no
+ * automatic retries: a lost response does not mean a payment mutation failed.
+ * Explicit cancellation stays AbortError so abandoned views do not show an alert.
+ */
+async function fetchJson<T>(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
+  const caller = init.signal;
+  if (caller?.aborted) throw caller.reason ?? new DOMException('Request cancelled', 'AbortError');
+  const controller = new AbortController();
+  let timedOut = false;
+  const cancel = () => controller.abort(caller?.reason);
+  caller?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    return await parseResponse<T>(response);
+  } catch (error) {
+    if (caller?.aborted) throw caller.reason ?? new DOMException('Request cancelled', 'AbortError');
+    if (timedOut) throw new ApiRequestError(504, { error: { code: 'request_timeout', type: 'transport_error', message: 'The request timed out. Check the operation status before trying again.' } });
+    if (error instanceof ApiRequestError) throw error;
+    throw new ApiRequestError(503, { error: { code: 'network_error', type: 'transport_error', message: 'Unable to reach the server. Check your connection and try again.' } });
+  } finally {
+    clearTimeout(timer);
+    caller?.removeEventListener('abort', cancel);
+  }
 }
 
 export interface ServerFetchOptions {
@@ -45,6 +88,8 @@ export interface ServerFetchOptions {
   cookie?: string;
   mode?: Mode;
   revalidate?: number | false;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 /** Server-side fetch to the API. Pass the request cookie header (from next/headers). */
@@ -53,13 +98,13 @@ export async function apiServer<T>(path: string, opts: ServerFetchOptions = {}):
   if (opts.cookie) headers.cookie = opts.cookie;
   if (opts.mode) headers["x-natio-mode"] = opts.mode;
   if (opts.body !== undefined) headers["content-type"] = "application/json";
-  const res = await fetch(`${INTERNAL_URL}${path}`, {
+  return fetchJson<T>(`${INTERNAL_URL}${path}`, {
     method: opts.method ?? "GET",
     headers,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     cache: "no-store",
-  });
-  return parseResponse<T>(res);
+    signal: opts.signal,
+  }, opts.timeoutMs);
 }
 
 export interface ClientFetchOptions {
@@ -69,6 +114,7 @@ export interface ClientFetchOptions {
   mode?: Mode;
   formData?: FormData;
   signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 /** Browser-side fetch through the /api rewrite. */
@@ -82,8 +128,7 @@ export async function apiClient<T>(path: string, opts: ClientFetchOptions = {}):
     headers["content-type"] = "application/json";
     body = JSON.stringify(opts.body);
   }
-  const res = await fetch(`/api${path}`, { method: opts.method ?? (body ? "POST" : "GET"), headers, body, signal: opts.signal, credentials: "same-origin" });
-  return parseResponse<T>(res);
+  return fetchJson<T>(`/api${path}`, { method: opts.method ?? (body ? "POST" : "GET"), headers, body, signal: opts.signal, credentials: "same-origin" }, opts.timeoutMs);
 }
 
 export function qs(params: Record<string, string | number | boolean | undefined | null>): string {

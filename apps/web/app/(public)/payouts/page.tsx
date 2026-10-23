@@ -58,8 +58,8 @@ const CREATE_RESPONSE = `{
   "created_at": "2026-09-22T09:14:02.118Z"
 }`;
 
-export default function PayoutsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PayoutsPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

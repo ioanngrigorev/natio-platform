@@ -63,8 +63,8 @@ const PHASES: Array<{ phase: string; title: string; status: string; body: string
   },
 ];
 
-export default function CompanyPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function CompanyPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

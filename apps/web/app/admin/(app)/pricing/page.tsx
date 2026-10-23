@@ -6,9 +6,9 @@ import { serverApi } from "@/lib/session";
 import type { PricePlan } from "@/components/admin/strategy-types";
 export const metadata = { title: "Pricing & margin" };
 export default async function PricingPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [plans, merchants, providers] = await Promise.all([
     api.get<{ data: PricePlan[] }>("/admin/pricing"),
     api.get<{ data: { id: string; name: string }[] }>(

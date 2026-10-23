@@ -199,8 +199,8 @@ function pretty(value: unknown): string {
 }
 
 /** Spec descriptions use Markdown backticks for code. Render those as <code>, leave the rest as text. */
-function SpecText({ text }: { text: string | undefined }): ReactNode {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function SpecText({ text }: { text: string | undefined }): Promise<ReactNode> {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   if (!text) return null;
   const parts = text.split("`");
@@ -258,8 +258,8 @@ function propertyRows(spec: Spec, schema: JsonSchema | undefined, depth = 0, max
   return rows;
 }
 
-function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | undefined }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | undefined }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const rows = propertyRows(spec, schema);
   if (!rows.length) return null;
@@ -297,8 +297,8 @@ function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | unde
 // ---------------------------------------------------------------------------
 // Operation rendering
 // ---------------------------------------------------------------------------
-function ParameterTable({ spec, parameters }: { spec: Spec; parameters: Parameter[] }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function ParameterTable({ spec, parameters }: { spec: Spec; parameters: Parameter[] }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const resolved = parameters.map((p) => (p.$ref ? (resolve<Parameter>(spec, p) ?? p) : p)).filter((p) => p.name);
   if (!resolved.length) return null;
@@ -337,8 +337,8 @@ function firstExample(media: MediaType | undefined): unknown {
   return undefined;
 }
 
-function OperationBlock({ spec, method, path, operation }: { spec: Spec; method: string; path: string; operation: Operation }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function OperationBlock({ spec, method, path, operation }: { spec: Spec; method: string; path: string; operation: Operation }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const anchor = opAnchor(method, path);
   const params = operation.parameters ?? [];
@@ -430,7 +430,7 @@ function OperationBlock({ spec, method, path, operation }: { spec: Spec; method:
 // ---------------------------------------------------------------------------
 async function loadSpec(): Promise<{ spec: Spec } | { error: string }> {
   try {
-    const res = await fetch(`${API_INTERNAL_URL}/openapi.json`, { cache: "no-store", headers: { accept: "application/json" } });
+    const res = await fetch(`${API_INTERNAL_URL}/openapi.json`, { cache: "no-store", headers: { accept: "application/json" }, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return { error: `The API responded with HTTP ${res.status}.` };
     const parsed: unknown = await res.json();
     if (!isRecord(parsed) || !isRecord(parsed["paths"])) return { error: "The document that was returned is not a usable OpenAPI description." };
@@ -476,7 +476,7 @@ function groupByTag(spec: Spec): Array<{ tag: string; description?: string; oper
 // Page
 // ---------------------------------------------------------------------------
 export default async function ApiReferencePage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const result = await loadSpec();
 
@@ -614,8 +614,8 @@ export default async function ApiReferencePage() {
   );
 }
 
-function SchemaBlock({ spec, name, schema }: { spec: Spec; name: string; schema: JsonSchema }): ReactNode {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function SchemaBlock({ spec, name, schema }: { spec: Spec; name: string; schema: JsonSchema }): Promise<ReactNode> {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const rows = propertyRows(spec, schema);
   const enums = enumNote(schema);

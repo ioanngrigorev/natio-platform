@@ -38,7 +38,7 @@ import { getDeliveryDetail, listDeliveries, resendDelivery } from "../../modules
 import { chainHealth } from "../../modules/wallets/watcher.js";
 import { getDb as _db } from "../../db/client.js";
 import { actorFromRequest } from "../context.js";
-import { requireAdmin } from "../guards.js";
+import { requireAdmin, checkCsrf } from "../guards.js";
 import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie } from "../helpers.js";
 import { parse, parseQuery } from "../validate.js";
 import { merchants as merchantsTable } from "../../db/schema/index.js";
@@ -66,7 +66,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       if (token) {
         const { resolveAdminSession } = await import("../../modules/auth/service.js");
         const p = await resolveAdminSession(db, token);
-        if (p) await revokeSession(db, p.session.id);
+        if (p) { checkCsrf(req, p.session.csrfToken); await revokeSession(db, p.session.id); }
       }
       clearSessionCookie(reply, "admin");
       return { ok: true };

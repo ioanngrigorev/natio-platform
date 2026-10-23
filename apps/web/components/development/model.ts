@@ -1,7 +1,7 @@
 export type Phase={id:string;kind:'analysis'|'development'|'testing'|'deployment'|'monitoring';name:string;start:string;end:string;owner:string;progress:number};
 export type Spec={objective:string;users:string;scope:string;acceptance:string;technical:string;risks:string;questions:string};
 export type Data={request:string;source_path:string;spec:Spec;monthly_revenue_usd:number;monthly_savings_usd:number;one_time_cost_usd:number;effort_hours:number;complexity:number;confidence_pct:number;market_pct:number;evidence:string;method:string;worker:string;assignee:string;plan_start:string|null;plan_end:string|null;milestone:boolean;dependencies:string[];phases:Phase[];story_points:number;definition_of_done:string;completion_evidence:string;realized_usd:number|null;qa_owner:string;analyst:string;devops:string;process_type:'delivery'|'payment'};
-export type Item={id:string;title:string;public_summary:string;status:string;visibility:string;data:Data;priority_score:number;version:number;is_demo:boolean;started_at:string|null;completed_at:string|null;created_at:string;updated_at:string;sprint_id:string|null;can_edit:boolean;can_manage:boolean;private_access:boolean};
+export type Item={cost_estimate?:{currency:'USD';hourly_rate:number;estimated_hours:number;estimated_cost:number};id:string;title:string;public_summary:string;status:string;visibility:string;data:Data;priority_score:number;version:number;is_demo:boolean;started_at:string|null;completed_at:string|null;created_at:string;updated_at:string;sprint_id:string|null;can_edit:boolean;can_manage:boolean;private_access:boolean};
 export const stages=['draft','idea','backlog','todo','in_progress','review','test','done','rejected','archived'];
 export const labels:Record<string,string>={draft:'Review specification',idea:'Ideas',backlog:'Backlog',todo:'To do',in_progress:'In progress',review:'Code review',test:'Test',done:'Done',rejected:'Rejected',archived:'Archive'};
 export const specLabels:Record<keyof Spec,string>={objective:'Objective & expected outcome',users:'Users & roles',scope:'Functional scope',acceptance:'Acceptance criteria',technical:'Frontend, backend & integrations',risks:'Risks, security & rollout',questions:'Open questions'};
@@ -11,3 +11,7 @@ export function duration(seconds:number|null|undefined){if(seconds==null)return 
 export const stamp=(s:string|null|undefined)=>s?new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'Unscheduled';
 export function score(d:Data){return Math.round(Math.max(0,3*(d.monthly_revenue_usd+d.monthly_savings_usd)-d.one_time_cost_usd)*(d.confidence_pct/100)*(.5+.5*d.market_pct/100)/(d.effort_hours*(1+.15*(d.complexity-1)))*100)/100}
 export function download(name:string,contents:string,type='application/xml'){const url=URL.createObjectURL(new Blob([contents],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+// The fixed planning rate also applies to unsaved drafts; persisted items receive it from the API.
+export const ENGINEERING_RATE_USD = 30;
+export const engineeringCost=(hours:number,rate=ENGINEERING_RATE_USD)=>Math.round(hours*rate*100)/100;

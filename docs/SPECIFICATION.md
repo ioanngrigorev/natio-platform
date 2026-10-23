@@ -130,8 +130,17 @@ together with the original response status and body.
 - A key in flight is marked with `locked_at` so a concurrent duplicate cannot
   race past the first.
 
-Keys expire. Expiry frees the key for reuse; it does not retroactively permit
-a conflicting replay within the window.
+Completed responses expire after the configured retention period. Only completed
+records may be purged and reused. Deterministic 4xx failures are stored and replayed;
+a changed request needs a new key. Errors returned before the handler is entered
+(for example authentication/schema validation) do not reserve a key.
+
+An incomplete reservation is **never** deleted automatically, including after its
+TTL. A process may have committed a payment or charged a PSP before losing its
+response. After 60 seconds, duplicates return `409 idempotency_recovery_required`;
+this is a reconciliation signal, not permission to submit a new key. Reconcile the
+payment timeline, ledger and PSP reference before an operator resolves the record.
+There is no automatic recovery that guesses whether a charge occurred.
 
 ## 7. Provider orchestration
 

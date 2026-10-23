@@ -6,6 +6,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { DbOrTx } from "../../db/client.js";
 import { events, paymentEvents, webhookDeliveries, webhookEndpoints } from "../../db/schema/index.js";
+import { logger } from "../../lib/logger.js";
 import { newId } from "../../lib/ids.js";
 import { getQueue, QUEUE_NAMES } from "../../lib/queue.js";
 
@@ -76,7 +77,13 @@ export async function emitEvent(db: DbOrTx, input: EmitEventInput): Promise<{ ev
 export async function enqueueDeliveries(deliveryIds: string[]): Promise<void> {
   if (!deliveryIds.length) return;
   const q = getQueue<WebhookJob>(QUEUE_NAMES.webhooks);
-  for (const id of deliveryIds) await q.add("deliver", { deliveryId: id }, { jobId: `${id}-1` });
+  try {
+    for (const id of deliveryIds) await q.add("deliver", { deliveryId: id }, { jobId: `${id}-queued-${Date.now()}` });
+  } catch (err) {
+    // Payment + outbox already committed. Reporting payment failure here invites
+    // duplicate submissions; the worker recovers due deliveries from PostgreSQL.
+    logger.warn({ err, deliveryCount: deliveryIds.length }, "webhook scheduling deferred to outbox recovery");
+  }
 }
 
 /** Append a payment timeline entry. */

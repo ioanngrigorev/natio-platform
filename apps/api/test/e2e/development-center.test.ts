@@ -23,3 +23,14 @@ it('scores confidence consistently and detects dependency cycles',()=>{const d=b
 
 it('starts new self-registered merchants on Light',async()=>{const r=await env.app.inject({method:'POST',url:'/dashboard/auth/register',payload:{company_name:'New Light Merchant',name:'Jamie Demo',email:'new-light@example.test',password:'Strong-demo-2026!'}});expect(r.statusCode,r.body).toBe(201);const plan=(await getPool().query("SELECT p.plan FROM merchant_plans p JOIN merchants m ON m.id=p.merchant_id WHERE m.contact_email='new-light@example.test'")).rows[0];expect(plan.plan).toBe('light')});
 it('resets delivery timestamps when a completed item is reopened via archive',async()=>{const b=body('Reopened delivery');await call(admin,'POST','/admin/development',b);await getPool().query("UPDATE development_items SET status='done',started_at=now()-interval '1 day',completed_at=now() WHERE id=$1",[b.id]);let r=await call(admin,'POST','/admin/development/'+b.id+'/status',{version:1,status:'archived',reason:'Reconsider scope later'});expect(r.statusCode,r.body).toBe(200);r=await call(admin,'POST','/admin/development/'+b.id+'/status',{version:2,status:'idea'});expect(r.statusCode,r.body).toBe(200);expect(r.json().started_at).toBeNull();expect(r.json().completed_at).toBeNull()});
+
+it('derives planning costs at $30 per hour on the server without changing business value',async()=>{
+ const b=body('Costed synthetic feature');b.data.effort_hours=40;
+ let r=await call(admin,'POST','/admin/development',b);expect(r.statusCode,r.body).toBe(200);
+ expect(r.json().cost_estimate).toEqual({currency:'USD',hourly_rate:30,estimated_hours:40,estimated_cost:1200});
+ expect(r.json().priority_score).toBe(priority(b.data));
+ const data={...b.data,effort_hours:1/60};
+ r=await call(admin,'PUT','/admin/development/'+b.id,{title:b.title,public_summary:b.public_summary,data,version:1});expect(r.statusCode,r.body).toBe(200);
+ expect(r.json().cost_estimate.estimated_cost).toBe(.5);
+ r=await call(admin,'GET','/admin/development/'+b.id);expect(r.json().item.cost_estimate.hourly_rate).toBe(30);
+});

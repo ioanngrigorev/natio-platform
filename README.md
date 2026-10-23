@@ -68,7 +68,7 @@ apps/api/           Fastify API + workers (modular monolith)
                     webhooks, settlements, payouts, merchants, auth, audit, …
   src/providers/    adapter interface, registry, mock providers, failure dictionary
   src/db/           Drizzle schema, SQL migrations, sandbox seed
-  test/             209 tests (unit + end-to-end against real PostgreSQL)
+  test/             unit, integration, HTTP-contract and failure-injection tests
   openapi/          OpenAPI 3.1 document
 apps/web/           Next.js 14: natio.me, /docs, /dashboard, /admin
 deploy/             Caddyfile, backup/restore scripts, DB role hardening
@@ -92,6 +92,10 @@ docs/               SPECIFICATION.md, ARCHITECTURE.md, DEPLOYMENT.md, SECURITY.m
 Implement the `ProviderAdapter` interface (`apps/api/src/providers/types.ts`), register it in `src/providers/registry.ts`, then create a `providers` row pointing at that adapter key and a `provider_accounts` row with credentials (encrypted at rest). Map the provider's decline codes onto the shared failure dictionary so the retry policy classifies them correctly. No changes to the orchestration engine are required.
 
 The architecture is prepared for global and local providers alike. NATIO is not affiliated with, endorsed by, or a partner of any payment provider unless and until such an agreement is signed and disclosed.
+
+## Regression and resilience
+
+See [the CTO review and recovery runbook](docs/RESILIENCE_REVIEW.md) for failure semantics, regression commands, deployment constraints and remaining infrastructure work. CI runs type checks, API/web tests, the real Redis restart scenario, production builds and the production dependency audit.
 
 ## Documentation
 

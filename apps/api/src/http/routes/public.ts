@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { loadConfig } from "../../config.js";
-import { getDb } from "../../db/client.js";
+import { getDb, getPool } from "../../db/client.js";
 import { contactRequests, mockProviderRecords, providerAccounts, providers } from "../../db/schema/index.js";
 import { hmacSha256Hex } from "../../lib/crypto.js";
 import { Errors } from "../../lib/errors.js";
@@ -18,6 +18,7 @@ import { getAdapter } from "../../providers/registry.js";
 import { MockProviderAdapter } from "../../providers/mock/mock-adapter.js";
 import { handleProviderPaymentEvent } from "../../modules/payments/orchestrator.js";
 import { recordSystemEvent } from "../../modules/audit/service.js";
+import { checkQueueHealth, withDeadline } from "../../lib/queue.js";
 import { parse } from "../validate.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -26,15 +27,18 @@ export async function registerPublicRoutes(app: FastifyInstance) {
   const cfg = loadConfig();
   const db = getDb();
 
-  app.get("/health", async (_req, reply) => {
-    const checks: Record<string, "ok" | "error"> = {};
-    try {
-      await db.execute(sql`select 1`);
-      checks.database = "ok";
-    } catch {
-      checks.database = "error";
-    }
-    checks.queue = cfg.QUEUE_DRIVER === "memory" ? "ok" : "ok";
+  // Readiness must remain observable when the Redis-backed rate limiter is down.
+  app.get("/health", { config: { rateLimit: false } }, async (_req, reply) => {
+    const query = { text: "select 1", query_timeout: 1_500 };
+    const results = await Promise.allSettled([
+      withDeadline(getPool().query(query), 2_000),
+      checkQueueHealth(),
+    ]);
+    const checks = {
+      database: results[0].status === "fulfilled" ? "ok" : "error",
+      queue: results[1].status === "fulfilled" ? "ok" : "error",
+    };
+    reply.header("cache-control", "no-store");
     const ok = Object.values(checks).every((v) => v === "ok");
     // The commit is baked in at image build time. Without it there is no way
     // to tell from outside which code a server is running — and on a host that

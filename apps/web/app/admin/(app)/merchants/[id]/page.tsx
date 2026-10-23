@@ -11,10 +11,11 @@ import { formatDateTime, titleCase } from "@/lib/format";
 import { serverApi } from "@/lib/session";
 import type { AdminMerchantDetail } from "@/lib/admin-types";
 
-export default async function MerchantDetailPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function MerchantDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let m: AdminMerchantDetail;
   try {
     m = await api.get<AdminMerchantDetail>(`/admin/merchants/${params.id}`);

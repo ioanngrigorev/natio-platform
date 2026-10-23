@@ -30,8 +30,8 @@ const LAYERS: Array<{ term: string; detail: string }> = [
   { term: "Merchant account", detail: "What arrived in your bank account, from the licensed provider, under the provider's own settlement terms." },
 ];
 
-export default function ReconciliationPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function ReconciliationPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

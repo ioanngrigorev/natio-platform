@@ -10,9 +10,9 @@ import type { Provider } from "@/lib/types";
 export const metadata = { title: "New routing rule" };
 
 export default async function NewRoutingRulePage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [providers, merchants] = await Promise.all([api.get<{ data: Provider[] }>("/admin/providers"), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const accounts = providers.data.flatMap((p) => p.accounts);
 

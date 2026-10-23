@@ -100,8 +100,8 @@ const NEXT_ACTION = `{
   }
 }`;
 
-export default function PaymentsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PaymentsPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>
