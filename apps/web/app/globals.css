@@ -203,3 +203,21 @@ body {
   background: #2a3040;
   border-radius: 4px;
 }
+
+.dev-pdf-only { display:none; }
+.dev-dialog { color:inherit; }
+.dev-dialog::backdrop { background:rgba(12,14,25,.52); backdrop-filter:blur(4px); }
+@media print {
+ body:has(> .dev-pdf-only) { margin:0!important; padding:0!important; height:auto!important; min-height:0!important; background:white!important; }
+ body:has(> .dev-pdf-only) > :not(.dev-pdf-only) { display:none!important; }
+ .dev-pdf-only { display:block!important; position:static; width:auto; height:auto; overflow:visible; font-size:11px; line-height:1.6; padding:0; background:white!important; color:#172032!important; }
+ .dev-pdf-only .no-print { display:none!important; }
+ .dev-pdf-only section { white-space:normal; overflow-wrap:anywhere; }
+ .dev-pdf-only h1 { font-size:12px; letter-spacing:2px; margin-bottom:12px; }
+ .dev-pdf-only h2 { font-size:24px; margin-bottom:12px; }
+ .dev-pdf-only h3 { font-size:14px; margin-top:18px; font-weight:600; }
+ .dev-pdf-only h3 { break-after:avoid; }
+ .dev-pdf-only svg { break-inside:avoid; }
+ .dev-pdf-only svg { min-width:0!important; }
+ @page { size:A4; margin:10mm; }
+}

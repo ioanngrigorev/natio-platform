@@ -1,3 +1,4 @@
+import { merchantPlan } from '../../modules/plans/service.js';
 /**
  * Merchant dashboard API — /dashboard. Cookie session + CSRF header + RBAC.
  */
@@ -104,7 +105,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       m.get("/auth/me", async (req) => {
         const { user, merchant, session } = me(req);
         const projects = await listProjects(db, merchant.id);
-        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, mode: req.dashboardMode };
+        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, mode: req.dashboardMode, plan: await merchantPlan(merchant.id) };
       });
 
       m.post("/auth/password", async (req) => {

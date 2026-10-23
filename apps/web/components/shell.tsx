@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DevelopmentNotifications } from "@/components/development/notifications";
 import dynamic from "next/dynamic";
 const AdminAssistant = dynamic(() => import("@/components/admin/assistant").then(m => m.AdminAssistant), { ssr: false });
 import { SectionIcon } from "@/components/admin/section-icon";
@@ -54,10 +55,12 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
             <div key={s.section || "root"} className="mb-4">
               {s.section ? <div className="nav-section-heading flex items-center gap-2 px-2 pb-2 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-500">{session.kind === "admin" ? <SectionIcon name={s.section}/> : null}<span>{s.section}</span><span className="ml-1 h-px flex-1 bg-ink-100" aria-hidden="true"/></div> : null}
               {s.items.map((item) => {
+                const requiredPlan = /\/(api-keys|webhooks|developers|projects)(?:$|\/)/.test(item.href) ? 'premium' : /\/(analytics|reconciliation|settlements|recommendations)(?:$|\/)/.test(item.href) ? 'optimal' : null;
+                const locked = session.kind === 'merchant' && requiredPlan && (session.plan === 'light' || (session.plan === 'optimal' && requiredPlan === 'premium'));
                 const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
-                  <Link prefetch={false} key={item.href} href={item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={active ? "page" : undefined} className={cx("block rounded-md px-2 py-[6px] text-[13px]", active ? "bg-ink-100 font-medium text-ink-900" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900")}>
-                    {item.label}
+                  <Link prefetch={false} key={item.href} href={locked ? "/dashboard/plans" : item.href} onClick={(e) => { if (!e.metaKey && !e.ctrlKey) { if (pathname !== item.href) setOpening(item.label); e.currentTarget.closest("details")?.removeAttribute("open"); } }} aria-current={active ? "page" : undefined} className={cx("block rounded-md px-2 py-[6px] text-[13px]", active ? "bg-ink-100 font-medium text-ink-900" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900")}>
+                    {item.label}{locked ? <span className="float-right text-[9px] uppercase text-ink-400">{requiredPlan}</span> : null}
                   </Link>
                 );
               })}
@@ -78,6 +81,8 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="hidden text-[13px] text-ink-500 md:block">{brand.subtitle}</div>
           <div className="ml-auto flex items-center gap-3">
             {session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">Support ↗</Link><AdminThemeToggle /></> : null}
+            <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">＋ Suggest improvement</Link>
+            <DevelopmentNotifications/>
             <ModeToggle />
             <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">
               Sign out

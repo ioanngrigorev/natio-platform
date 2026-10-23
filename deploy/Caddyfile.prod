@@ -26,8 +26,8 @@
 		Referrer-Policy "strict-origin-when-cross-origin"
 
 	}
-	@voice_ui path /admin /admin/*
-	@non_voice_ui not path /admin /admin/*
+	@voice_ui path /admin /admin/* /dashboard /dashboard/*
+	@non_voice_ui not path /admin /admin/* /dashboard /dashboard/*
 	header @voice_ui Permissions-Policy "camera=(), microphone=(self), geolocation=(), payment=()"
 	header @non_voice_ui Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
 	encode zstd gzip

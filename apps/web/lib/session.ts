@@ -1,8 +1,10 @@
+import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { apiServer, ApiRequestError, type Mode } from "./api";
 
 export interface MerchantSession {
+  plan: "light" | "optimal" | "premium";
   user: { id: string; email: string; name: string; role: string; status: string; mfa_enabled: boolean; last_login_at: string | null };
   merchant: { id: string; name: string; legal_name: string | null; country: string | null; kyb_status: string; status: string; settings: Record<string, unknown> };
   projects: Array<{ id: string; name: string; slug: string; status: string; settings: Record<string, unknown> }>;
@@ -49,7 +51,7 @@ export function serverApi() {
   const mode = currentMode();
   return {
     mode,
-    get: <T>(path: string) => apiServer<T>(path, { cookie, mode }),
+    get: async <T>(path: string) => { try { return await apiServer<T>(path, { cookie, mode }); } catch (e) { if (e instanceof ApiRequestError && e.code === "upgrade_required") redirect("/dashboard/plans"); throw e; } },
     post: <T>(path: string, body?: unknown) => apiServer<T>(path, { cookie, mode, method: "POST", body }),
   };
 }

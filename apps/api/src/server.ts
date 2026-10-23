@@ -1,3 +1,5 @@
+import { registerDevelopmentRoutes } from './http/routes/development.js';
+import { registerPlanRoutes } from './http/routes/plans.js';
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
@@ -111,6 +113,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerReceiptRoutes(app);
   await registerPricingRoutes(app);
   await registerWorkspaceRoutes(app);
+  await registerDevelopmentRoutes(app);
+  await registerPlanRoutes(app);
   await registerMarketRoutes(app);
   await registerSupportRoutes(app);
 

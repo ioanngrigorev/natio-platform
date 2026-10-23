@@ -1,3 +1,4 @@
+import { requirePlan, featureForPermission } from '../modules/plans/service.js';
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getDb } from "../db/client.js";
 import { Errors } from "../lib/errors.js";
@@ -17,6 +18,7 @@ export async function requireApiKey(req: FastifyRequest, _reply: FastifyReply): 
   if (!principal) throw Errors.invalidApiKey();
   const allowed = principal.project.settings.allowedIps ?? [];
   if (allowed.length && !isIpAllowed(req.ip, allowed)) throw Errors.ipNotAllowed();
+  await requirePlan(principal.merchant.id, 'integrations');
   req.apiKey = principal;
 }
 
@@ -42,6 +44,7 @@ export function requireMerchant(permission?: Permission) {
     if (principal.merchant.status === "disabled") throw Errors.forbidden("This merchant account has been disabled");
     checkCsrf(req, principal.session.csrfToken);
     if (permission && !hasPermission(principal.user.role, permission)) throw Errors.forbidden(`Requires permission ${permission}`);
+    if (!/^\/dashboard\/(auth|development|plans|recommendations)(?:[/?]|$)/.test(req.url)) await requirePlan(principal.merchant.id, featureForPermission(permission, req.method, req.url));
     req.merchantUser = principal;
     req.dashboardMode = readMode(req);
   };

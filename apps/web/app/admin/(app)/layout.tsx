@@ -26,6 +26,8 @@ const NAV: NavItem[] = [
   { href: "/admin/routing/studio", label: "Routing studio", section: "Payment setup" },
   { href: "/admin/routing", exact: true, label: "Routing rules", section: "Payment setup" },
   { href: "/admin/risk", label: "Risk rules", section: "Payment setup" },
+  { href: "/admin/development", label: "Development Center", section: "Development" },
+  { href: "/admin/plans", label: "Plans & monetisation", section: "Development" },
   { href: "/admin/system-events", label: "System events", section: "Platform" },
   { href: "/admin/audit", label: "Audit log", section: "Platform" },
   { href: "/admin/knowledge", label: "Knowledge base", section: "Support" },
