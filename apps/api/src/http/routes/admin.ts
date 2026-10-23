@@ -281,7 +281,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       r.post("/provider-accounts", async (req, reply) => {
         need(req, "providers.manage");
         const body = parse(accountInput.extend({ provider_id: z.string(), mode: z.enum(["test", "live"]), name: z.string().min(2).max(80), merchant_id: z.string().optional() }), req.body);
-        const acc = await createProviderAccount(db, { providerId: body.provider_id, mode: body.mode, name: body.name, merchantId: body.merchant_id ?? null, priority: body.priority, feePercent: body.fee_percent, feeFixedMinor: body.fee_fixed_minor, currencies: body.currencies, credentials: body.credentials, config: body.config as never }, actorFromRequest(req));
+        const acc = await createProviderAccount(db, { providerId: body.provider_id, mode: body.mode, name: body.name, status: body.status, merchantId: body.merchant_id ?? null, priority: body.priority, feePercent: body.fee_percent, feeFixedMinor: body.fee_fixed_minor, currencies: body.currencies, credentials: body.credentials, config: body.config as never }, actorFromRequest(req));
         const { serializeAccount } = await import("../../modules/providers/service.js");
         return reply.status(201).send(serializeAccount(acc));
       });

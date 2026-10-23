@@ -41,6 +41,22 @@ export async function registerV1Routes(app: FastifyInstance) {
     });
 
     // ------------------------------------------------------------------ payments
+    v1.post('/checkout-sessions',async(req,reply)=>{
+      const body=parse(createPaymentSchema,req.body),scope=scopeOf(req);
+      if(!body.return_url || new URL(body.return_url).protocol!=='https:') throw Errors.validation('A HTTPS return_url is required');
+      const method=typeof body.payment_method==='string'?body.payment_method:body.payment_method.type;
+      if(method==='crypto') throw Errors.validation('Use the on-chain payment API for crypto payments');
+      if(typeof body.payment_method!=='string'&&(body.payment_method.id||body.payment_method.token)) throw Errors.validation('Hosted checkout collects payment details; do not supply a stored method or token');
+      if(scope.mode==='live'&&body.test_scenario) throw Errors.validation('Test scenarios are not available in Live mode');
+      const result=await withIdempotency(db,{...scope,scope:'checkout.create'},idempotencyKeyOf(req),body,async()=>{
+        const payment=await createPayment(db,scope,{...body,...(scope.mode==='test'&&!body.test_scenario?{test_scenario:'requires_action'}:{})},{actor:actorFromRequest(req),ip:req.ip,idempotencyKey:idempotencyKeyOf(req)});
+        // A redirect is navigation, never payment confirmation. The client must
+        // use the signed webhook or authenticated payment status to fulfill.
+        return {status:201,body:{object:'checkout_session',payment_id:payment.id,mode:scope.mode,status:payment.status,url:payment.nextAction?.url??null,expires_at:payment.nextAction?.expiresAt??null}};
+      });
+      if(result.replayed) reply.header('idempotent-replayed','true');
+      return reply.status(result.status).send(result.body);
+    });
     v1.post("/payments", async (req, reply) => {
       const body = parse(createPaymentSchema, req.body);
       const scope = scopeOf(req);
@@ -87,7 +103,7 @@ export async function registerV1Routes(app: FastifyInstance) {
     v1.get<{ Params: { id: string } }>("/payments/:id/timeline", async (req) => {
       const scope = scopeOf(req);
       const p = await getPaymentRow(db, req.params.id);
-      if (!p || p.merchantId !== scope.merchantId || p.mode !== scope.mode) throw Errors.notFound("Payment", req.params.id);
+      if (!p || p.merchantId !== scope.merchantId || p.projectId !== scope.projectId || p.mode !== scope.mode) throw Errors.notFound("Payment", req.params.id);
       return { payment_id: p.id, data: await getPaymentTimeline(db, p.id) };
     });
 

@@ -120,6 +120,13 @@
       "when": 1792752000002,
       "tag": "0016_admin_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792752000003,
+      "tag": "0017_integration_profiles",
+      "breakpoints": true
     }
   ]
 }

@@ -139,6 +139,7 @@ export const apiKeys = pgTable(
       .references(() => projects.id),
     mode: modeEnum("mode").notNull(),
     name: text("name").notNull(),
+    integrationType: text("integration_type").$type<'api'|'redirect'>().notNull().default('api'),
     /** First characters of the key (e.g. natio_sk_test_a1b2) — safe to display. */
     prefix: text("prefix").notNull(),
     keyHash: text("key_hash").notNull(),

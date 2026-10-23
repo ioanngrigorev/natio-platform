@@ -7,6 +7,7 @@ import { newId } from "../../lib/ids.js";
 import { recordAudit, type Actor } from "../audit/service.js";
 import {loadConfig} from '../../config.js';
 import {logger} from '../../lib/logger.js';
+import {getPool} from '../../db/client.js';
 
 export interface ApiKeyPrincipal {
   apiKey: typeof apiKeys.$inferSelect;
@@ -20,6 +21,7 @@ export function publicApiKey(k: typeof apiKeys.$inferSelect) {
     id: k.id,
     name: k.name,
     mode: k.mode,
+    integration_type: k.integrationType,
     prefix: k.prefix,
     project_id: k.projectId,
     last_used_at: k.lastUsedAt,
@@ -30,9 +32,11 @@ export function publicApiKey(k: typeof apiKeys.$inferSelect) {
 
 export async function createApiKey(
   db: Db,
-  input: { merchantId: string; projectId: string; mode: "test" | "live"; name: string; actor: Actor },
+  input: { merchantId: string; projectId: string; mode: "test" | "live"; name: string; actor: Actor; integrationType?: 'api'|'redirect' },
 ): Promise<{ key: typeof apiKeys.$inferSelect; secret: string }> {
   if (loadConfig().NATIO_SANDBOX_ONLY && input.mode === 'live') throw Errors.forbidden('Live keys are disabled in the demo environment');
+  const profile=(await getPool().query('SELECT allowed_types FROM merchant_integration_profiles WHERE merchant_id=$1 AND mode=$2',[input.merchantId,input.mode])).rows[0];
+  if(profile&&!profile.allowed_types.includes(input.integrationType??'api')) throw Errors.forbidden('This integration type is not enabled for this merchant');
   const [project] = await db
     .select()
     .from(projects)
@@ -53,6 +57,7 @@ export async function createApiKey(
       merchantId: input.merchantId,
       projectId: input.projectId,
       mode: input.mode,
+      integrationType: input.integrationType??'api',
       name: input.name.trim(),
       prefix: generated.prefix,
       keyHash: generated.hash,

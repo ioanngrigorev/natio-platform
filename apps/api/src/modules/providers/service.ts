@@ -188,7 +188,7 @@ export async function updateProviderAccount(
 
 export async function createProviderAccount(
   db: Db,
-  input: { providerId: string; mode: "test" | "live"; name: string; merchantId?: string | null; priority?: number; feePercent?: number; feeFixedMinor?: number; currencies?: string[]; credentials?: Record<string, unknown>; config?: ProviderAccountConfig },
+  input: { providerId: string; mode: "test" | "live"; name: string; status?: "active"|"disabled"; merchantId?: string | null; priority?: number; feePercent?: number; feeFixedMinor?: number; currencies?: string[]; credentials?: Record<string, unknown>; config?: ProviderAccountConfig },
   actor: Actor,
 ) {
   const [provider] = await db.select().from(providers).where(eq(providers.id, input.providerId)).limit(1);
@@ -205,6 +205,7 @@ export async function createProviderAccount(
       merchantId: input.merchantId ?? null,
       mode: input.mode,
       name: input.name,
+      status: input.status ?? "active",
       priority: input.priority ?? 100,
       feePercent: String(input.feePercent ?? 0),
       feeFixedMinor: input.feeFixedMinor ?? 0,

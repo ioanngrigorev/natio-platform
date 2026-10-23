@@ -186,6 +186,11 @@ export function eligibility(c: Candidate, ctx: RoutingContext): string[] {
   if (ctx.transactionType === "payment" && provider.supportedMethods.length && !provider.supportedMethods.includes(ctx.paymentMethod)) {
     reasons.push("method_not_supported");
   }
+  // A quick connection may opt into only one of the adapter's methods.
+  // Enforce that choice during routing, not just in the setup interface.
+  const accountMethods=account.config?.paymentMethods;
+  if(ctx.transactionType==='payment' && accountMethods!==undefined &&
+    (!Array.isArray(accountMethods)||!accountMethods.includes(ctx.paymentMethod))) reasons.push('account_method_not_supported');
   const currencies = account.currencies.length ? account.currencies : provider.supportedCurrencies;
   if (currencies.length && !currencies.includes(ctx.currency.toUpperCase())) reasons.push("currency_not_supported");
   if (provider.supportedCountries.length && (!ctx.country || !provider.supportedCountries.includes(ctx.country.toUpperCase()))) reasons.push(ctx.country ? "country_not_supported" : "country_required");
