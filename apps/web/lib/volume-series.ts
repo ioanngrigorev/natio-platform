@@ -59,3 +59,22 @@ export function groupVolume(days: VolumePoint[], grain: VolumeGrain): VolumePoin
 export function volumeWindow(days: VolumePoint[], count?: number): { startIndex: number; endIndex: number } {
   return { startIndex: count ? Math.max(0, days.length - count) : 0, endIndex: Math.max(0, days.length - 1) };
 }
+
+/** Fit the visible values, without dropping zeros/outliers or exaggerating tiny rounding changes. */
+export function volumeDomain(values: number[], fromZero = false): [number, number] {
+  const finite = values.filter(Number.isFinite);
+  if (!finite.length) return [0, 1];
+  const low = Math.min(...finite), high = Math.max(...finite);
+  const padding = Math.max((high - low) * 0.12, Math.abs(high) * 0.02, 1);
+  return [fromZero ? Math.min(0, low - (low < 0 ? padding : 0)) : Math.max(0, low - padding), high + padding];
+}
+
+/** Zoom around the center; pan within the report without changing the window length. */
+export function adjustVolumeWindow(length: number, range: { startIndex: number; endIndex: number }, factor = 1, direction = 0) {
+  if (!length) return { startIndex: 0, endIndex: 0 };
+  const current = range.endIndex - range.startIndex + 1;
+  const count = Math.min(length, Math.max(Math.min(3, length), Math.round(current * factor)));
+  const desired = range.startIndex + Math.floor((current - count) / 2) + Math.round(current / 2) * direction;
+  const startIndex = Math.max(0, Math.min(length - count, desired));
+  return { startIndex, endIndex: startIndex + count - 1 };
+}
