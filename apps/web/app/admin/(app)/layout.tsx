@@ -22,6 +22,7 @@ const NAV: NavItem[] = [
   { href: "/admin/receipts", label: "Receipt review", section: "Finance" },
   { href: "/admin/settlements", label: "Settlements", section: "Finance" },
   { href: "/admin/reconciliation", label: "Reconciliation", section: "Finance" },
+  { href: "/admin/integrations", label: "Integration center", section: "Payment setup" },
   { href: "/admin/providers", label: "Providers", section: "Payment setup" },
   { href: "/admin/lab", label: "Connection Lab", section: "Payment setup" },
   { href: "/admin/catalog", label: "Payment catalog", section: "Payment setup" },

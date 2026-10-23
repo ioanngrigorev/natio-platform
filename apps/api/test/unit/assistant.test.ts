@@ -21,6 +21,11 @@ describe('assistant response boundary',()=>{
   vi.stubGlobal('fetch',f);expect((await askAssistant({question:'PSP Aurora Demo для EUR и card',page:'/admin/lab',history:[],locale:'en'},'test')).action).toBe('none');
   expect(JSON.parse(f.mock.calls[0][1].body).instructions).toContain('Never invent a country');
  });
+ it('pins merchant dashboard proposals to the authenticated tenant',async()=>{
+  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({output:[{content:[{type:'output_text',text:JSON.stringify({...valid,dashboard:{...valid.dashboard,merchant_id:'another-tenant'}})}]}]}))));
+  const r=await askAssistant({question:'Show my turnover',page:'/dashboard',history:[],locale:'en'},'test',[],'authenticated-merchant');
+  expect(r.dashboard?.filters.merchant_id).toBe('authenticated-merchant');
+ });
  it('reports invalid credentials without leaking upstream content',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('secret-from-upstream',{status:401})));await expect(askAssistant({question:'Помоги',page:'/admin',history:[],locale:'en'},'test')).rejects.toMatchObject({status:503,code:'assistant_credentials_invalid'});});
  it('distinguishes exhausted credit from temporary rate limits without exposing provider details',async()=>{
   for(const code of ['insufficient_quota','credit_balance_exhausted']){

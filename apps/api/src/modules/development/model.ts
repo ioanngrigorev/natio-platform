@@ -21,7 +21,7 @@ export function scheduleTemplate(input:z.infer<typeof scheduleInput>){
  return phaseKinds.map((kind,i)=>({id:kind,kind,name:names[i]!,start:at(Math.floor(days*bounds[i]!)),end:at(Math.max(Math.floor(days*bounds[i]!),Math.floor(days*bounds[i+1]!)-1)),owner:owners[i]!,progress:0}));
 }
 export const developmentData=z.object({
- request:z.string().trim().max(8000).default(''),source_path:z.string().max(200).regex(/^\/(admin|dashboard)(?:\/[a-zA-Z0-9_-]+)*$/).default('/admin'),
+ request:z.string().trim().max(12000).default(''),source_path:z.string().max(200).regex(/^\/(admin|dashboard)(?:\/[a-zA-Z0-9_-]+)*$/).default('/admin'),
  spec:specification,
  monthly_revenue_usd:z.number().min(0).max(1e9).default(0),monthly_savings_usd:z.number().min(0).max(1e9).default(0),one_time_cost_usd:z.number().min(0).max(1e9).default(0),
  effort_hours:z.number().min(1/60).max(100000).default(8),complexity:z.number().int().min(1).max(5).default(3),confidence_pct:z.number().int().min(0).max(100).default(0),market_pct:z.number().int().min(0).max(100).default(0),

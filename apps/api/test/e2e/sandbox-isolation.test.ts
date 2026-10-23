@@ -15,6 +15,9 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{await stopTestEnv(env);delete process.env.NATIO_SANDBOX_ONLY;delete process.env.COOKIE_DOMAIN;resetConfigForTests();});
 describe('isolated sandbox boundaries',()=>{
+ it('requires an issued demo identity instead of public registration',async()=>{
+  expect((await env.app.inject({method:'POST',url:'/dashboard/auth/register',payload:{}})).statusCode).toBe(403);
+ });
  it('sets a distinct host-only session and ignores a live mode override',async()=>{
   const login=await env.app.inject({method:'POST',url:'/admin/auth/login',payload:{email:env.seed.adminEmail,password:env.seed.password}});
   expect(login.statusCode).toBe(200);

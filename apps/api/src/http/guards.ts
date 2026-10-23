@@ -18,6 +18,12 @@ export async function requireApiKey(req: FastifyRequest, _reply: FastifyReply): 
   const principal = await authenticateApiKey(getDb(), secret);
   if (!principal) throw Errors.invalidApiKey();
   if (loadConfig().NATIO_SANDBOX_ONLY && principal.mode === 'live') throw Errors.forbidden('Live payments are disabled in this demo environment');
+  // Redirect keys cannot refund, pay out, enumerate ledger data or store methods.
+  const path=req.url.split('?')[0]!;
+  if(principal.apiKey.integrationType==='redirect' && !(
+    (req.method==='POST'&&path==='/v1/checkout-sessions') ||
+    (req.method==='GET'&&/^\/v1\/payments\/[^/]+(?:\/timeline)?$/.test(path))
+  )) throw Errors.forbidden('This redirect key can only create checkout sessions and read their payment status');
   const allowed = principal.project.settings.allowedIps ?? [];
   if (allowed.length && !isIpAllowed(req.ip, allowed)) throw Errors.ipNotAllowed();
   await requirePlan(principal.merchant.id, 'integrations',principal.mode);
@@ -47,7 +53,7 @@ export function requireMerchant(permission?: Permission) {
     if (principal.merchant.status === "disabled") throw Errors.forbidden("This merchant account has been disabled");
     checkCsrf(req, principal.session.csrfToken);
     if (permission && !hasPermission(principal.user.role, permission)) throw Errors.forbidden(`Requires permission ${permission}`);
-    if (!/^\/dashboard\/(auth|development|plans|recommendations)(?:[/?]|$)/.test(req.url)) await requirePlan(principal.merchant.id, featureForPermission(permission, req.method, req.url),readMode(req));
+    if (!/^\/dashboard\/(auth|development|plans|recommendations|assistant|knowledge|boards|bi)(?:[/?]|$)/.test(req.url)) await requirePlan(principal.merchant.id, featureForPermission(permission, req.method, req.url),readMode(req));
     req.merchantUser = principal;
     req.dashboardMode = readMode(req);
   };

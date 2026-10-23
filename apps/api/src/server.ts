@@ -18,6 +18,8 @@ import { registerDashboardRoutes } from "./http/routes/dashboard.js";
 import { registerAdminRoutes } from "./http/routes/admin.js";
 import { registerSupportRoutes } from "./http/routes/support.js";
 import { registerMarketRoutes } from "./http/routes/market.js";
+import {registerMerchantWorkspaceRoutes} from './http/routes/merchant-workspace.js';
+import {registerIntegrationRoutes} from './http/routes/integrations.js';
 import { registerWorkspaceRoutes } from "./http/routes/workspace.js";
 import { registerPricingRoutes } from "./http/routes/pricing.js";
 import { registerReceiptRoutes } from "./http/routes/receipts.js";
@@ -118,6 +120,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerReceiptRoutes(app);
   await registerPricingRoutes(app);
   await registerWorkspaceRoutes(app);
+  await registerIntegrationRoutes(app);
+  await registerMerchantWorkspaceRoutes(app);
   await registerDevelopmentRoutes(app);
   await registerPlanRoutes(app);
   await registerMarketRoutes(app);

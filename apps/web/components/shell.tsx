@@ -62,7 +62,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
             <div key={s.section || "root"} className="mb-4">
               {translateUi(s.section ? <div className="nav-section-heading flex items-center gap-2 px-2 pb-2 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-500">{translateUi(session.kind === "admin" ? <SectionIcon name={s.section}/> : null)}<span>{translateUi(s.section)}</span><span className="ml-1 h-px flex-1 bg-ink-100" aria-hidden="true"/></div> : null)}
               {translateUi(s.items.map((item) => {
-                const requiredPlan = /\/(api-keys|webhooks|developers|projects)(?:$|\/)/.test(item.href) ? 'premium' : /\/(analytics|reconciliation|settlements|recommendations)(?:$|\/)/.test(item.href) ? 'optimal' : null;
+                const requiredPlan = /\/(api-keys|webhooks|developers|projects|integrations)(?:$|\/)/.test(item.href) ? 'premium' : /\/(analytics|reconciliation|settlements|recommendations)(?:$|\/)/.test(item.href) ? 'optimal' : null;
                 const locked = session.kind === 'merchant' && requiredPlan && (session.plan === 'light' || (session.plan === 'optimal' && requiredPlan === 'premium'));
                 const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
@@ -89,7 +89,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="ml-auto flex items-center gap-3">
             {translateUi(session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">{translateUi("Support ↗")}</Link><AdminThemeToggle /></> : null)}
             <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">{translateUi("＋ Suggest improvement")}</Link>
-            {session.kind === 'admin'?<button type="button" className="btn-secondary whitespace-nowrap !border-brand-600 !text-brand-600" onClick={()=>window.dispatchEvent(new CustomEvent('natio:ask',{detail:''}))}>{translateUi("✦ Ask AI")}</button>:null}<DevelopmentNotifications/>
+            {<button type="button" className="btn-secondary whitespace-nowrap !border-brand-600 !text-brand-600" onClick={()=>window.dispatchEvent(new CustomEvent('natio:ask',{detail:''}))}>{translateUi("✦ Ask AI")}</button>}<DevelopmentNotifications/>
             <LanguagePicker compact/><ModeToggle />
             <button type="button" onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
           </div>
@@ -99,7 +99,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="mx-auto max-w-[1280px]">{translateUi(session.kind === "admin" ? <AdminGreeting/> : null)}{children}</div>
         </main>
       </div>
-      {translateUi(session.kind === "admin" ? <AdminAssistant /> : null)}
+      <AdminAssistant />
     </div>
   );
 }

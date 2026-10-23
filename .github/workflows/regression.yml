@@ -35,7 +35,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install disposable Redis test runtime
-        run: sudo apt-get update -qq && sudo apt-get install -y redis-server poppler-utils tesseract-ocr fonts-liberation
+        timeout-minutes: 4
+        run: |
+          # A stalled package mirror must not consume the entire regression job.
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
+          sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y redis-server poppler-utils tesseract-ocr fonts-liberation
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
       - run: pnpm typecheck

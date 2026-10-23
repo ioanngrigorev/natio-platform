@@ -274,6 +274,11 @@ describe("selectRule", () => {
 // eligibility
 // ---------------------------------------------------------------------------
 describe("eligibility", () => {
+  it('enforces explicitly selected account payment methods',()=>{
+    const c=candidate({}, {config:{paymentMethods:['qr']}});
+    expect(eligibility(c,baseCtx)).toContain('account_method_not_supported');
+    expect(eligibility(c,{...baseCtx,paymentMethod:'qr'})).not.toContain('account_method_not_supported');
+  });
   it("returns no reasons for a fully eligible candidate", () => {
     expect(eligibility(candidate(), baseCtx)).toEqual([]);
   });

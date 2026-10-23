@@ -44,6 +44,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     const authLimit = { rateLimit: { max: cfg.RATE_LIMIT_AUTH_PER_MINUTE, timeWindow: "1 minute" } };
 
     d.post("/auth/register", { config: authLimit }, async (req, reply) => {
+      if(cfg.NATIO_SANDBOX_ONLY)throw Errors.forbidden("Use an issued demo account. Public registration is disabled in this test environment.");
       const body = parse(
         z.object({
           company_name: z.string().min(2).max(120),
@@ -220,9 +221,9 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       });
       m.post("/api-keys", async (req, reply) => {
         need(req, "api_keys.manage");
-        const body = parse(z.object({ project_id: z.string().optional(), mode: z.enum(["test", "live"]), name: z.string().min(1).max(80) }), req.body);
+        const body = parse(z.object({ project_id: z.string().optional(), mode: z.enum(["test", "live"]), name: z.string().min(1).max(80), integration_type:z.enum(['api','redirect']).optional() }), req.body);
         const project = await projectOf(req, body.project_id);
-        const { key, secret } = await createApiKey(db, { merchantId: merchantId(req), projectId: project.id, mode: body.mode, name: body.name, actor: actorFromRequest(req) });
+        const { key, secret } = await createApiKey(db, { merchantId: merchantId(req), projectId: project.id, mode: body.mode, name: body.name, integrationType:body.integration_type, actor: actorFromRequest(req) });
         return reply.status(201).send({ ...publicApiKey(key), secret, note: "Store this key securely. It will not be shown again." });
       });
       m.delete<{ Params: { id: string } }>("/api-keys/:id", async (req) => {

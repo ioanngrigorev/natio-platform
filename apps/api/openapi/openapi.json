@@ -23,6 +23,94 @@
     { "name": "Sandbox" }
   ],
   "paths": {
+    "/v1/checkout-sessions": {
+      "post": {
+        "tags": [
+          "Payments"
+        ],
+        "summary": "Create a hosted checkout session",
+        "description": "Server-to-server only. Accepts an API or restricted redirect key. Requires an HTTPS return_url. Raw card details, saved tokens and crypto are not supported by this endpoint. Verify signed webhooks or API status after returning. A null url means no customer redirect is available.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentRequest"
+              },
+              "example": {
+                "amount": 10000,
+                "currency": "USD",
+                "payment_method": "card",
+                "country": "US",
+                "reference": "ORD-1001",
+                "customer": {
+                  "external_id": "cust_42",
+                  "email": "buyer@example.com"
+                },
+                "test_scenario": "failover"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Checkout created or idempotently replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "payment_id",
+                    "mode",
+                    "status",
+                    "url"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "checkout_session"
+                      ]
+                    },
+                    "payment_id": {
+                      "type": "string"
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "test",
+                        "live"
+                      ]
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": ["string", "null"]
+                    },
+                    "expires_at": {
+                      "type": ["string", "null"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Key scope, merchant eligibility or environment does not permit this request"
+          },
+          "422": {
+            "description": "Invalid checkout request"
+          }
+        }
+      }
+    },
     "/v1/payments": {
       "post": {
         "tags": ["Payments"],
