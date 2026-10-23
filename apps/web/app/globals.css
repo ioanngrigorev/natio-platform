@@ -240,6 +240,10 @@ body:has(.natio-sidebar) .global-language-picker{display:none}
 [dir=rtl] .ml-auto{margin-left:0;margin-right:auto}[dir=rtl] .mr-auto{margin-right:0;margin-left:auto}
 [dir=rtl] input:not([type=number]):not([type=email]):not([type=url]),[dir=rtl] textarea{text-align:right}
 [dir=rtl] input[type=email],[dir=rtl] input[type=url],[dir=rtl] input[type=number],[dir=rtl] input[type=date],[dir=rtl] pre,[dir=rtl] code,[dir=rtl] .recharts-wrapper,[dir=rtl] .payment-volume-chart,[dir=rtl] .delivery-gantt{direction:ltr}
+
+/* Recharts keeps the last tooltip coordinates when hidden. After a resize those
+   invisible boxes can widen the page. Keep them measurable at the chart origin. */
+.recharts-tooltip-wrapper[style*="visibility: hidden"] { transform:none!important; }
 [dir=rtl] .font-mono{unicode-bidi:plaintext}
 @media print{.global-language-picker,.language-picker{display:none!important}}
 
