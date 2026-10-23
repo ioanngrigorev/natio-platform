@@ -40,6 +40,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
   }, []);
 
   async function logout() {
+    if (!window.confirm(translateUi("Sign out of NATIO?"))) return;
     await fetch(`/api${base}/auth/logout`, { method: "POST", headers: { "x-csrf-token": session.csrf } });
     router.push(`${base}/login`);
     router.refresh();
@@ -90,7 +91,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
             <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">{translateUi("＋ Suggest improvement")}</Link>
             <DevelopmentNotifications/>
             <LanguagePicker compact/><ModeToggle />
-            <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
+            <button type="button" onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
           </div>
         </header>
         {translateUi(opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">{translateUi("Opening ")}{translateUi(opening)}…</div> : null)}
@@ -108,10 +109,10 @@ export function ModeToggle() {
 
   const session = useSession();
   return (
-    <div className="flex items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="radiogroup" aria-label={translateUi("Data mode")}>
+    <div className="mode-toggle flex shrink-0 items-center rounded-md border border-ink-200 p-[2px] text-[12px]" role="radiogroup" aria-label={translateUi("Data mode")}>
       {translateUi((["test", "live"] as const).map((m) => (
-        <button key={m} role="radio" aria-checked={session.mode === m} onClick={() => session.setMode(m)} className={cx("rounded px-2.5 py-[3px] font-medium capitalize", session.mode === m ? (m === "live" ? "bg-ok text-white" : "bg-warn text-white") : "text-ink-500 hover:text-ink-900")}>
-          {translateUi(m === "test" ? translateUi("Test data") : translateUi("Live data"))}
+        <button key={m} role="radio" aria-label={translateUi(m === "test" ? "Test data" : "Live data")} aria-checked={session.mode === m} onClick={() => session.setMode(m)} className={cx("whitespace-nowrap rounded px-2.5 py-[3px] font-medium", session.mode === m ? (m === "live" ? "bg-ok text-white" : "bg-warn text-white") : "text-ink-500 hover:text-ink-900")}>
+          {translateUi(m === "test" ? "Test" : "Live")}
         </button>
       )))}
     </div>

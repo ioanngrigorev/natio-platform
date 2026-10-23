@@ -43,6 +43,15 @@ describe('Next.js to Fastify over real HTTP',()=>{
  it('serves multilingual HTML and restricts microphone access to the dashboard',async()=>{
   const response=await request('/admin/plans',{headers:{cookie:cookie+'; natio_locale=ar'}});const html=await response.text();expect(html).toContain('lang="ar"');expect(html).toContain('dir="rtl"');expect(response.headers.get('permissions-policy')).toContain('microphone=(self)');
  });
+ it('keeps the same authenticated session through language changes including Arabic and back',async()=>{
+  for(const locale of ['en','ar','en','ru','es','pt','en']){
+   const headers={cookie:cookie+'; natio_locale='+locale};
+   const page=await request('/admin/plans',{headers});expect(page.status).toBe(200);expect(page.url).not.toContain('/login');
+   const html=await page.text();expect(html).toContain(`lang="${locale}"`);
+   const me=await request('/api/admin/auth/me',{headers});expect(me.status).toBe(200);expect((await me.json() as {csrf_token:string}).csrf_token).toBe(csrf);
+   expect(page.headers.getSetCookie().some(c=>c.startsWith('natio_admin_session='))).toBe(false);
+  }
+ },120_000);
  it('renders merchant surfaces and applies paid-plan gates with the merchant session',async()=>{
   const login=await request('/api/dashboard/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:env.seed.merchantEmail,password:env.seed.password})});
   expect(login.status).toBe(200);const merchantCookie=login.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');

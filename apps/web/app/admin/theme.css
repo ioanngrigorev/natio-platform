@@ -215,3 +215,9 @@
 .outcome-tooltip-label {display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;line-height:1.4;color:var(--muted,#655f79);overflow-wrap:anywhere;}
 .outcome-tooltip-label>span {width:8px;height:8px;flex:none;border-radius:50%;}
 .outcome-tooltip strong {display:block;margin-top:4px;font-size:20px;line-height:1.25;font-variant-numeric:tabular-nums;color:var(--foreground,#19182f);}
+
+/* Shared controls inherit the admin palette, including the native option popup. */
+.admin-theme .language-picker {background:var(--surface);color:var(--foreground);border-color:var(--line);flex-shrink:0;}
+.admin-theme .language-picker select {color:var(--foreground);}
+.admin-theme .language-picker option {background:var(--surface);color:var(--foreground);}
+.admin-theme .mode-toggle button {min-width:48px;line-height:1.5;text-transform:none;}
