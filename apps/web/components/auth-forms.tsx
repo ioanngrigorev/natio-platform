@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { apiClient, ApiRequestError } from "@/lib/api";
+import { signInToWorkspace, workspacePath } from "@/lib/sign-in";
 import { Alert, Button, Field } from "@/components/ui";
 
 export function LoginForm({ kind }: { kind: "merchant" | "admin" }) {
@@ -16,16 +17,15 @@ export function LoginForm({ kind }: { kind: "merchant" | "admin" }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const base = kind === "admin" ? "/admin" : "/dashboard";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      await apiClient(`${base}/auth/login`, { body: { email, password } });
-      if (kind === "admin") document.cookie = "natio_mode=test; path=/; max-age=31536000; samesite=lax";
-      router.push(base);
+      const authenticatedKind = await signInToWorkspace(kind, { email, password });
+      if (authenticatedKind === "admin") document.cookie = "natio_mode=test; path=/; max-age=31536000; samesite=lax";
+      router.replace(workspacePath(authenticatedKind));
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not sign in");
@@ -37,8 +37,8 @@ export function LoginForm({ kind }: { kind: "merchant" | "admin" }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <h1 className="text-[18px] font-semibold tracking-tight">{translateUi(kind === "admin" ? translateUi("NATIO internal admin") : translateUi("Sign in to your dashboard"))}</h1>
-        <p className="mt-1 text-[13px] text-ink-500">{translateUi(kind === "admin" ? translateUi("Restricted to NATIO operations staff.") : translateUi("Payment operations, routing insight and developer tools."))}</p>
+        <h1 className="text-[18px] font-semibold tracking-tight">{translateUi("Sign in to NATIO")}</h1>
+        <p className="mt-1 text-[13px] text-ink-500">{translateUi("Use your merchant or staff account. We will open the right workspace for you.")}</p>
       </div>
       <div className="flex justify-end"><LanguagePicker compact/></div>
       {translateUi(error ? <Alert tone="bad">{translateUi(error)}</Alert> : null)}
