@@ -1,11 +1,12 @@
 
+import Link from 'next/link';
 import {getI18n} from '@/lib/i18n/server';
 import { BreakdownChart, SuccessRateChart, VolumeChart } from "@/components/charts";
 import { PeriodPicker, QuerySelect } from "@/components/dashboard/filters";
 import { Card, Grid, Kpi, Mono, PageHeader, Table } from "@/components/ui";
 import { qs } from "@/lib/api";
 import { formatMoney, formatMs, formatNumber, formatPercent, isoDaysAgo, titleCase } from "@/lib/format";
-import { serverApi } from "@/lib/session";
+import { getMerchantSession, serverApi } from "@/lib/session";
 import type { AnalyticsOverview, BreakdownRow, Breakdowns, ProviderComparisonRow, TimeseriesPoint } from "@/lib/types";
 
 export const metadata = { title: "Analytics" };
@@ -40,25 +41,28 @@ async function BreakdownTable({ rows, currency, dimension }: { rows: BreakdownRo
   );
 }
 
-export default async function AnalyticsPage(props: { searchParams: Promise<{ days?: string; currency?: string }> }) {
+export default async function AnalyticsPage(props: { searchParams: Promise<{ current?: string; days?: string; currency?: string }> }) {
   const searchParams = await props.searchParams;
   const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const api = (await serverApi());
-  const days = searchParams.days ?? "7";
-  const from = isoDaysAgo(Number(days) || 7);
+  const demo=!!(await getMerchantSession())?.sandbox && searchParams.current!=='1';
+  const days = searchParams.days ?? (demo?'30':"7");
+  const span=Math.max(1,Math.min(90,Number(days)||7));
+  const to=demo?'2025-12-30T23:59:59.999Z':undefined;
+  const from=demo?new Date(Date.parse(to!)-(span*86400000-1)).toISOString():isoDaysAgo(span);
   const bucket = days === "1" ? "hour" : "day";
   const currencyParam = searchParams.currency?.toUpperCase();
-  const scope = qs({ from, currency: currencyParam });
+  const scope = qs({ from, to, currency: currencyParam });
   const [overview, series, breakdowns, providers] = await Promise.all([
     api.get<AnalyticsOverview>(`/dashboard/analytics/overview${scope}`),
-    api.get<{ currency: string | null; bucket: string; points: TimeseriesPoint[] }>(`/dashboard/analytics/timeseries${qs({ from, currency: currencyParam, bucket })}`),
+    api.get<{ currency: string | null; bucket: string; points: TimeseriesPoint[] }>(`/dashboard/analytics/timeseries${qs({ from, to, currency: currencyParam, bucket })}`),
     api.get<Breakdowns>(`/dashboard/analytics/breakdowns${scope}`),
     api.get<{ currency: string | null; rows: ProviderComparisonRow[] }>(`/dashboard/analytics/providers${scope}`),
   ]);
   const cur = overview.currency;
   const currencies = breakdowns.by_currency.rows.map((r) => r.key).filter((k) => k && k !== "unknown");
-  const periodLabel = days === "1" ? "Last 24 hours" : `Last ${days} days`;
+  const periodLabel = demo?"Demo period · 2025":days === "1" ? "Last 24 hours" : `Last ${days} days`;
 
   return (
     <>
@@ -73,6 +77,7 @@ export default async function AnalyticsPage(props: { searchParams: Promise<{ day
         }
       />
 
+      {demo?<p className="mb-4 text-xs text-ink-500">{from.slice(0,10)} — {to!.slice(0,10)} UTC · <Link className="text-brand-600" href="?current=1&days=1">{translateUi("Show current period")}</Link></p>:null}
       <Grid cols={4}>
         <Kpi label={translateUi("Total payment volume")} value={cur ? formatMoney(overview.tpv, cur) : "—"} hint={`${formatNumber(overview.successful)} successful payments`} />
         <Kpi label={translateUi("Transactions")} value={formatNumber(overview.transactions)} hint={`${formatNumber(overview.failed)} failed · ${formatNumber(overview.in_flight)} in flight`} />

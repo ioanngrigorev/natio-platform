@@ -44,6 +44,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
     const authLimit = { rateLimit: { max: cfg.RATE_LIMIT_AUTH_PER_MINUTE, timeWindow: "1 minute" } };
 
     d.post("/auth/register", { config: authLimit }, async (req, reply) => {
+      if(cfg.NATIO_SANDBOX_ONLY)throw Errors.forbidden("Use an issued demo account. Public registration is disabled in this test environment.");
       const body = parse(
         z.object({
           company_name: z.string().min(2).max(120),
