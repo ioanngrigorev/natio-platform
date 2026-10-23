@@ -62,6 +62,11 @@ export function Kpi({ label, value, hint, tone }: { label: string; value: ReactN
 // Status badge
 // ---------------------------------------------------------------------------
 const STATUS_TONES: Record<string, string> = {
+  passed: "bg-ok-bg text-ok",
+  ready: "bg-ok-bg text-ok",
+  testing: "bg-warn-bg text-warn",
+  requires_action: "bg-info-bg text-info",
+  draft: "bg-muted-bg text-muted",
   successful: "bg-ok-bg text-ok",
   succeeded: "bg-ok-bg text-ok",
   captured: "bg-ok-bg text-ok",
@@ -74,8 +79,8 @@ const STATUS_TONES: Record<string, string> = {
   allow: "bg-ok-bg text-ok",
   ok: "bg-ok-bg text-ok",
   authorized: "bg-info-bg text-info",
-  processing: "bg-info-bg text-info",
-  delivering: "bg-info-bg text-info",
+  processing: "bg-warn-bg text-warn",
+  delivering: "bg-warn-bg text-warn",
   created: "bg-muted-bg text-muted",
   pending: "bg-warn-bg text-warn",
   review: "bg-warn-bg text-warn",
@@ -136,8 +141,9 @@ export function StatusBadge({ status, label, variant = "light" }: { status: stri
   const light = STATUS_TONES[s] ?? "bg-muted-bg text-muted";
   return (
     <span
+      data-tone={light.includes("text-ok") ? "ok" : light.includes("text-bad") ? "bad" : light.includes("text-warn") ? "warn" : light.includes("text-info") ? "info" : "muted"}
       className={cx(
-        "inline-flex items-center rounded-full text-[11px] font-medium leading-4 whitespace-nowrap",
+        "natio-status inline-flex items-center rounded-full text-[11px] font-medium leading-4 whitespace-nowrap",
         variant === "dark" ? cx("border px-2 py-[2px] font-mono", darkToneFor(light)) : cx("px-2 py-[2px]", light),
       )}
     >

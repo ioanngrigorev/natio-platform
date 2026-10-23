@@ -10,6 +10,7 @@ import { dailyVolume, groupVolume, type VolumeGrain } from "@/lib/volume-series"
 import type { BiReport } from "@/lib/bi-types";
 
 const colors=["var(--chart-1)","var(--chart-2)","var(--chart-3)","var(--chart-4)"];
+const statusColor=(status:string)=>status==="successful"?"var(--status-success)":status==="failed"?"var(--status-failure)":status==="pending"?"var(--status-pending)":"var(--chart-other)";
 const grid="var(--chart-grid)", axis={fontSize:11,fill:"var(--chart-axis)"};
 const compact=(n:number)=>new Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n);
 const tipStyle={backgroundColor:"var(--surface)",color:"inherit",borderRadius:12,border:"1px solid #e9e6ff",fontSize:12,boxShadow:"0 8px 30px #1d17f310"};
@@ -29,7 +30,7 @@ export function BiCharts({ report:r, overview=false }: {report:BiReport; overvie
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.8fr)_minmax(280px,1fr)]">
       <PaymentVolumeChart report={r} motion={motion} grain={grain} onGrain={setGrain}/>
       <Card title="Transaction outcomes" description="All operations within the selected filters">
-        {r.statuses.length ? <><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={r.statuses} dataKey="transactions" nameKey="label" innerRadius={70} outerRadius={100} paddingAngle={3} stroke="none" {...animated}>{r.statuses.map((s,i)=><Cell key={s.label} fill={colors[i%colors.length]}/>)}</Pie><Tooltip contentStyle={tipStyle} formatter={(v:number)=>formatNumber(v)}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/></PieChart></ResponsiveContainer>
+        {r.statuses.length ? <><ResponsiveContainer width="100%" height={250}><PieChart><Pie data={r.statuses} dataKey="transactions" nameKey="label" innerRadius={70} outerRadius={100} paddingAngle={3} stroke="none" {...animated}>{r.statuses.map((s,i)=><Cell key={s.label} fill={statusColor(s.label)}/>)}</Pie><Tooltip contentStyle={tipStyle} formatter={(v:number)=>formatNumber(v)}/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/></PieChart></ResponsiveContainer>
         <div className="text-center"><strong className="text-2xl text-brand-600">{formatPercent(r.summary.successful+r.summary.failed?r.summary.successful/(r.summary.successful+r.summary.failed):null)}</strong><span className="ml-2 text-xs text-ink-500">success among decided operations</span></div></> : <div className="py-16 text-center text-sm text-ink-500"><p>No operations in this period.</p><Link className="mt-2 inline-block text-brand-600" href="/admin/bi">Reset report filters →</Link></div>}
       </Card>
     </div>

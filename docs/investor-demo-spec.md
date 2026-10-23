@@ -95,3 +95,6 @@ References: [PostgreSQL grouping sets](https://www.postgresql.org/docs/16/querie
 - Visual reference: [Bybit chart navigation and display controls](https://www.bybit.com/en/help-center/article/Bybit-Trading-Chart-FAQ). No trading candles or price data are fabricated from payment totals.
 - Regression: ten volume-series tests cover accounting, scale edge cases and bounded navigation; local browser checks verify actual/MA overlays, range totals, zoom and themes.
 - Production measurements (sequential requests from the same client; full HTML response; not load-test percentiles): repeated Overview 6.811 → 1.718 seconds; BI 5.143 → 1.809 seconds; Providers 6.788 → 1.927 seconds. First BI response after cache expiry was 4.328 seconds and Providers 6.395 seconds. Merchant list 4.996 → 2.702 seconds on first measured page request. Network distance and the single-vCPU database remain relevant for cold analytics.
+
+- Status badges now use consistent semantic colors across all admin themes: success green, pending/processing orange, failure red, action/info blue, disabled/cancelled grey. Transaction-outcome sectors use the same meaning. Text labels remain visible.
+- Native select controls retain keyboard behavior with a custom chevron inset 0.8rem from the right edge and 2.5rem text padding.

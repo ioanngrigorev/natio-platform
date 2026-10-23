@@ -133,3 +133,27 @@
 .volume-tool { min-width:30px; height:30px; border-radius:6px; border:1px solid var(--chart-grid); font-size:16px; }
 .volume-tool:hover:not(:disabled) { background:var(--chart-grid); }
 .volume-tool:disabled { opacity:.3; cursor:default; }
+
+/* Status meaning stays consistent across brand themes. */
+.admin-theme { --status-success:#15803d; --status-failure:#dc2626; --status-pending:#d97706; }
+.admin-theme .natio-status[data-tone="ok"] { background:#dcfce7; color:#166534; }
+.admin-theme .natio-status[data-tone="warn"] { background:#ffedd5; color:#9a3412; }
+.admin-theme .natio-status[data-tone="bad"] { background:#fee2e2; color:#991b1b; }
+.admin-theme .natio-status[data-tone="info"] { background:#dbeafe; color:#1e40af; }
+.admin-theme .natio-status[data-tone="muted"] { background:#e5e7eb; color:#4b5563; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) { --status-success:#4ade80; --status-failure:#fb7185; --status-pending:#fbbf24; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) .natio-status[data-tone="ok"] { background:#123c2c; color:#86efac; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) .natio-status[data-tone="warn"] { background:#422d17; color:#fdba74; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) .natio-status[data-tone="bad"] { background:#481e29; color:#fda4af; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) .natio-status[data-tone="info"] { background:#1e3153; color:#93c5fd; }
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) .natio-status[data-tone="muted"] { background:#303543; color:#cbd5e1; }
+.admin-theme select.input { padding-right:2.5rem; background-position:right .8rem center; }
+.admin-theme select.input,
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) select.input {
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-size:16px; background-position:right .8rem center; padding-right:2.5rem;
+}
+.admin-theme:is([data-theme="dark"],[data-theme="mint"]) select.input {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
