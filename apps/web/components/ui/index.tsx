@@ -1,39 +1,45 @@
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { titleCase } from "@/lib/format";
 
-export function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
+export {cx} from "@/lib/classnames";
+import {cx} from "@/lib/classnames";
 
 // ---------------------------------------------------------------------------
 // Layout primitives
 // ---------------------------------------------------------------------------
 export function PageHeader({ title, subtitle, actions, breadcrumb }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; breadcrumb?: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        {breadcrumb ? <div className="mb-1 text-[12px] text-ink-500">{breadcrumb}</div> : null}
-        <h1 className="text-[20px] font-semibold tracking-tight text-ink-900">{title}</h1>
-        {subtitle ? <p className="mt-1 text-[13px] text-ink-500">{subtitle}</p> : null}
+        {translateUi(breadcrumb ? <div className="mb-1 text-[12px] text-ink-500">{translateUi(breadcrumb)}</div> : null)}
+        <h1 className="text-[20px] font-semibold tracking-tight text-ink-900">{translateUi(title)}</h1>
+        {translateUi(subtitle ? <p className="mt-1 text-[13px] text-ink-500">{translateUi(subtitle)}</p> : null)}
       </div>
-      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+      {translateUi(actions ? <div className="flex items-center gap-2">{translateUi(actions)}</div> : null)}
     </div>
   );
 }
 
 export function Card({ title, description, actions, children, className, padded = true }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; padded?: boolean }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <section className={cx("rounded-lg bg-white shadow-card", className)}>
-      {title || actions ? (
+      {translateUi(title || actions ? (
         <header className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-3">
           <div>
-            <h2 className="text-[13px] font-semibold text-ink-900">{title}</h2>
-            {description ? <p className="mt-0.5 text-[12px] text-ink-500">{description}</p> : null}
+            <h2 className="text-[13px] font-semibold text-ink-900">{translateUi(title)}</h2>
+            {translateUi(description ? <p className="mt-0.5 text-[12px] text-ink-500">{translateUi(description)}</p> : null)}
           </div>
-          {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+          {translateUi(actions ? <div className="flex items-center gap-2">{translateUi(actions)}</div> : null)}
         </header>
-      ) : null}
+      ) : null)}
       <div className={padded ? "p-4" : ""}>{children}</div>
     </section>
   );
@@ -48,12 +54,14 @@ export function Grid({ cols = 4, children, className }: { cols?: 2 | 3 | 4 | 6; 
 // KPI tile
 // ---------------------------------------------------------------------------
 export function Kpi({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: ReactNode; tone?: "ok" | "warn" | "bad" | "neutral" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const toneClass = tone === "ok" ? "text-ok" : tone === "warn" ? "text-warn" : tone === "bad" ? "text-bad" : "text-ink-900";
   return (
     <div className="rounded-lg bg-white px-4 py-3 shadow-card">
-      <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-500">{label}</div>
-      <div className={cx("mt-1 text-[22px] font-semibold tabular tracking-tight", toneClass)}>{value}</div>
-      {hint ? <div className="mt-0.5 text-[12px] text-ink-500">{hint}</div> : null}
+      <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-500">{translateUi(label)}</div>
+      <div className={cx("mt-1 text-[22px] font-semibold tabular tracking-tight", toneClass)}>{translateUi(value)}</div>
+      {translateUi(hint ? <div className="mt-0.5 text-[12px] text-ink-500">{translateUi(hint)}</div> : null)}
     </div>
   );
 }
@@ -137,6 +145,8 @@ function darkToneFor(light: string): string {
  * keep the light tones above.
  */
 export function StatusBadge({ status, label, variant = "light" }: { status: string | null | undefined; label?: string; variant?: "light" | "dark" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const s = (status ?? "unknown").toLowerCase();
   const light = STATUS_TONES[s] ?? "bg-muted-bg text-muted";
   return (
@@ -147,7 +157,7 @@ export function StatusBadge({ status, label, variant = "light" }: { status: stri
         variant === "dark" ? cx("border px-2 py-[2px] font-mono", darkToneFor(light)) : cx("px-2 py-[2px]", light),
       )}
     >
-      {label ?? titleCase(s)}
+      {translateUi(label ?? titleCase(s))}
     </span>
   );
 }
@@ -163,6 +173,8 @@ export function Tag({ children, tone = "neutral" }: { children: ReactNode; tone?
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost"; size?: "sm" | "md"; loading?: boolean };
 
 export function Button({ variant = "secondary", size = "md", loading, className, children, disabled, ...rest }: ButtonProps) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const base = "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-100 disabled:opacity-50 disabled:cursor-not-allowed";
   const sizes = { sm: "h-7 px-2.5 text-[12px]", md: "h-8 px-3 text-[13px]" };
   const variants = {
@@ -173,7 +185,7 @@ export function Button({ variant = "secondary", size = "md", loading, className,
   };
   return (
     <button className={cx(base, sizes[size], variants[variant], className)} disabled={disabled || loading} {...rest}>
-      {loading ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null}
+      {translateUi(loading ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null)}
       {children}
     </button>
   );
@@ -202,11 +214,13 @@ export function Table({ children, className }: { children: ReactNode; className?
 }
 
 export function EmptyState({ title, description, action }: { title: string; description?: ReactNode; action?: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-      <div className="text-[14px] font-medium text-ink-800">{title}</div>
-      {description ? <div className="mt-1 max-w-md text-[13px] text-ink-500">{description}</div> : null}
-      {action ? <div className="mt-4">{action}</div> : null}
+      <div className="text-[14px] font-medium text-ink-800">{translateUi(title)}</div>
+      {translateUi(description ? <div className="mt-1 max-w-md text-[13px] text-ink-500">{translateUi(description)}</div> : null)}
+      {translateUi(action ? <div className="mt-4">{translateUi(action)}</div> : null)}
     </div>
   );
 }
@@ -216,39 +230,43 @@ export function Mono({ children, className }: { children: ReactNode; className?:
 }
 
 export function DescriptionList({ items, cols = 2 }: { items: Array<{ label: string; value: ReactNode }>; cols?: 1 | 2 | 3 }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const map = { 1: "sm:grid-cols-1", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3" };
   return (
     <dl className={cx("grid grid-cols-1 gap-x-6 gap-y-3", map[cols])}>
-      {items.map((it) => (
+      {translateUi(items.map((it) => (
         <div key={it.label} className="min-w-0">
-          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-500">{it.label}</dt>
-          <dd className="mt-0.5 break-words text-[13px] text-ink-900">{it.value ?? "—"}</dd>
+          <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-500">{translateUi(it.label)}</dt>
+          <dd className="mt-0.5 break-words text-[13px] text-ink-900">{translateUi(it.value ?? "—")}</dd>
         </div>
-      ))}
+      )))}
     </dl>
   );
 }
 
 export function Alert({ tone = "info", title, children }: { tone?: "info" | "warn" | "bad" | "ok"; title?: string; children?: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const map = { info: "bg-info-bg text-info border-info/20", warn: "bg-warn-bg text-warn border-warn/20", bad: "bg-bad-bg text-bad border-bad/20", ok: "bg-ok-bg text-ok border-ok/20" };
   return (
     <div className={cx("rounded-md border px-3 py-2 text-[13px]", map[tone])}>
-      {title ? <div className="font-medium">{title}</div> : null}
-      {children ? <div className={title ? "mt-0.5" : ""}>{children}</div> : null}
+      {translateUi(title ? <div className="font-medium">{translateUi(title)}</div> : null)}
+      {translateUi(children ? <div className={title ? "mt-0.5" : ""}>{children}</div> : null)}
     </div>
   );
 }
 
 export function Pagination({ hasMore, nextCursor, baseHref, params }: { hasMore: boolean; nextCursor: string | null; baseHref: string; params: Record<string, string | undefined> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   if (!hasMore || !nextCursor) return null;
   const u = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v) u.set(k, v);
   u.set("cursor", nextCursor);
   return (
     <div className="flex justify-end border-t border-ink-100 px-4 py-2">
-      <Link href={`${baseHref}?${u.toString()}`} className="text-[12px] font-medium text-brand-600 hover:underline">
-        Next page →
-      </Link>
+      <Link href={`${baseHref}?${u.toString()}`} className="text-[12px] font-medium text-brand-600 hover:underline">{translateUi("Next page →")}</Link>
     </div>
   );
 }
@@ -273,13 +291,15 @@ export function CodeBlock({ code, language, variant = "light", className }: { co
 }
 
 export function Field({ label, help, children, htmlFor }: { label: string; help?: ReactNode; children: ReactNode; htmlFor?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div>
       <label className="label" htmlFor={htmlFor}>
-        {label}
+        {translateUi(label)}
       </label>
       {children}
-      {help ? <div className="help">{help}</div> : null}
+      {translateUi(help ? <div className="help">{translateUi(help)}</div> : null)}
     </div>
   );
 }

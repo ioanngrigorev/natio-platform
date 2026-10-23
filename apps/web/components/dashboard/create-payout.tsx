@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -22,6 +24,8 @@ const TEST_SCENARIOS = [
 ];
 
 export function CreatePayout() {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -69,73 +73,67 @@ export function CreatePayout() {
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Create payout
-      </Button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Create a payout" description={session.mode === "test" ? "Routed to the demo payout providers exactly like an API call. No real funds move." : "Routed to an eligible provider account. The provider executes the transfer; NATIO records the outcome."}>
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Create payout")}</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title={translateUi("Create a payout")} description={translateUi(session.mode === "test" ? translateUi("Routed to the demo payout providers exactly like an API call. No real funds move.") : translateUi("Routed to an eligible provider account. The provider executes the transfer; NATIO records the outcome."))}>
         <form onSubmit={submit}>
-          {error ? (
+          {translateUi(error ? (
             <div className="mt-3">
-              <Alert tone="bad">{error}</Alert>
+              <Alert tone="bad">{translateUi(error)}</Alert>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Field label="Amount" htmlFor="po-amt">
+            <Field label={translateUi("Amount")} htmlFor="po-amt">
               <input id="po-amt" className="input" value={form.amount} onChange={set("amount")} required />
             </Field>
-            <Field label="Currency" htmlFor="po-cur">
+            <Field label={translateUi("Currency")} htmlFor="po-cur">
               <input id="po-cur" className="input" maxLength={3} value={form.currency} onChange={set("currency")} required />
             </Field>
-            <Field label="Destination type" htmlFor="po-type">
+            <Field label={translateUi("Destination type")} htmlFor="po-type">
               <select id="po-type" className="input" value={form.type} onChange={set("type")}>
-                {DESTINATION_TYPES.map((d) => (
+                {translateUi(DESTINATION_TYPES.map((d) => (
                   <option key={d.value} value={d.value}>
-                    {d.label}
+                    {translateUi(d.label)}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Destination token" htmlFor="po-token" help="Provider token or tokenised beneficiary. Raw account numbers are not accepted.">
-              <input id="po-token" className="input" placeholder="tok_…" value={form.token} onChange={set("token")} />
+            <Field label={translateUi("Destination token")} htmlFor="po-token" help={translateUi("Provider token or tokenised beneficiary. Raw account numbers are not accepted.")}>
+              <input id="po-token" className="input" placeholder={translateUi("tok_…")} value={form.token} onChange={set("token")} />
             </Field>
-            <Field label="Display (masked)" htmlFor="po-display" help="Shown in the dashboard and webhooks, e.g. IBAN ****4321">
+            <Field label={translateUi("Display (masked)")} htmlFor="po-display" help={translateUi("Shown in the dashboard and webhooks, e.g. IBAN ****4321")}>
               <input id="po-display" className="input" value={form.display} onChange={set("display")} required minLength={3} />
             </Field>
-            <Field label="Holder name" htmlFor="po-holder">
+            <Field label={translateUi("Holder name")} htmlFor="po-holder">
               <input id="po-holder" className="input" value={form.holder_name} onChange={set("holder_name")} />
             </Field>
-            <Field label="Country" htmlFor="po-country">
+            <Field label={translateUi("Country")} htmlFor="po-country">
               <input id="po-country" className="input" maxLength={2} value={form.country} onChange={set("country")} />
             </Field>
-            <Field label="Reference" htmlFor="po-ref">
-              <input id="po-ref" className="input" placeholder="PO-1001" value={form.reference} onChange={set("reference")} />
+            <Field label={translateUi("Reference")} htmlFor="po-ref">
+              <input id="po-ref" className="input" placeholder={translateUi("PO-1001")} value={form.reference} onChange={set("reference")} />
             </Field>
           </div>
           <div className="mt-3">
-            <Field label="Description" htmlFor="po-desc">
+            <Field label={translateUi("Description")} htmlFor="po-desc">
               <input id="po-desc" className="input" value={form.description} onChange={set("description")} />
             </Field>
           </div>
-          {session.mode === "test" ? (
+          {translateUi(session.mode === "test" ? (
             <div className="mt-3">
-              <Field label="Test scenario" htmlFor="po-sc" help={TEST_SCENARIOS.find((s) => s.value === form.test_scenario)?.help}>
+              <Field label={translateUi("Test scenario")} htmlFor="po-sc" help={translateUi(TEST_SCENARIOS.find((s) => s.value === form.test_scenario)?.help)}>
                 <select id="po-sc" className="input" value={form.test_scenario} onChange={set("test_scenario")}>
-                  {TEST_SCENARIOS.map((s) => (
+                  {translateUi(TEST_SCENARIOS.map((s) => (
                     <option key={s.value} value={s.value}>
-                      {s.label}
+                      {translateUi(s.label)}
                     </option>
-                  ))}
+                  )))}
                 </select>
               </Field>
             </div>
-          ) : null}
+          ) : null)}
           <div className="mt-5 flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Create payout
-            </Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{translateUi("Cancel")}</Button>
+            <Button type="submit" variant="primary" loading={loading}>{translateUi("Create payout")}</Button>
           </div>
         </form>
       </Modal>
@@ -144,6 +142,8 @@ export function CreatePayout() {
 }
 
 export function PayoutActions({ payout }: { payout: Payout }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -165,8 +165,6 @@ export function PayoutActions({ payout }: { payout: Payout }) {
   }
 
   return (
-    <Button variant="danger" loading={busy} onClick={() => void cancel()}>
-      Cancel payout
-    </Button>
+    <Button variant="danger" loading={busy} onClick={() => void cancel()}>{translateUi("Cancel payout")}</Button>
   );
 }

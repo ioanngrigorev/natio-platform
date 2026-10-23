@@ -7,8 +7,8 @@ export const planFeatures={
  optimal:['dashboards','financial_read','shared_roadmap','advanced_reports','recommendations'],
  premium:['dashboards','financial_read','shared_roadmap','advanced_reports','recommendations','development','integrations','operations'],
 } as const;
-export async function merchantPlan(id:string):Promise<Plan>{return (await getPool().query('SELECT plan FROM merchant_plans WHERE merchant_id=$1',[id])).rows[0]?.plan||'premium'}
-export async function requirePlan(id:string,feature:string){const plan=await merchantPlan(id);if(!(planFeatures[plan] as readonly string[]).includes(feature))throw new ApiError(403,'permission_error','upgrade_required',`Your ${plan} plan does not include ${feature}. Request an upgrade in Plans.`,{details:{plan,feature}})}
+export async function merchantPlan(id:string,mode:'test'|'live'='live'):Promise<Plan>{if(mode==='test'){const demo=(await getPool().query("SELECT plan FROM platform_demo_subscriptions WHERE actor_kind='merchant' AND actor_id=$1",[id])).rows[0];if(demo)return demo.plan;}return (await getPool().query('SELECT plan FROM merchant_plans WHERE merchant_id=$1',[id])).rows[0]?.plan||'premium'}
+export async function requirePlan(id:string,feature:string,mode:'test'|'live'='live'){const plan=await merchantPlan(id,mode);if(!(planFeatures[plan] as readonly string[]).includes(feature))throw new ApiError(403,'permission_error','upgrade_required',`Your ${plan} plan does not include ${feature}. Request an upgrade in Plans.`,{details:{plan,feature}})}
 export function featureForPermission(permission?:string,method='GET',url=''){
  if(/\/(api-keys|webhooks|projects|developers)(?:[/?]|$)/.test(url))return 'integrations';
  if(!['GET','HEAD','OPTIONS'].includes(method))return 'operations';

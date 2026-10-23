@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,6 +9,8 @@ import { Button } from "@/components/ui";
 
 /** POST /dashboard/webhooks/test — emits a synthetic event to every endpoint of the current mode. */
 export function WebhookTestButton({ eventType = "payment.successful", variant = "secondary", size = "md" }: { eventType?: string; variant?: "primary" | "secondary"; size?: "sm" | "md" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -26,8 +30,6 @@ export function WebhookTestButton({ eventType = "payment.successful", variant = 
   }
 
   return (
-    <Button variant={variant} size={size} loading={busy} onClick={() => void send()}>
-      Send test event
-    </Button>
+    <Button variant={variant} size={size} loading={busy} onClick={() => void send()}>{translateUi("Send test event")}</Button>
   );
 }

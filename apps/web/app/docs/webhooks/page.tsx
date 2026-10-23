@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code, DocHeader, DocTable, H2, H3, Note, Tok } from "@/components/docs/parts";
@@ -174,164 +176,121 @@ const TEST_EVENT = `curl -X POST https://api.natio.me/v1/webhooks/test \\
   -d '{ "event_type": "payment.successful" }'`;
 
 export default function WebhooksPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <DocHeader
         eyebrow="Guides"
-        title="Webhooks"
+        title={translateUi("Webhooks")}
         lead="Webhooks are how your systems learn that something changed without polling. Every event is persisted before any delivery is attempted, every delivery is signed, and every attempt is recorded and replayable."
       />
 
-      <H2 id="event-types">Event types</H2>
-      <p>
-        An endpoint subscribes to a list of event types, or to <Tok>*</Tok> for all of them. Unknown types are rejected when the endpoint is saved, so a typo fails loudly rather
-        than silently dropping traffic.
-      </p>
+      <H2 id="event-types">{translateUi("Event types")}</H2>
+      <p>{translateUi("An endpoint subscribes to a list of event types, or to ")}<Tok>*</Tok>{translateUi(" for all of them. Unknown types are rejected when the endpoint is saved, so a typo fails loudly rather than silently dropping traffic.")}</p>
       <DocTable
         columns={["Event type", "Sent when"]}
         rows={WEBHOOK_EVENT_TYPES.map((t) => [<Tok key={t}>{t}</Tok>, WEBHOOK_EVENT_DESCRIPTIONS[t] ?? ""])}
       />
-      <Note tone="info" title="Subscribe narrowly">
-        Most integrations need only the terminal events: <Tok>payment.successful</Tok>, <Tok>payment.failed</Tok>, <Tok>payment.cancelled</Tok>,{" "}
-        <Tok>payment.refunded</Tok> and the refund and payout results. Subscribing to everything multiplies deliveries without adding information.
-      </Note>
+      <Note tone="info" title={translateUi("Subscribe narrowly")}>{translateUi("Most integrations need only the terminal events: ")}<Tok>{"payment.successful"}</Tok>, <Tok>{"payment.failed"}</Tok>, <Tok>{"payment.cancelled"}</Tok>,{translateUi(" ")}
+        <Tok>{"payment.refunded"}</Tok>{translateUi(" and the refund and payout results. Subscribing to everything multiplies deliveries without adding information.")}</Note>
 
-      <H2 id="envelope">Payload envelope</H2>
-      <p>
-        Every delivery has the same top-level shape. The object that changed is always nested under <Tok>data.object</Tok> and is the same serialisation you get from the
-        corresponding API endpoint, so one code path can handle both.
-      </p>
+      <H2 id="envelope">{translateUi("Payload envelope")}</H2>
+      <p>{translateUi("Every delivery has the same top-level shape. The object that changed is always nested under ")}<Tok>{"data.object"}</Tok>{translateUi(" and is the same serialisation you get from the corresponding API endpoint, so one code path can handle both.")}</p>
       <Code caption="Request body" code={ENVELOPE} />
       <DocTable
         columns={["Field", "Meaning"]}
         rows={[
-          [<Tok key="a">id</Tok>, <>Event id, prefixed <Tok key="b">evt_</Tok>. Stable across every delivery attempt and every endpoint. Deduplicate on this.</>],
-          [<Tok key="c">type</Tok>, "The event type from the table above."],
-          [<Tok key="d">mode</Tok>, <><Tok key="e">test</Tok> or <Tok key="f">live</Tok>. Endpoints are per mode, so this should always match the endpoint you registered.</>],
-          [<Tok key="g">created_at</Tok>, "When the event was emitted, ISO 8601 UTC. Not when this delivery attempt was made."],
-          [<Tok key="h">data.object</Tok>, "The payment, refund, payout or settlement object as it stood when the event was emitted."],
+          [<Tok key="a">{"id"}</Tok>, <>{translateUi("Event id, prefixed ")}<Tok key="b">{"evt_"}</Tok>{translateUi(". Stable across every delivery attempt and every endpoint. Deduplicate on this.")}</>],
+          [<Tok key="c">{"type"}</Tok>, "The event type from the table above."],
+          [<Tok key="d">{"mode"}</Tok>, <><Tok key="e">{"test"}</Tok>{translateUi(" or ")}<Tok key="f">{"live"}</Tok>{translateUi(". Endpoints are per mode, so this should always match the endpoint you registered.")}</>],
+          [<Tok key="g">{"created_at"}</Tok>, "When the event was emitted, ISO 8601 UTC. Not when this delivery attempt was made."],
+          [<Tok key="h">{"data.object"}</Tok>, "The payment, refund, payout or settlement object as it stood when the event was emitted."],
         ]}
       />
-      <p>Alongside the body, each request carries identifying headers:</p>
+      <p>{translateUi("Alongside the body, each request carries identifying headers:")}</p>
       <Code caption="Delivery headers" code={HEADERS} />
       <DocTable
         columns={["Header", "Meaning"]}
         rows={[
-          [<Tok key="a">natio-signature</Tok>, <>The signature to verify: <Tok key="s">t=&lt;unix&gt;,v1=&lt;hex&gt;</Tok>.</>],
-          [<Tok key="b">natio-event-id</Tok>, "The event id, matching id in the body."],
-          [<Tok key="c">natio-event-type</Tok>, "The event type, for cheap routing before parsing."],
-          [<Tok key="d">natio-delivery-id</Tok>, "This delivery to this endpoint. Quote it in support requests about a missing webhook."],
-          [<Tok key="e">natio-delivery-attempt</Tok>, "1-based attempt number. Anything above 1 means an earlier attempt did not get a 2xx."],
+          [<Tok key="a">{"natio-signature"}</Tok>, <>{translateUi("The signature to verify: ")}<Tok key="s">{"t=<unix>,v1=<hex>"}</Tok>.</>],
+          [<Tok key="b">{"natio-event-id"}</Tok>, "The event id, matching id in the body."],
+          [<Tok key="c">{"natio-event-type"}</Tok>, "The event type, for cheap routing before parsing."],
+          [<Tok key="d">{"natio-delivery-id"}</Tok>, "This delivery to this endpoint. Quote it in support requests about a missing webhook."],
+          [<Tok key="e">{"natio-delivery-attempt"}</Tok>, "1-based attempt number. Anything above 1 means an earlier attempt did not get a 2xx."],
         ]}
       />
 
-      <H2 id="signatures">Signature verification</H2>
-      <p>
-        Each endpoint has its own signing secret (<Tok>whsec_…</Tok>), shown once when the endpoint is created. The header is:
-      </p>
+      <H2 id="signatures">{translateUi("Signature verification")}</H2>
+      <p>{translateUi("Each endpoint has its own signing secret (")}<Tok>{"whsec_…"}</Tok>{translateUi("), shown once when the endpoint is created. The header is:")}</p>
       <Code caption="Natio-Signature" code={`Natio-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">`} />
-      <p>To verify:</p>
+      <p>{translateUi("To verify:")}</p>
       <ol className="mb-4 list-decimal pl-5 text-[15px] leading-7 text-mist-200">
-        <li>
-          Split the header on commas into <Tok>t</Tok> and <Tok>v1</Tok>.
+        <li>{translateUi("Split the header on commas into ")}<Tok>{"t"}</Tok>{translateUi(" and ")}<Tok>{"v1"}</Tok>.
         </li>
-        <li>
-          Reject the request if <Tok>t</Tok> is more than <strong>5 minutes</strong> away from your current time, in either direction. The timestamp is inside the signed payload,
-          so an attacker cannot move it.
-        </li>
-        <li>
-          Compute <Tok>HMAC-SHA256(secret, &quot;&lt;t&gt;.&lt;raw body&gt;&quot;)</Tok> and hex-encode it.
-        </li>
-        <li>
-          Compare it to <Tok>v1</Tok> with a constant-time comparison.
-        </li>
+        <li>{translateUi("Reject the request if ")}<Tok>{"t"}</Tok>{translateUi(" is more than ")}<strong>{translateUi("5 minutes")}</strong>{translateUi(" away from your current time, in either direction. The timestamp is inside the signed payload, so an attacker cannot move it.")}</li>
+        <li>{translateUi("Compute ")}<Tok>{"HMAC-SHA256(secret, \"<t>.<raw body>\")"}</Tok>{translateUi(" and hex-encode it.")}</li>
+        <li>{translateUi("Compare it to ")}<Tok>{"v1"}</Tok>{translateUi(" with a constant-time comparison.")}</li>
       </ol>
-      <Note tone="bad" title="Use the raw body, always">
-        The signature covers the exact bytes NATIO sent. If a body parser has already turned the request into an object, re-serialising it changes whitespace, key order and
-        number formatting, and the signature will never match. Capture the raw buffer before any JSON middleware runs, and keep it as bytes or as a UTF-8 string — never as a
-        parsed object.
-      </Note>
-      <H3 id="node">Node</H3>
+      <Note tone="bad" title={translateUi("Use the raw body, always")}>{translateUi("The signature covers the exact bytes NATIO sent. If a body parser has already turned the request into an object, re-serialising it changes whitespace, key order and number formatting, and the signature will never match. Capture the raw buffer before any JSON middleware runs, and keep it as bytes or as a UTF-8 string — never as a parsed object.")}</Note>
+      <H3 id="node">{translateUi("Node")}</H3>
       <Code caption="Node — node:crypto" code={NODE} />
-      <H3 id="python">Python</H3>
+      <H3 id="python">{translateUi("Python")}</H3>
       <Code caption="Python — hmac / hashlib" code={PYTHON} />
 
-      <H2 id="retries">Retry schedule</H2>
-      <p>
-        A delivery succeeds on any <Tok>2xx</Tok>. Anything else — a 4xx, a 5xx, a connection error or a timeout — is a failure and is retried with a fixed backoff. Redirects are
-        not followed.
-      </p>
+      <H2 id="retries">{translateUi("Retry schedule")}</H2>
+      <p>{translateUi("A delivery succeeds on any ")}<Tok>{"2xx"}</Tok>{translateUi(". Anything else — a 4xx, a 5xx, a connection error or a timeout — is a failure and is retried with a fixed backoff. Redirects are not followed.")}</p>
       <DocTable columns={["Attempt", "Sent"]} rows={WEBHOOK_RETRY_SCHEDULE.map((r) => [<Tok key={r.attempt}>{r.attempt}</Tok>, r.delay])} />
-      <p>
-        The maximum number of attempts is configurable per deployment and defaults to <strong>6</strong>. When it is reached, the delivery is marked{" "}
-        <Tok>exhausted</Tok> and stops. The event itself is never lost: it remains in the delivery history and can be resent manually.
-      </p>
+      <p>{translateUi("The maximum number of attempts is configurable per deployment and defaults to ")}<strong>6</strong>{translateUi(". When it is reached, the delivery is marked")}{translateUi(" ")}
+        <Tok>{"exhausted"}</Tok>{translateUi(" and stops. The event itself is never lost: it remains in the delivery history and can be resent manually.")}</p>
       <DocTable
         columns={["Delivery status", "Meaning"]}
         rows={[
-          [<Tok key="a">pending</Tok>, "Queued, not yet attempted, or waiting for its next scheduled attempt."],
-          [<Tok key="b">delivering</Tok>, "An attempt is in flight. A delivery is claimed before sending, so it is never sent twice concurrently."],
-          [<Tok key="c">succeeded</Tok>, "A 2xx was received. No further attempts."],
-          [<Tok key="d">failed</Tok>, "The last attempt did not succeed and another one is scheduled."],
-          [<Tok key="e">exhausted</Tok>, "The attempt limit was reached. Only a manual resend will try again."],
+          [<Tok key="a">{"pending"}</Tok>, "Queued, not yet attempted, or waiting for its next scheduled attempt."],
+          [<Tok key="b">{"delivering"}</Tok>, "An attempt is in flight. A delivery is claimed before sending, so it is never sent twice concurrently."],
+          [<Tok key="c">{"succeeded"}</Tok>, "A 2xx was received. No further attempts."],
+          [<Tok key="d">{"failed"}</Tok>, "The last attempt did not succeed and another one is scheduled."],
+          [<Tok key="e">{"exhausted"}</Tok>, "The attempt limit was reached. Only a manual resend will try again."],
         ]}
       />
-      <Note tone="warn" title="Respond fast">
-        Deliveries time out server-side. If your handler does real work before answering — writing to a database, calling another service — a slow dependency turns into a failed
-        delivery and a retry storm. Answer 2xx first, process afterwards.
-      </Note>
+      <Note tone="warn" title={translateUi("Respond fast")}>{translateUi("Deliveries time out server-side. If your handler does real work before answering — writing to a database, calling another service — a slow dependency turns into a failed delivery and a retry storm. Answer 2xx first, process afterwards.")}</Note>
 
-      <H2 id="history">Delivery history and manual resend</H2>
-      <p>
-        Every delivery and every individual attempt is stored: the request headers that were sent (with the signature truncated), the response status, the response body up to 2
-        KB, the error if the request never completed, and the duration. Open{" "}
-        <Link href="/dashboard/webhooks">Webhooks</Link> in the dashboard to inspect them.
-      </p>
+      <H2 id="history">{translateUi("Delivery history and manual resend")}</H2>
+      <p>{translateUi("Every delivery and every individual attempt is stored: the request headers that were sent (with the signature truncated), the response status, the response body up to 2 KB, the error if the request never completed, and the duration. Open")}{translateUi(" ")}
+        <Link href="/dashboard/webhooks">{translateUi("Webhooks")}</Link>{translateUi(" in the dashboard to inspect them.")}</p>
       <ul>
-        <li>Filter deliveries by endpoint, event type and status to find what did not land.</li>
-        <li>Open a delivery to see the exact payload that was sent and the response your server returned on each attempt.</li>
+        <li>{translateUi("Filter deliveries by endpoint, event type and status to find what did not land.")}</li>
+        <li>{translateUi("Open a delivery to see the exact payload that was sent and the response your server returned on each attempt.")}</li>
         <li>
-          <strong>Resend</strong> replays that delivery immediately with the same event id and the same payload. It is safe precisely because you deduplicate on the event id.
-        </li>
-        <li>Resending works even for an exhausted delivery, and even while the endpoint is disabled, so you can fix a receiver and then replay what it missed.</li>
+          <strong>{translateUi("Resend")}</strong>{translateUi(" replays that delivery immediately with the same event id and the same payload. It is safe precisely because you deduplicate on the event id.")}</li>
+        <li>{translateUi("Resending works even for an exhausted delivery, and even while the endpoint is disabled, so you can fix a receiver and then replay what it missed.")}</li>
       </ul>
 
-      <H3 id="test-events">Sending a test event</H3>
+      <H3 id="test-events">{translateUi("Sending a test event")}</H3>
       <p>
-        <Tok>POST /v1/webhooks/test</Tok> emits an event of the type you name to the endpoints registered for that key, so you can build and debug a receiver without creating
-        payments.
-      </p>
+        <Tok>{"POST /v1/webhooks/test"}</Tok>{translateUi(" emits an event of the type you name to the endpoints registered for that key, so you can build and debug a receiver without creating payments.")}</p>
       <Code caption="Test event" code={TEST_EVENT} />
-      <p>
-        The test event is signed and delivered exactly like a real one, including retries and delivery history. There is also a test button on each endpoint in the dashboard.
-      </p>
+      <p>{translateUi("The test event is signed and delivered exactly like a real one, including retries and delivery history. There is also a test button on each endpoint in the dashboard.")}</p>
 
-      <H2 id="best-practices">Best practices</H2>
+      <H2 id="best-practices">{translateUi("Best practices")}</H2>
       <DocTable
         columns={["Rule", "Why"]}
         rows={[
           ["Respond 2xx in milliseconds, process asynchronously", "The delivery times out server-side. Acknowledge, enqueue, return. Never do business logic inside the request."],
           [
-            <>
-              Deduplicate on <Tok key="a">event.id</Tok>
+            <>{translateUi("Deduplicate on ")}<Tok key="a">{"event.id"}</Tok>
             </>,
             "Delivery is at-least-once. Retries, manual resends and network ambiguity all produce repeats of the same event id.",
           ],
           ["Make the handler idempotent", "Deduplication is a cache, not a guarantee. Writing the same terminal state twice must be harmless."],
           [
-            <>
-              Verify before you parse, and use the raw body
-            </>,
+            <>{translateUi("Verify before you parse, and use the raw body")}</>,
             "An unverified payload is untrusted input. Parsing first also tempts you to re-serialise, which breaks the signature.",
           ],
           ["Ignore event types you do not handle", "New event types can appear. Return 2xx for them rather than 400, or you will generate retries for events you do not care about."],
           [
-            <>
-              Treat the event as a notification, not as the truth
-            </>,
-            <>
-              Events can arrive out of order. When ordering matters, re-read the object with <Tok key="b">GET /v1/payments/{"{id}"}</Tok> and act on that.
-            </>,
+            <>{translateUi("Treat the event as a notification, not as the truth")}</>,
+            <>{translateUi("Events can arrive out of order. When ordering matters, re-read the object with ")}<Tok key="b">{"GET /v1/payments/"}{"{id}"}</Tok>{translateUi(" and act on that.")}</>,
           ],
           ["Store the delivery id you received", "It is the fastest way to have one specific delivery investigated."],
           ["Keep the endpoint on HTTPS and publicly reachable", "Endpoint URLs are validated when saved; private and loopback addresses are refused in production."],

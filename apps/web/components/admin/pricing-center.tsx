@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { errorMessage, useSession } from "@/components/session-provider";
@@ -40,10 +42,12 @@ const fresh = (): Terms => ({
   ],
 });
 export function QuoteSummary({ quote }: { quote: Quote }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
+        {translateUi([
           ["Merchant fee", quote.merchant.amount],
           ["PSP cost", quote.provider.amount],
           ["Gross margin", quote.margin],
@@ -54,37 +58,37 @@ export function QuoteSummary({ quote }: { quote: Quote }) {
             className="rounded-xl border border-ink-200 bg-ink-50 p-4"
           >
             <p className="text-xs uppercase tracking-wider text-ink-500">
-              {label}
+              {translateUi(label)}
             </p>
             <p className="mt-2 text-2xl font-semibold text-brand-600">
-              {formatMoney(Number(amount), quote.currency)}
+              {translateUi(formatMoney(Number(amount), quote.currency))}
             </p>
           </div>
-        ))}
+        )))}
       </div>
       <div className="mt-3 grid gap-2 text-xs text-ink-500 sm:grid-cols-2">
-        {[quote.merchant, quote.provider].map((f, i) => (
+        {translateUi([quote.merchant, quote.provider].map((f, i) => (
           <p key={i}>
-            {f.planId ? (
+            {translateUi(f.planId ? (
               <Link
                 className="text-brand-600 underline"
                 href={`/admin/pricing?plan=${f.planId}`}
               >
-                {f.name} · v{f.revision}
+                {f.name}{translateUi(" · v")}{translateUi(f.revision)}
               </Link>
             ) : (
               f.name
-            )}{" "}
-            · {f.tier.rateBps / 100}% +{" "}
-            {formatMoney(f.tier.fixed, quote.currency)}
+            ))}{translateUi(" ")}
+            · {translateUi(f.tier.rateBps / 100)}% +{translateUi(" ")}
+            {translateUi(formatMoney(f.tier.fixed, quote.currency))}
           </p>
-        ))}
+        )))}
       </div>
-      {quote.warnings.length > 0 && (
+      {translateUi(quote.warnings.length > 0 && (
         <p className="mt-2 text-xs text-warn">
-          {quote.warnings.map((s) => s.replaceAll("_", " ")).join(" · ")}
+          {translateUi(quote.warnings.map((s) => s.replaceAll("_", " ")).join(" · "))}
         </p>
-      )}
+      ))}
     </>
   );
 }
@@ -97,6 +101,8 @@ export function PricingCenter({
   merchants: { id: string; name: string }[];
   accounts: Account[];
 }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession(),
     can = adminCan(session.user.role, "providers.manage");
   const [plans, setPlans] = useState(initial),
@@ -294,7 +300,7 @@ export function PricingCenter({
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-3">
-        {[
+        {translateUi([
           ["Active tariffs", plans.filter((p) => p.status === "active").length],
           ["Draft versions", plans.filter((p) => p.status === "draft").length],
           [
@@ -307,17 +313,17 @@ export function PricingCenter({
           ],
         ].map(([l, v]) => (
           <Card key={l}>
-            <div className="text-xs text-ink-500">{l}</div>
+            <div className="text-xs text-ink-500">{translateUi(l)}</div>
             <div className="mt-1 text-3xl font-semibold text-brand-600">
-              {v}
+              {translateUi(v)}
             </div>
           </Card>
-        ))}
+        )))}
       </div>
-      {error && <Alert tone="bad">{error}</Alert>}
+      {translateUi(error && <Alert tone="bad">{translateUi(error)}</Alert>)}
       <Card
-        title="Tariff library"
-        description="The most specific scope wins, then the lowest priority. Dates use UTC; upper amount bounds are exclusive."
+        title={translateUi("Tariff library")}
+        description={translateUi("The most specific scope wins, then the lowest priority. Dates use UTC; upper amount bounds are exclusive.")}
         actions={
           <Button
             disabled={!can || busy}
@@ -327,36 +333,34 @@ export function PricingCenter({
               setCloneId(undefined);
               setEditor(true);
             }}
-          >
-            New tariff
-          </Button>
+          >{translateUi("New tariff")}</Button>
         }
       >
         <div className="mb-3 flex flex-wrap gap-2">
-          {["all", "merchant", "provider", "draft", "retired"].map((f) => (
+          {translateUi(["all", "merchant", "provider", "draft", "retired"].map((f) => (
             <Button
               key={f}
               size="sm"
               variant={filter === f ? "primary" : "ghost"}
               onClick={() => setFilter(f)}
             >
-              {f}
+              {translateUi(f)}
             </Button>
-          ))}
+          )))}
         </div>
         <Table>
           <thead>
             <tr>
-              <th>Tariff / version</th>
-              <th>Side</th>
-              <th>Currency</th>
-              <th>Scope</th>
-              <th>Brackets</th>
-              <th>Status</th>
+              <th>{translateUi("Tariff / version")}</th>
+              <th>{translateUi("Side")}</th>
+              <th>{translateUi("Currency")}</th>
+              <th>{translateUi("Scope")}</th>
+              <th>{translateUi("Brackets")}</th>
+              <th>{translateUi("Status")}</th>
             </tr>
           </thead>
           <tbody>
-            {plans
+            {translateUi(plans
               .filter(
                 (p) =>
                   filter === "all" ||
@@ -370,52 +374,49 @@ export function PricingCenter({
                       className="text-left font-medium text-brand-600 hover:underline"
                       onClick={() => open(p)}
                     >
-                      {p.terms.name} · v{p.revision}
+                      {p.terms.name}{translateUi(" · v")}{translateUi(p.revision)}
                     </button>
                   </td>
                   <td>
-                    {p.terms.side === "merchant" ? "Merchant fee" : "PSP cost"}
+                    {translateUi(p.terms.side === "merchant" ? translateUi("Merchant fee") : translateUi("PSP cost"))}
                   </td>
-                  <td>{p.terms.currency}</td>
+                  <td>{translateUi(p.terms.currency)}</td>
                   <td>
-                    {p.terms.merchantId ? <Link className="text-brand-600 hover:underline" href={`/admin/merchants/${p.terms.merchantId}`}>{merchants.find(m=>m.id===p.terms.merchantId)?.name??p.terms.merchantId}</Link> : p.terms.providerAccountId ? <Link className="text-brand-600 hover:underline" href={`/admin/provider-accounts/${p.terms.providerAccountId}`}>{accounts.find(a=>a.id===p.terms.providerAccountId)?.label??p.terms.providerAccountId}</Link> : "Platform"}
+                    {translateUi(p.terms.merchantId ? <Link className="text-brand-600 hover:underline" href={`/admin/merchants/${p.terms.merchantId}`}>{translateUi(merchants.find(m=>m.id===p.terms.merchantId)?.name??p.terms.merchantId)}</Link> : p.terms.providerAccountId ? <Link className="text-brand-600 hover:underline" href={`/admin/provider-accounts/${p.terms.providerAccountId}`}>{translateUi(accounts.find(a=>a.id===p.terms.providerAccountId)?.label??p.terms.providerAccountId)}</Link> : translateUi("Platform"))}
                     <div className="text-xs text-ink-500">
-                      {p.terms.paymentMethod ?? "All methods"} ·{" "}
-                      {p.terms.country ?? "All countries"} · priority{" "}
-                      {p.terms.priority}
+                      {translateUi(p.terms.paymentMethod ?? "All methods")} ·{translateUi(" ")}
+                      {translateUi(p.terms.country ?? "All countries")}{translateUi(" · priority")}{translateUi(" ")}
+                      {translateUi(p.terms.priority)}
                     </div>
                   </td>
-                  <td>{p.terms.tiers.length}</td>
+                  <td>{translateUi(p.terms.tiers.length)}</td>
                   <td>
-                    <Tag>{p.status}</Tag>
+                    <Tag>{translateUi(p.status)}</Tag>
                   </td>
                 </tr>
-              ))}
+              )))}
           </tbody>
         </Table>
-        {!plans.length && (
-          <p className="py-5 text-sm text-ink-500">
-            No tariffs in this mode. Legacy account pricing remains explicitly
-            labelled in the calculator.
-          </p>
-        )}
+        {translateUi(!plans.length && (
+          <p className="py-5 text-sm text-ink-500">{translateUi("No tariffs in this mode. Legacy account pricing remains explicitly labelled in the calculator.")}</p>
+        ))}
       </Card>
-      {editor && (
+      {translateUi(editor && (
         <section id="pricing-editor" className="scroll-mt-6">
           <Card
             title={
-              selected
+              translateUi(selected
                 ? `${selected.terms.name} · v${selected.revision}`
                 : cloneId
-                  ? "New version draft"
-                  : "New tariff draft"
+                  ? translateUi("New version draft")
+                  : translateUi("New tariff draft"))
             }
-            description="Whole-payment bracket pricing: one selected percentage + fixed fee, then minimum/maximum. Fees are charged on successful capture."
+            description={translateUi("Whole-payment bracket pricing: one selected percentage + fixed fee, then minimum/maximum. Fees are charged on successful capture.")}
           >
             <div className="mb-4 flex flex-wrap gap-2">
-              {selected && (
+              {translateUi(selected && (
                 <>
-                  <Tag>{selected.status}</Tag>
+                  <Tag>{translateUi(selected.status)}</Tag>
                   <Button
                     size="sm"
                     disabled={!can || busy}
@@ -424,23 +425,19 @@ export function PricingCenter({
                       setSelected(null);
                       setTerms({ ...terms, name: terms.name });
                     }}
-                  >
-                    Create new version
-                  </Button>
+                  >{translateUi("Create new version")}</Button>
                 </>
-              )}
+              ))}
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setEditor(false)}
-              >
-                Close
-              </Button>
+              >{translateUi("Close")}</Button>
             </div>
-            {error && <Alert tone="bad">{error}</Alert>}
+            {translateUi(error && <Alert tone="bad">{translateUi(error)}</Alert>)}
             <fieldset disabled={locked || busy} className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Field label="Name" htmlFor="price-name">
+                <Field label={translateUi("Name")} htmlFor="price-name">
                   <input
                     id="price-name"
                     className="input"
@@ -450,7 +447,7 @@ export function PricingCenter({
                     }
                   />
                 </Field>
-                <Field label="Side" htmlFor="price-side">
+                <Field label={translateUi("Side")} htmlFor="price-side">
                   <select
                     id="price-side"
                     className="input"
@@ -464,11 +461,11 @@ export function PricingCenter({
                       })
                     }
                   >
-                    <option value="merchant">Merchant commission</option>
-                    <option value="provider">PSP cost</option>
+                    <option value="merchant">{translateUi("Merchant commission")}</option>
+                    <option value="provider">{translateUi("PSP cost")}</option>
                   </select>
                 </Field>
-                <Field label="Currency" htmlFor="price-currency">
+                <Field label={translateUi("Currency")} htmlFor="price-currency">
                   <input
                     id="price-currency"
                     className="input"
@@ -482,7 +479,7 @@ export function PricingCenter({
                     }
                   />
                 </Field>
-                <Field label="Priority" htmlFor="price-priority">
+                <Field label={translateUi("Priority")} htmlFor="price-priority">
                   <input
                     id="price-priority"
                     className="input"
@@ -495,13 +492,13 @@ export function PricingCenter({
                 </Field>
                 <Field
                   label={
-                    terms.side === "merchant"
-                      ? "Merchant scope"
-                      : "PSP account ID (blank = all)"
+                    translateUi(terms.side === "merchant"
+                      ? translateUi("Merchant scope")
+                      : translateUi("PSP account ID (blank = all)"))
                   }
                   htmlFor="price-scope"
                 >
-                  {terms.side === "merchant" ? (
+                  {translateUi(terms.side === "merchant" ? (
                     <select
                       id="price-scope"
                       className="input"
@@ -513,12 +510,12 @@ export function PricingCenter({
                         })
                       }
                     >
-                      <option value="">All merchants</option>
-                      {merchants.map((m) => (
+                      <option value="">{translateUi("All merchants")}</option>
+                      {translateUi(merchants.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name}
                         </option>
-                      ))}
+                      )))}
                     </select>
                   ) : (
                     <input
@@ -532,9 +529,9 @@ export function PricingCenter({
                         })
                       }
                     />
-                  )}
+                  ))}
                 </Field>
-                <Field label="Method" htmlFor="price-method">
+                <Field label={translateUi("Method")} htmlFor="price-method">
                   <select
                     id="price-method"
                     className="input"
@@ -546,8 +543,8 @@ export function PricingCenter({
                       })
                     }
                   >
-                    <option value="">All methods</option>
-                    {[
+                    <option value="">{translateUi("All methods")}</option>
+                    {translateUi([
                       "card",
                       "bank_transfer",
                       "qr",
@@ -557,11 +554,11 @@ export function PricingCenter({
                       "local",
                       "crypto",
                     ].map((m) => (
-                      <option key={m}>{m}</option>
-                    ))}
+                      <option key={m} value={m}>{translateUi(m)}</option>
+                    )))}
                   </select>
                 </Field>
-                <Field label="Country (blank = all)" htmlFor="price-country">
+                <Field label={translateUi("Country (blank = all)")} htmlFor="price-country">
                   <input
                     id="price-country"
                     className="input"
@@ -575,7 +572,7 @@ export function PricingCenter({
                     }
                   />
                 </Field>
-                <Field label="Effective from UTC" htmlFor="price-start">
+                <Field label={translateUi("Effective from UTC")} htmlFor="price-start">
                   <input
                     id="price-start"
                     className="input"
@@ -590,7 +587,7 @@ export function PricingCenter({
                     }
                   />
                 </Field>
-                <Field label="Until UTC (optional)" htmlFor="price-end">
+                <Field label={translateUi("Until UTC (optional)")} htmlFor="price-end">
                   <input
                     id="price-end"
                     className="input"
@@ -610,19 +607,19 @@ export function PricingCenter({
               <Table>
                 <thead>
                   <tr>
-                    <th>From (minor)</th>
-                    <th>To exclusive / ∞</th>
-                    <th>Rate bps</th>
-                    <th>Fixed minor</th>
-                    <th>Min fee</th>
-                    <th>Max fee / ∞</th>
+                    <th>{translateUi("From (minor)")}</th>
+                    <th>{translateUi("To exclusive / ∞")}</th>
+                    <th>{translateUi("Rate bps")}</th>
+                    <th>{translateUi("Fixed minor")}</th>
+                    <th>{translateUi("Min fee")}</th>
+                    <th>{translateUi("Max fee / ∞")}</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {terms.tiers.map((t, i) => (
+                  {translateUi(terms.tiers.map((t, i) => (
                     <tr key={i}>
-                      {(
+                      {translateUi((
                         [
                           "from",
                           "to",
@@ -634,16 +631,16 @@ export function PricingCenter({
                       ).map((k) => (
                         <td key={k}>
                           <input
-                            aria-label={`Bracket ${i + 1} ${k}`}
+                            aria-label={translateUi(`Bracket ${i + 1} ${k}`)}
                             type="number"
                             min={0}
                             className="input min-w-[90px]"
                             value={t[k] ?? ""}
-                            placeholder="∞"
+                            placeholder={translateUi("∞")}
                             onChange={(e) => tier(i, k, e.target.value)}
                           />
                         </td>
-                      ))}
+                      )))}
                       <td>
                         <Button
                           size="sm"
@@ -654,12 +651,10 @@ export function PricingCenter({
                               tiers: terms.tiers.filter((_, j) => i !== j),
                             })
                           }
-                        >
-                          Remove
-                        </Button>
+                        >{translateUi("Remove")}</Button>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </Table>
               <Button
@@ -677,25 +672,16 @@ export function PricingCenter({
                     ],
                   });
                 }}
-              >
-                Add bracket
-              </Button>
+              >{translateUi("Add bracket")}</Button>
             </fieldset>
-            <p className="mt-3 text-xs text-ink-500">
-              100 bps = 1%. Amounts use the currency’s minor unit. Published
-              terms cannot be edited; create a version to replace the active
-              tariff atomically. Future schedules must have non-overlapping
-              effective intervals.
-            </p>
+            <p className="mt-3 text-xs text-ink-500">{translateUi("100 bps = 1%. Amounts use the currency’s minor unit. Published terms cannot be edited; create a version to replace the active tariff atomically. Future schedules must have non-overlapping effective intervals.")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 variant="primary"
                 disabled={locked || busy}
                 onClick={() => void save()}
-              >
-                Save draft
-              </Button>
-              {selected?.status === "draft" && (
+              >{translateUi("Save draft")}</Button>
+              {translateUi(selected?.status === "draft" && (
                 <Button
                   disabled={
                     !can ||
@@ -704,53 +690,46 @@ export function PricingCenter({
                   }
                   onClick={() => void action("publish")}
                 >
-                  {plans.some(
+                  {translateUi(plans.some(
                     (p) =>
                       p.familyId === selected.familyId &&
                       p.status === "active" &&
                       p.id !== selected.id,
                   )
-                    ? "Publish & replace active version"
-                    : "Publish saved draft"}
+                    ? translateUi("Publish & replace active version")
+                    : translateUi("Publish saved draft"))}
                 </Button>
-              )}
-              {selected?.status === "active" && (
+              ))}
+              {translateUi(selected?.status === "active" && (
                 <Button
                   variant="danger"
                   disabled={!can || busy}
                   onClick={() => void action("retire")}
-                >
-                  Retire tariff
-                </Button>
-              )}
-              {!can && (
-                <span className="text-xs text-ink-500">
-                  Investor access is read-only. The calculator remains
-                  available.
-                </span>
-              )}
+                >{translateUi("Retire tariff")}</Button>
+              ))}
+              {translateUi(!can && (
+                <span className="text-xs text-ink-500">{translateUi("Investor access is read-only. The calculator remains available.")}</span>
+              ))}
             </div>
           </Card>
         </section>
-      )}
+      ))}
       <Card
-        title="Fee & margin calculator"
-        description="Uses the backend pricing engine and published versions. No payment is created."
+        title={translateUi("Fee & margin calculator")}
+        description={translateUi("Uses the backend pricing engine and published versions. No payment is created.")}
       >
         <div className="mb-3 flex gap-2">
           <input
             className="input"
-            aria-label="Search PSP accounts"
-            placeholder="Search any PSP by name"
+            aria-label={translateUi("Search PSP accounts")}
+            placeholder={translateUi("Search any PSP by name")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Button disabled={busy} onClick={() => void searchAccounts()}>
-            Find PSP
-          </Button>
+          <Button disabled={busy} onClick={() => void searchAccounts()}>{translateUi("Find PSP")}</Button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Field label="Merchant" htmlFor="quote-merchant">
+          <Field label={translateUi("Merchant")} htmlFor="quote-merchant">
             <select
               id="quote-merchant"
               className="input"
@@ -762,14 +741,14 @@ export function PricingCenter({
                 setQuote(null); setCurve([]);
               }}
             >
-              {merchants.map((m) => (
+              {translateUi(merchants.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
-              ))}
+              )))}
             </select>
           </Field>
-          <Field label="PSP account" htmlFor="quote-account">
+          <Field label={translateUi("PSP account")} htmlFor="quote-account">
             <select
               id="quote-account"
               className="input"
@@ -778,15 +757,15 @@ export function PricingCenter({
                 setForm(withAccount(form, accounts.find(a => a.id === e.target.value)))
               }
             >
-              <option value="">Choose account</option>
-              {accounts.filter(a => !a.merchant_id || a.merchant_id === form.merchantId).map((a) => (
+              <option value="">{translateUi("Choose account")}</option>
+              {translateUi(accounts.filter(a => !a.merchant_id || a.merchant_id === form.merchantId).map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.label}
+                  {translateUi(a.label)}
                 </option>
-              ))}
+              )))}
             </select>
           </Field>
-          {(
+          {translateUi((
             [
               ["amount", "Amount (minor units)"],
               ["currency", "Currency"],
@@ -794,7 +773,7 @@ export function PricingCenter({
               ["at", "Pricing date UTC"],
             ] as const
           ).map(([k, l]) => (
-            <Field key={k} label={l} htmlFor={`quote-${k}`}>
+            <Field key={k} label={translateUi(l)} htmlFor={`quote-${k}`}>
               <input
                 id={`quote-${k}`}
                 className="input"
@@ -811,8 +790,8 @@ export function PricingCenter({
                 }
               />
             </Field>
-          ))}
-          <Field label="Payment method" htmlFor="quote-method">
+          )))}
+          <Field label={translateUi("Payment method")} htmlFor="quote-method">
             <select
               id="quote-method"
               className="input"
@@ -821,7 +800,7 @@ export function PricingCenter({
                 setForm({ ...form, paymentMethod: e.target.value })
               }
             >
-              {[
+              {translateUi([
                 "card",
                 "bank_transfer",
                 "qr",
@@ -831,8 +810,8 @@ export function PricingCenter({
                 "local",
                 "crypto",
               ].map((m) => (
-                <option key={m}>{m}</option>
-              ))}
+                <option key={m} value={m}>{translateUi(m)}</option>
+              )))}
             </select>
           </Field>
           <div className="flex items-end">
@@ -841,27 +820,23 @@ export function PricingCenter({
               loading={busy}
               disabled={!form.providerAccountId || !form.merchantId}
               onClick={() => void calculate()}
-            >
-              Calculate fees
-            </Button>
+            >{translateUi("Calculate fees")}</Button>
           </div>
         </div>
-        {quote && (
+        {translateUi(quote && (
           <div className="mt-5 space-y-4">
             <QuoteSummary quote={quote} />
             <FeeCurve rows={curve} />
-            <p className="text-xs text-ink-500">
-              Gross margin excludes tax, FX, refunds and fees for failed
-              attempts. The quote is an estimate; capture records the selected
-              tariff version.
-            </p>
+            <p className="text-xs text-ink-500">{translateUi("Gross margin excludes tax, FX, refunds and fees for failed attempts. The quote is an estimate; capture records the selected tariff version.")}</p>
           </div>
-        )}
+        ))}
       </Card>
     </div>
   );
 }
 function FeeCurve({ rows }: { rows: Quote[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   if (!rows.length) return null;
   const max = Math.max(
     ...rows.flatMap((r) => [r.merchant.amount, r.provider.amount]),
@@ -876,14 +851,11 @@ function FeeCurve({ rows }: { rows: Quote[] }) {
       .join(" ");
   return (
     <div className="rounded-xl border border-ink-200 p-4">
-      <h3 className="font-medium">Fee curve by payment amount</h3>
-      <p className="text-xs text-ink-500">
-        Solid: merchant fee · dashed: PSP cost · sample points, unequal amount
-        intervals
-      </p>
+      <h3 className="font-medium">{translateUi("Fee curve by payment amount")}</h3>
+      <p className="text-xs text-ink-500">{translateUi("Solid: merchant fee · dashed: PSP cost · sample points, unequal amount intervals")}</p>
       <svg
         role="img"
-        aria-label="Merchant fees and PSP costs across payment amounts"
+        aria-label={translateUi("Merchant fees and PSP costs across payment amounts")}
         viewBox="0 0 780 250"
         className="mt-3 w-full"
       >
@@ -893,7 +865,7 @@ function FeeCurve({ rows }: { rows: Quote[] }) {
           stroke="currentColor"
           opacity=".2"
         />
-        {(["merchant", "provider"] as const).map((k) => (
+        {translateUi((["merchant", "provider"] as const).map((k) => (
           <polyline
             key={k}
             points={line(k)}
@@ -904,8 +876,8 @@ function FeeCurve({ rows }: { rows: Quote[] }) {
             className="text-brand-600"
             opacity={k === "provider" ? 0.5 : 1}
           />
-        ))}
-        {rows.map((r, i) => (
+        )))}
+        {translateUi(rows.map((r, i) => (
           <circle
             key={i}
             cx={40 + (i * 700) / (rows.length - 1)}
@@ -914,36 +886,34 @@ function FeeCurve({ rows }: { rows: Quote[] }) {
             className="fill-brand-600"
           >
             <title>
-              {formatMoney(r.amount, r.currency)}: fee{" "}
-              {formatMoney(r.merchant.amount, r.currency)}, PSP{" "}
-              {formatMoney(r.provider.amount, r.currency)}, margin{" "}
-              {formatMoney(r.margin, r.currency)}
+              {translateUi(formatMoney(r.amount, r.currency))}{translateUi(": fee")}{translateUi(" ")}
+              {translateUi(formatMoney(r.merchant.amount, r.currency))}{translateUi(", PSP")}{translateUi(" ")}
+              {translateUi(formatMoney(r.provider.amount, r.currency))}{translateUi(", margin")}{translateUi(" ")}
+              {translateUi(formatMoney(r.margin, r.currency))}
             </title>
           </circle>
-        ))}
+        )))}
       </svg>
       <details>
-        <summary className="cursor-pointer text-sm text-brand-600">
-          View exact amounts
-        </summary>
+        <summary className="cursor-pointer text-sm text-brand-600">{translateUi("View exact amounts")}</summary>
         <Table>
           <thead>
             <tr>
-              <th>Payment</th>
-              <th>Merchant fee</th>
-              <th>PSP cost</th>
-              <th>Margin</th>
+              <th>{translateUi("Payment")}</th>
+              <th>{translateUi("Merchant fee")}</th>
+              <th>{translateUi("PSP cost")}</th>
+              <th>{translateUi("Margin")}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {translateUi(rows.map((r) => (
               <tr key={r.amount}>
-                <td>{formatMoney(r.amount, r.currency)}</td>
-                <td>{formatMoney(r.merchant.amount, r.currency)}</td>
-                <td>{formatMoney(r.provider.amount, r.currency)}</td>
-                <td>{formatMoney(r.margin, r.currency)}</td>
+                <td>{translateUi(formatMoney(r.amount, r.currency))}</td>
+                <td>{translateUi(formatMoney(r.merchant.amount, r.currency))}</td>
+                <td>{translateUi(formatMoney(r.provider.amount, r.currency))}</td>
+                <td>{translateUi(formatMoney(r.margin, r.currency))}</td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </Table>
       </details>

@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CtaBand, Feature, FeatureGrid, PageIntro, PrimaryCta, Prose, SecondaryCta, Section, SpecList, Split, Panel } from "@/components/marketing/sections";
@@ -62,11 +64,13 @@ const PHASES: Array<{ phase: string; title: string; status: string; body: string
 ];
 
 export default function CompanyPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <PageIntro
         eyebrow="Company"
-        title="We build the layer that makes payment providers interchangeable."
+        title={translateUi("We build the layer that makes payment providers interchangeable.")}
         lead="NATIO is a payment orchestration company. We build the infrastructure that lets a business integrate once and then change providers, add markets and add payment methods as configuration — without rewriting its checkout, its ledger or its reporting each time."
         actions={
           <>
@@ -76,10 +80,10 @@ export default function CompanyPage() {
         }
       />
 
-      <Section eyebrow="Why" title="Payment infrastructure is fragmented, and the cost lands on the merchant." lead="Every provider has its own API, its own status vocabulary, its own failure codes, its own report format and its own settlement rhythm. A business operating in more than one market ends up maintaining all of them.">
+      <Section eyebrow="Why" title={translateUi("Payment infrastructure is fragmented, and the cost lands on the merchant.")} lead="Every provider has its own API, its own status vocabulary, its own failure codes, its own report format and its own settlement rhythm. A business operating in more than one market ends up maintaining all of them.">
         <Split
           panel={
-            <Panel title="What that fragmentation costs">
+            <Panel title={translateUi("What that fragmentation costs")}>
               <SpecList
                 className="border-y-0"
                 items={[
@@ -93,57 +97,49 @@ export default function CompanyPage() {
           }
         >
           <Prose className="max-w-[560px]">
-            <p>
-              Orchestration is the answer to a structural problem, not a feature. When provider connectivity is a layer rather than a set of point integrations, adding a country is configuration, a provider outage is a fallback instead of an incident, and the question of which provider performs best is answered from your own data.
-            </p>
-            <p>
-              We are building that layer deliberately narrowly. NATIO does not hold funds, does not touch card data and does not compete with the providers it connects to. It does one thing: decide, execute and record — for every payment, every payout and every provider, the same way.
-            </p>
+            <p>{translateUi("Orchestration is the answer to a structural problem, not a feature. When provider connectivity is a layer rather than a set of point integrations, adding a country is configuration, a provider outage is a fallback instead of an incident, and the question of which provider performs best is answered from your own data.")}</p>
+            <p>{translateUi("We are building that layer deliberately narrowly. NATIO does not hold funds, does not touch card data and does not compete with the providers it connects to. It does one thing: decide, execute and record — for every payment, every payout and every provider, the same way.")}</p>
           </Prose>
           <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/product" className="text-[13px] font-medium text-iris hover:underline">
-              What the platform does →
-            </Link>
-            <Link href="/orchestration" className="text-[13px] font-medium text-iris hover:underline">
-              How the engine works →
-            </Link>
+            <Link href="/product" className="text-[13px] font-medium text-iris hover:underline">{translateUi("What the platform does →")}</Link>
+            <Link href="/orchestration" className="text-[13px] font-medium text-iris hover:underline">{translateUi("How the engine works →")}</Link>
           </div>
         </Split>
       </Section>
 
-      <Section tone="raised" eyebrow="Principles" title="The constraints we chose." lead="These are design decisions, and they are the reason the product looks the way it does.">
+      <Section tone="raised" eyebrow="Principles" title={translateUi("The constraints we chose.")} lead="These are design decisions, and they are the reason the product looks the way it does.">
         <div className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
-          {PRINCIPLES.map((p, i) => (
+          {translateUi(PRINCIPLES.map((p, i) => (
             <div key={p.title} className="border-t border-night-700 pt-4">
-              <span className="font-mono text-[11px] text-mist-600">{String(i + 1).padStart(2, "0")}</span>
-              <h3 className="mt-2 text-[15px] font-medium text-mist-50">{p.title}</h3>
+              <span className="font-mono text-[11px] text-mist-600">{translateUi(String(i + 1).padStart(2, "0"))}</span>
+              <h3 className="mt-2 text-[15px] font-medium text-mist-50">{translateUi(p.title)}</h3>
               <p className="mt-2 text-[14px] leading-6 text-mist-400">{p.body}</p>
             </div>
-          ))}
+          )))}
         </div>
       </Section>
 
-      <Section eyebrow="Approach" title="A phased build, described honestly." lead="We say what exists today, what is being built next, and what would depend on conditions outside an engineering roadmap.">
+      <Section eyebrow="Approach" title={translateUi("A phased build, described honestly.")} lead="We say what exists today, what is being built next, and what would depend on conditions outside an engineering roadmap.">
         <div className="divide-y divide-night-700 border-y border-night-700">
-          {PHASES.map((p) => (
+          {translateUi(PHASES.map((p) => (
             <div key={p.phase} className="grid grid-cols-1 gap-3 py-7 md:grid-cols-[200px_1fr] md:gap-10">
               <div>
-                <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{p.phase}</div>
-                <div className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-iris">{p.status}</div>
+                <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{translateUi(p.phase)}</div>
+                <div className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-iris">{translateUi(p.status)}</div>
               </div>
               <div className="min-w-0">
-                <h3 className="text-[17px] font-medium tracking-[-0.012em] text-mist-50">{p.title}</h3>
+                <h3 className="text-[17px] font-medium tracking-[-0.012em] text-mist-50">{translateUi(p.title)}</h3>
                 <p className="mt-2.5 max-w-[680px] text-[14.5px] leading-[1.7] text-mist-400">{p.body}</p>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </Section>
 
-      <Section tone="raised" eyebrow="How we describe ourselves" title="What NATIO is, in plain terms." lead="Payments attract loose language. We would rather be precise, including about what we are not.">
+      <Section tone="raised" eyebrow="How we describe ourselves" title={translateUi("What NATIO is, in plain terms.")} lead="Payments attract loose language. We would rather be precise, including about what we are not.">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
-            <h3 className="text-[14px] font-medium text-mist-50">NATIO is</h3>
+            <h3 className="text-[14px] font-medium text-mist-50">{translateUi("NATIO is")}</h3>
             <SpecList
               className="mt-3"
               items={[
@@ -154,7 +150,7 @@ export default function CompanyPage() {
             />
           </div>
           <div>
-            <h3 className="text-[14px] font-medium text-mist-50">NATIO is not</h3>
+            <h3 className="text-[14px] font-medium text-mist-50">{translateUi("NATIO is not")}</h3>
             <SpecList
               className="mt-3"
               items={[
@@ -167,26 +163,18 @@ export default function CompanyPage() {
         </div>
       </Section>
 
-      <Section eyebrow="Working with us" title="Who we build for." lead="Teams that have outgrown a single provider, or expect to.">
+      <Section eyebrow="Working with us" title={translateUi("Who we build for.")} lead="Teams that have outgrown a single provider, or expect to.">
         <FeatureGrid cols={3}>
-          <Feature index={1} title="Engineering teams">
-            One contract to integrate, an OpenAPI specification, a sandbox that reproduces the failure paths, and no hidden behaviour between the request and the provider.
-          </Feature>
-          <Feature index={2} title="Finance and operations">
-            Reconciliation against provider reports, settlement visibility per provider and currency, and a timeline that answers support questions without a second dashboard.
-          </Feature>
-          <Feature index={3} title="Decision makers">
-            Provider-neutral infrastructure, comparable performance and cost data from your own traffic, and the ability to change providers without changing your systems.
-          </Feature>
+          <Feature index={1} title={translateUi("Engineering teams")}>{translateUi("One contract to integrate, an OpenAPI specification, a sandbox that reproduces the failure paths, and no hidden behaviour between the request and the provider.")}</Feature>
+          <Feature index={2} title={translateUi("Finance and operations")}>{translateUi("Reconciliation against provider reports, settlement visibility per provider and currency, and a timeline that answers support questions without a second dashboard.")}</Feature>
+          <Feature index={3} title={translateUi("Decision makers")}>{translateUi("Provider-neutral infrastructure, comparable performance and cost data from your own traffic, and the ability to change providers without changing your systems.")}</Feature>
         </FeatureGrid>
         <div className="mt-10">
-          <Link href="/contact" className="text-[13px] font-medium text-iris hover:underline">
-            Talk to the team →
-          </Link>
+          <Link href="/contact" className="text-[13px] font-medium text-iris hover:underline">{translateUi("Talk to the team →")}</Link>
         </div>
       </Section>
 
-      <CtaBand title="Tell us about your payment stack." lead="Markets, methods, providers and the parts that currently hurt. We will tell you plainly whether orchestration helps, and what it would take." />
+      <CtaBand title={translateUi("Tell us about your payment stack.")} lead="Markets, methods, providers and the parts that currently hurt. We will tell you plainly whether orchestration helps, and what it would take." />
     </>
   );
 }

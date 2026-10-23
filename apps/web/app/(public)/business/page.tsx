@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import { CodeBlock } from "@/components/ui";
 import {
@@ -110,6 +112,8 @@ const COMPLIANCE_NOT_BUILT: Array<{ term: string; detail: string }> = [
 ];
 
 export default function BusinessPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       {/* --- hero ------------------------------------------------------- */}
@@ -118,27 +122,21 @@ export default function BusinessPage() {
         <Container className="relative py-16 md:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1fr_minmax(0,500px)]">
             <div className="max-w-[640px]">
-              <Eyebrow className="mb-5">Natio Business</Eyebrow>
-              <h1 className="text-[42px] font-medium leading-[1.0] tracking-[-0.034em] text-mist-50 md:text-[68px]">
-                Get paid on-chain.
-                <br />
-                <Accent>Settle to your wallet.</Accent>
+              <Eyebrow className="mb-5">{translateUi("Natio Business")}</Eyebrow>
+              <h1 className="text-[42px] font-medium leading-[1.0] tracking-[-0.034em] text-mist-50 md:text-[68px]">{translateUi("Get paid on-chain.")}<br />
+                <Accent>{translateUi("Settle to your wallet.")}</Accent>
               </h1>
-              <p className="mt-7 max-w-[560px] text-[16.5px] leading-[1.7] text-mist-400 md:text-[17.5px]">
-                You give NATIO an extended public key. It derives a fresh address for every invoice, watches the chain and tells you
-                the moment a payment confirms. The funds go from your customer to you. There is no intermediate balance, because there
-                is no account for one to sit in.
-              </p>
+              <p className="mt-7 max-w-[560px] text-[16.5px] leading-[1.7] text-mist-400 md:text-[17.5px]">{translateUi("You give NATIO an extended public key. It derives a fresh address for every invoice, watches the chain and tells you the moment a payment confirms. The funds go from your customer to you. There is no intermediate balance, because there is no account for one to sit in.")}</p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <PrimaryCta href="/contact">Talk to us</PrimaryCta>
-                <SecondaryCta href="/docs/api-reference">API reference</SecondaryCta>
+                <PrimaryCta href="/contact">{translateUi("Talk to us")}</PrimaryCta>
+                <SecondaryCta href="/docs/api-reference">{translateUi("API reference")}</SecondaryCta>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-2">
-                <Chip tone="warn">In development</Chip>
-                <span className="text-[13px] text-mist-600">Orchestration and on-chain settlement are built; identity and screening are not — see status below.</span>
+                <Chip tone="warn">{translateUi("In development")}</Chip>
+                <span className="text-[13px] text-mist-600">{translateUi("Orchestration and on-chain settlement are built; identity and screening are not — see status below.")}</span>
               </div>
             </div>
-            <Panel glow title="Create an invoice">
+            <Panel glow title={translateUi("Create an invoice")}>
               <CodeBlock code={CREATE_INVOICE} language="bash" />
             </Panel>
           </div>
@@ -148,15 +146,15 @@ export default function BusinessPage() {
       {/* --- the settlement argument ------------------------------------- */}
       <Section
         grid
-        eyebrow={<span>Settlement</span>}
-        title="The shortest path between your customer and your treasury."
+        eyebrow={<span>{translateUi("Settlement")}</span>}
+        title={translateUi("The shortest path between your customer and your treasury.")}
         lead="Most crypto gateways take custody, net their fee and pay you out later. That turns a payment into a credit exposure: your money sits on someone else's balance sheet until they choose to release it."
-        aside={<>Nothing to withdraw, no payout schedule, no counterparty risk on the settlement leg — because the settlement leg never existed.</>}
+        aside={<>{translateUi("Nothing to withdraw, no payout schedule, no counterparty risk on the settlement leg — because the settlement leg never existed.")}</>}
       >
         <div className="grid gap-5 md:grid-cols-3">
-          <Metric value="0" label="Funds held by NATIO" tone="lime" sub="Structurally, not by policy" />
-          <Metric value="1" label="Hop from payer to merchant" tone="mist" sub="Customer address → your address" />
-          <Metric value="xpub" label="What you hand over" tone="aqua" sub="Watch-only; cannot sign" />
+          <Metric value="0" label={translateUi("Funds held by NATIO")} tone="lime" sub="Structurally, not by policy" />
+          <Metric value="1" label={translateUi("Hop from payer to merchant")} tone="mist" sub="Customer address → your address" />
+          <Metric value="xpub" label={translateUi("What you hand over")} tone="aqua" sub="Watch-only; cannot sign" />
         </div>
         <div className="mt-10">
           <SpecList items={LEDGER} />
@@ -166,45 +164,38 @@ export default function BusinessPage() {
       {/* --- one integration --------------------------------------------- */}
       <Section
         tone="raised"
-        eyebrow={<span>Integration</span>}
-        title="The same API you already have."
+        eyebrow={<span>{translateUi("Integration")}</span>}
+        title={translateUi("The same API you already have.")}
         lead="Crypto is a payment method on the existing endpoint, not a second platform bolted alongside. The object, the idempotency guarantees, the timeline and the webhooks are the ones your integration already handles."
       >
         <Split
           reverse
           panel={
-            <Panel title="Response">
+            <Panel title={translateUi("Response")}>
               <CodeBlock code={INVOICE_RESPONSE} language="json" />
             </Panel>
           }
         >
-          <p className="text-[15.5px] leading-[1.75] text-mist-400">
-            A merchant that has integrated cards through NATIO adds on-chain acceptance by sending a different <code className="font-mono text-[13.5px] text-mist-200">method</code> and a settlement account. The
-            response carries the address to display, the exact expected amount and the confirmation threshold, so a checkout page can
-            render a QR code without knowing anything about chains.
-          </p>
-          <p className="mt-5 text-[15.5px] leading-[1.75] text-mist-400">
-            Everything downstream is unchanged. The payment appears in the same transaction monitor with the same timeline, the same
-            signed webhook contract fires, and it reconciles in the same report as every other method.
-          </p>
+          <p className="text-[15.5px] leading-[1.75] text-mist-400">{translateUi("A merchant that has integrated cards through NATIO adds on-chain acceptance by sending a different ")}<code className="font-mono text-[13.5px] text-mist-200">method</code>{translateUi(" and a settlement account. The response carries the address to display, the exact expected amount and the confirmation threshold, so a checkout page can render a QR code without knowing anything about chains.")}</p>
+          <p className="mt-5 text-[15.5px] leading-[1.75] text-mist-400">{translateUi("Everything downstream is unchanged. The payment appears in the same transaction monitor with the same timeline, the same signed webhook contract fires, and it reconciles in the same report as every other method.")}</p>
           <div className="mt-7">
-            <SecondaryCta href="/docs/quickstart">Read the quickstart</SecondaryCta>
+            <SecondaryCta href="/docs/quickstart">{translateUi("Read the quickstart")}</SecondaryCta>
           </div>
         </Split>
       </Section>
 
       {/* --- compliance --------------------------------------------------- */}
       <Section
-        eyebrow={<span>Compliance</span>}
-        title="What the engine enforces, and what it does not yet."
+        eyebrow={<span>{translateUi("Compliance")}</span>}
+        title={translateUi("What the engine enforces, and what it does not yet.")}
         lead="Non-custodial does not mean unregulated. Two of these controls are in the engine today and a merchant cannot configure their way out of them. Two are not built, and are named here rather than left to be discovered during an audit."
       >
         <SpecList items={COMPLIANCE_TODAY} />
 
         <div className="mt-12 border-t border-night-700 pt-8">
           <div className="mb-5 flex flex-wrap items-center gap-2">
-            <Chip tone="warn">Not built</Chip>
-            <span className="text-[13px] text-mist-600">Described because it is planned, listed here because it does not exist yet.</span>
+            <Chip tone="warn">{translateUi("Not built")}</Chip>
+            <span className="text-[13px] text-mist-600">{translateUi("Described because it is planned, listed here because it does not exist yet.")}</span>
           </div>
           <SpecList items={COMPLIANCE_NOT_BUILT} />
         </div>
@@ -213,44 +204,25 @@ export default function BusinessPage() {
       {/* --- honest status ------------------------------------------------ */}
       <Section
         tone="raised"
-        eyebrow={<span>Status</span>}
-        title="What exists, and what does not."
+        eyebrow={<span>{translateUi("Status")}</span>}
+        title={translateUi("What exists, and what does not.")}
         lead="A landing page is a promise. These are the parts of it we can currently keep."
       >
         <FeatureGrid cols={4}>
-          <Feature index="01" title="Built" mono="orchestration">
-            Payments, payouts, routing across providers, retry and failover, reconciliation, settlement reporting, signed webhooks, the
-            merchant dashboard and the developer portal. Tested end to end.
-          </Feature>
-          <Feature index="02" title="Built" mono="crypto">
-            Address derivation from a merchant xpub, a fresh address per invoice, chain watching on TRON and Bitcoin with confirmation
-            handling, and the underpayment and overpayment outcomes described above. Ethereum, BSC and Polygon derive addresses but are
-            not watched yet, so a payment on those is not noticed automatically.
-          </Feature>
-          <Feature index="03" title="Not built" mono="compliance">
-            Sanctions screening and KYB, as set out above. The audit trail and provider eligibility checks are in place; the identity
-            and screening controls are not.
-          </Feature>
-          <Feature index="04" title="Not yet decided" mono="scope">
-            Supported assets and networks, and which jurisdictions can be served. Both follow from where the operating entity is
-            incorporated and what its counsel advises. Published when settled.
-          </Feature>
+          <Feature index="01" title={translateUi("Built")} mono="orchestration">{translateUi("Payments, payouts, routing across providers, retry and failover, reconciliation, settlement reporting, signed webhooks, the merchant dashboard and the developer portal. Tested end to end.")}</Feature>
+          <Feature index="02" title={translateUi("Built")} mono="crypto">{translateUi("Address derivation from a merchant xpub, a fresh address per invoice, chain watching on TRON and Bitcoin with confirmation handling, and the underpayment and overpayment outcomes described above. Ethereum, BSC and Polygon derive addresses but are not watched yet, so a payment on those is not noticed automatically.")}</Feature>
+          <Feature index="03" title={translateUi("Not built")} mono="compliance">{translateUi("Sanctions screening and KYB, as set out above. The audit trail and provider eligibility checks are in place; the identity and screening controls are not.")}</Feature>
+          <Feature index="04" title={translateUi("Not yet decided")} mono="scope">{translateUi("Supported assets and networks, and which jurisdictions can be served. Both follow from where the operating entity is incorporated and what its counsel advises. Published when settled.")}</Feature>
         </FeatureGrid>
-        <p className="mt-10 max-w-[720px] text-[14.5px] leading-[1.75] text-mist-600">
-          NATIO is a payment technology platform. It is not a bank, an acquirer, a payment institution or an electronic money
-          institution, it holds no such licence, and it neither accepts nor holds customer funds. Payment processing and settlement in
-          fiat are performed by licensed providers connected to the platform.
-        </p>
+        <p className="mt-10 max-w-[720px] text-[14.5px] leading-[1.75] text-mist-600">{translateUi("NATIO is a payment technology platform. It is not a bank, an acquirer, a payment institution or an electronic money institution, it holds no such licence, and it neither accepts nor holds customer funds. Payment processing and settlement in fiat are performed by licensed providers connected to the platform.")}</p>
       </Section>
 
       <CtaBand
-        title="Tell us what you are selling and where."
+        title={translateUi("Tell us what you are selling and where.")}
         lead="Market, volume and method mix decide what gets built first. A short description is more useful to us than a signup, and more useful to you than a waitlist."
-        primary={<PrimaryCta href="/contact" size="lg">Talk to us</PrimaryCta>}
+        primary={<PrimaryCta href="/contact" size="lg">{translateUi("Talk to us")}</PrimaryCta>}
         secondary={
-          <SecondaryCta href="/wallet" size="lg">
-            Natio Wallet
-          </SecondaryCta>
+          <SecondaryCta href="/wallet" size="lg">{translateUi("Natio Wallet")}</SecondaryCta>
         }
       />
     </>

@@ -116,6 +116,7 @@ export async function createPayment(
         description: input.description ?? null,
         reference: input.reference ?? null,
         metadata: input.metadata ?? {},
+        trafficType: input.traffic_type ?? "unknown",
         idempotencyKey: opts.idempotencyKey ?? null,
         returnUrl: input.return_url ?? null,
         device: { ip: input.device?.ip ?? opts.ip, userAgent: input.device?.user_agent ?? opts.userAgent, fingerprint: input.device?.fingerprint },

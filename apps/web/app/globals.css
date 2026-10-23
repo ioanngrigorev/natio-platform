@@ -221,3 +221,24 @@ body {
  .dev-pdf-only svg { min-width:0!important; }
  @page { size:A4; margin:10mm; }
 }
+
+/* BPMN is neutral ink on every admin theme; SVG and XML share the same geometry. */
+.bpmn-canvas { --bpmn-paper: var(--surface, #fff); --bpmn-lane: var(--surface, #f7f8fa); --bpmn-border: var(--chart-grid, #dedee8); color: inherit; }
+@media print {
+  .bpmn-diagram { break-inside: avoid; }
+  .bpmn-canvas { min-width: 0 !important; --bpmn-paper: #fff; --bpmn-lane: #f7f8fa; --bpmn-border: #d8dbe0; color: #192332 !important; }
+}
+
+/* Explicit language selection is persisted across public, merchant and admin pages. */
+.language-picker{display:inline-flex;align-items:center;gap:6px;color:inherit;font-size:12px;border:1px solid var(--admin-line,#d8dce5);border-radius:9px;padding:4px 8px;background:var(--admin-surface,#fff)}
+.language-picker select{color:inherit;background:transparent;border:0;box-shadow:none;padding:2px 22px 2px 2px;font-size:inherit;max-width:120px;cursor:pointer}
+.global-language-picker{position:fixed;inset-inline-start:12px;bottom:10px;z-index:60;color:#1c2230}
+body:has(.natio-sidebar) .global-language-picker{display:none}
+[dir=rtl] .language-picker select{padding:2px 2px 2px 22px;background-position:left 2px center}
+[dir=rtl] .text-left{text-align:right}[dir=rtl] .text-right{text-align:left}
+[dir=rtl] .natio-sidebar{border-right:0;border-left:1px solid var(--admin-line,#e2e6ed)}
+[dir=rtl] .ml-auto{margin-left:0;margin-right:auto}[dir=rtl] .mr-auto{margin-right:0;margin-left:auto}
+[dir=rtl] input:not([type=number]):not([type=email]):not([type=url]),[dir=rtl] textarea{text-align:right}
+[dir=rtl] input[type=email],[dir=rtl] input[type=url],[dir=rtl] input[type=number],[dir=rtl] input[type=date],[dir=rtl] pre,[dir=rtl] code,[dir=rtl] .recharts-wrapper,[dir=rtl] .payment-volume-chart,[dir=rtl] .delivery-gantt{direction:ltr}
+[dir=rtl] .font-mono{unicode-bidi:plaintext}
+@media print{.global-language-picker,.language-picker{display:none!important}}

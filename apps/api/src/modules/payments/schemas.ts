@@ -106,6 +106,7 @@ export const createPaymentObject = z
       })
       .optional(),
     capture_method: z.enum(["automatic", "manual"]).optional(),
+    traffic_type: z.enum(["ftd", "std", "unknown"]).optional(),
     country: countrySchema.optional(),
     customer: customerInputSchema.optional(),
     description: z.string().max(500).optional(),

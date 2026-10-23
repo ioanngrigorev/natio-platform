@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import { Field } from "@/components/ui";
 import { PROFILES, type Policy } from "./strategy-types";
 export function RoutingPolicyEditor({
@@ -10,12 +12,14 @@ export function RoutingPolicyEditor({
   onChange: (p: Policy) => void;
   disabled?: boolean;
 }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const set = (key: keyof Policy, v: unknown) =>
     onChange({ ...value, [key]: v });
   return (
     <fieldset disabled={disabled} className="space-y-4">
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {PROFILES.map((p) => (
+        {translateUi(PROFILES.map((p) => (
           <button
             type="button"
             key={p.id}
@@ -23,21 +27,21 @@ export function RoutingPolicyEditor({
             className={`rounded-xl border p-4 text-left transition-colors ${(value.profile ?? "balanced") === p.id ? "border-brand-500 bg-brand-50" : "border-ink-200"}`}
             onClick={() => set("profile", p.id)}
           >
-            <div className="font-medium text-brand-600">{p.title}</div>
+            <div className="font-medium text-brand-600">{translateUi(p.title)}</div>
             <p className="mt-1 text-xs text-ink-500">{p.text}</p>
-            <p className="mt-2 text-[10px] text-ink-400">{p.weights}</p>
+            <p className="mt-2 text-[10px] text-ink-400">{translateUi(p.weights)}</p>
           </button>
-        ))}
+        )))}
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        {(
+        {translateUi((
           [
             ["maxAttempts", "Maximum attempts", 2, 1, 5],
             ["maxElapsedMs", "Cascade time budget (ms)", 30000, 1000, 120000],
             ["minSamples", "Minimum health sample", 20, 5, 10000],
           ] as const
         ).map(([k, l, d, min, max]) => (
-          <Field key={k} label={l} htmlFor={`policy-${k}`}>
+          <Field key={k} label={translateUi(l)} htmlFor={`policy-${k}`}>
             <input
               id={`policy-${k}`}
               className="input"
@@ -48,15 +52,15 @@ export function RoutingPolicyEditor({
               onChange={(e) => set(k, Number(e.target.value))}
             />
           </Field>
-        ))}
-        {(
+        )))}
+        {translateUi((
           [
             ["minApprovalRate", "Minimum approval %"],
             ["minUptime", "Minimum uptime %"],
             ["maxLatencyMs", "Maximum latency ms"],
           ] as const
         ).map(([k, l]) => (
-          <Field key={k} label={l} htmlFor={`policy-${k}`}>
+          <Field key={k} label={translateUi(l)} htmlFor={`policy-${k}`}>
             <input
               id={`policy-${k}`}
               className="input"
@@ -64,7 +68,7 @@ export function RoutingPolicyEditor({
               min={0}
               max={k === "maxLatencyMs" ? 120000 : 100}
               step={k === "maxLatencyMs" ? 1 : 0.1}
-              placeholder="No threshold"
+              placeholder={translateUi("No threshold")}
               value={
                 value[k] == null
                   ? ""
@@ -82,10 +86,10 @@ export function RoutingPolicyEditor({
               }
             />
           </Field>
-        ))}
+        )))}
       </div>
       <div className="flex flex-wrap gap-4 text-sm">
-        {(
+        {translateUi((
           [
             [
               "retryOnSoftDecline",
@@ -112,16 +116,11 @@ export function RoutingPolicyEditor({
               checked={value[k] ?? d}
               onChange={(e) => set(k, e.target.checked)}
             />
-            {l}
+            {translateUi(l)}
           </label>
-        ))}
+        )))}
       </div>
-      <p className="text-xs text-ink-500">
-        Profile weights apply to score strategy. Ordered and weighted routes
-        still enforce health, price and cascade limits. Recent health uses
-        completed/indeterminate attempts from the last 24 hours in the selected
-        mode; sparse data uses labelled priors unless excluded.
-      </p>
+      <p className="text-xs text-ink-500">{translateUi("Profile weights apply to score strategy. Ordered and weighted routes still enforce health, price and cascade limits. Recent health uses completed/indeterminate attempts from the last 24 hours in the selected mode; sparse data uses labelled priors unless excluded.")}</p>
     </fieldset>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -10,6 +12,8 @@ import { adminCan } from "@/lib/admin-permissions";
 const KYB_STATUSES = ["not_started", "pending", "approved", "rejected"] as const;
 
 export function MerchantActions({ merchant }: { merchant: { id: string; name: string; status: string; kyb_status: string } }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [dialog, setDialog] = useState<"status" | "kyb" | null>(null);
@@ -58,37 +62,37 @@ export function MerchantActions({ merchant }: { merchant: { id: string; name: st
 
   return (
     <div className="flex items-center gap-2">
-      <Button onClick={() => { setError(null); setDialog("kyb"); }}>Set KYB status</Button>
+      <Button onClick={() => { setError(null); setDialog("kyb"); }}>{translateUi("Set KYB status")}</Button>
       <Button variant={nextStatus === "disabled" ? "danger" : "primary"} onClick={() => { setError(null); setDialog("status"); }}>
-        {nextStatus === "disabled" ? "Disable merchant" : "Enable merchant"}
+        {translateUi(nextStatus === "disabled" ? translateUi("Disable merchant") : translateUi("Enable merchant"))}
       </Button>
 
-      {dialog === "status" ? (
-        <Modal title={nextStatus === "disabled" ? `Disable ${merchant.name}` : `Enable ${merchant.name}`} description={nextStatus === "disabled" ? "All dashboard sessions of this merchant are revoked and API access is blocked until re-enabled. The reason is written to the audit log." : "Restores dashboard and API access for this merchant."} onClose={() => setDialog(null)} onSubmit={submitStatus} submitLabel={nextStatus === "disabled" ? "Disable" : "Enable"} submitVariant={nextStatus === "disabled" ? "danger" : "primary"} loading={loading} error={error}>
-          <Field label="Reason" htmlFor="reason" help="Optional, max 300 characters">
-            <input id="reason" className="input" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. compliance review, chargeback ratio" />
+      {translateUi(dialog === "status" ? (
+        <Modal title={translateUi(nextStatus === "disabled" ? `Disable ${merchant.name}` : `Enable ${merchant.name}`)} description={translateUi(nextStatus === "disabled" ? translateUi("All dashboard sessions of this merchant are revoked and API access is blocked until re-enabled. The reason is written to the audit log.") : translateUi("Restores dashboard and API access for this merchant."))} onClose={() => setDialog(null)} onSubmit={submitStatus} submitLabel={nextStatus === "disabled" ? "Disable" : "Enable"} submitVariant={nextStatus === "disabled" ? "danger" : "primary"} loading={loading} error={error}>
+          <Field label={translateUi("Reason")} htmlFor="reason" help={translateUi("Optional, max 300 characters")}>
+            <input id="reason" className="input" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={translateUi("e.g. compliance review, chargeback ratio")} />
           </Field>
         </Modal>
-      ) : null}
+      ) : null)}
 
-      {dialog === "kyb" ? (
-        <Modal title="Set KYB status" description="Records the verification outcome for this merchant. Live mode requires an approved KYB." onClose={() => setDialog(null)} onSubmit={submitKyb} submitLabel="Update KYB" loading={loading} error={error}>
+      {translateUi(dialog === "kyb" ? (
+        <Modal title={translateUi("Set KYB status")} description={translateUi("Records the verification outcome for this merchant. Live mode requires an approved KYB.")} onClose={() => setDialog(null)} onSubmit={submitKyb} submitLabel="Update KYB" loading={loading} error={error}>
           <div className="space-y-3">
-            <Field label="KYB status" htmlFor="kyb">
+            <Field label={translateUi("KYB status")} htmlFor="kyb">
               <select id="kyb" className="input" value={kyb} onChange={(e) => setKyb(e.target.value)}>
-                {KYB_STATUSES.map((s) => (
+                {translateUi(KYB_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {s.replace(/_/g, " ")}
+                    {translateUi(s.replace(/_/g, " "))}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Note" htmlFor="note" help="Optional, max 500 characters">
+            <Field label={translateUi("Note")} htmlFor="note" help={translateUi("Optional, max 500 characters")}>
               <textarea id="note" className="input" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -66,91 +68,87 @@ function parseCondition(row: ConditionRow): Condition {
 }
 
 function RiskRuleFields({ form, setForm, conditions, setConditions, merchants }: { form: RiskForm; setForm: (f: RiskForm) => void; conditions: ConditionRow[]; setConditions: (c: ConditionRow[]) => void; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
-          <Field label="Name" htmlFor="rk-name">
-            <input id="rk-name" className="input" required minLength={2} maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Block restricted countries" />
+          <Field label={translateUi("Name")} htmlFor="rk-name">
+            <input id="rk-name" className="input" required minLength={2} maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={translateUi("Block restricted countries")} />
           </Field>
         </div>
         <div className="col-span-2">
-          <Field label="Description" htmlFor="rk-description" help="Optional, max 500 characters">
+          <Field label={translateUi("Description")} htmlFor="rk-description" help={translateUi("Optional, max 500 characters")}>
             <input id="rk-description" className="input" maxLength={500} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </Field>
         </div>
-        <Field label="Mode" htmlFor="rk-mode">
+        <Field label={translateUi("Mode")} htmlFor="rk-mode">
           <select id="rk-mode" className="input" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value as Mode })}>
-            <option value="test">test</option>
-            <option value="live">live</option>
+            <option value="test">{translateUi("test")}</option>
+            <option value="live">{translateUi("live")}</option>
           </select>
         </Field>
-        <Field label="Scope" htmlFor="rk-merchant" help="Global rules apply to every merchant">
+        <Field label={translateUi("Scope")} htmlFor="rk-merchant" help={translateUi("Global rules apply to every merchant")}>
           <select id="rk-merchant" className="input" value={form.merchant_id} onChange={(e) => setForm({ ...form, merchant_id: e.target.value })}>
-            <option value="">Global (all merchants)</option>
-            {merchants.map((m) => (
+            <option value="">{translateUi("Global (all merchants)")}</option>
+            {translateUi(merchants.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
               </option>
-            ))}
+            )))}
           </select>
         </Field>
-        <Field label="Action" htmlFor="rk-action" help={form.action === "block" ? "Payment is declined immediately" : form.action === "review" ? "Payment is held for manual review" : "Payment continues; only the score is added"}>
+        <Field label={translateUi("Action")} htmlFor="rk-action" help={translateUi(form.action === "block" ? translateUi("Payment is declined immediately") : form.action === "review" ? translateUi("Payment is held for manual review") : translateUi("Payment continues; only the score is added"))}>
           <select id="rk-action" className="input" value={form.action} onChange={(e) => setForm({ ...form, action: e.target.value })}>
-            <option value="allow">allow</option>
-            <option value="review">review</option>
-            <option value="block">block</option>
+            <option value="allow">{translateUi("allow")}</option>
+            <option value="review">{translateUi("review")}</option>
+            <option value="block">{translateUi("block")}</option>
           </select>
         </Field>
-        <Field label="Score" htmlFor="rk-score" help="0 – 100, added to the payment's risk score when matched">
+        <Field label={translateUi("Score")} htmlFor="rk-score" help={translateUi("0 – 100, added to the payment's risk score when matched")}>
           <input id="rk-score" className="input" type="number" min={0} max={100} value={form.score} onChange={(e) => setForm({ ...form, score: e.target.value })} />
         </Field>
-        <Field label="Priority" htmlFor="rk-priority" help="Lower runs first">
+        <Field label={translateUi("Priority")} htmlFor="rk-priority" help={translateUi("Lower runs first")}>
           <input id="rk-priority" className="input" type="number" min={0} max={10000} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} />
         </Field>
         <div className="flex items-end">
           <label className="flex items-center gap-2 pb-[7px] text-[13px] text-ink-800">
-            <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
-            Enabled
-          </label>
+            <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />{translateUi("Enabled")}</label>
         </div>
       </div>
 
       <div className="border-t border-ink-100 pt-3">
         <div className="mb-2 flex items-center justify-between">
-          <span className="label !mb-0">Conditions (all must match)</span>
-          <Button type="button" size="sm" onClick={() => setConditions([...conditions, { field: "country", op: "eq", value: "" }])}>
-            Add condition
-          </Button>
+          <span className="label !mb-0">{translateUi("Conditions (all must match)")}</span>
+          <Button type="button" size="sm" onClick={() => setConditions([...conditions, { field: "country", op: "eq", value: "" }])}>{translateUi("Add condition")}</Button>
         </div>
-        {conditions.length ? (
+        {translateUi(conditions.length ? (
           <div className="space-y-2">
-            {conditions.map((c, i) => (
+            {translateUi(conditions.map((c, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
-                <select className="input !w-[170px]" value={c.field} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, field: e.target.value } : x)))} aria-label="Field">
-                  {RISK_FIELDS.map((f) => (
+                <select className="input !w-[170px]" value={c.field} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, field: e.target.value } : x)))} aria-label={translateUi("Field")}>
+                  {translateUi(RISK_FIELDS.map((f) => (
                     <option key={f} value={f}>
-                      {f}
+                      {translateUi(f)}
                     </option>
-                  ))}
+                  )))}
                 </select>
-                <select className="input !w-[90px]" value={c.op} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, op: e.target.value } : x)))} aria-label="Operator">
-                  {RISK_OPS.map((o) => (
+                <select className="input !w-[90px]" value={c.op} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, op: e.target.value } : x)))} aria-label={translateUi("Operator")}>
+                  {translateUi(RISK_OPS.map((o) => (
                     <option key={o} value={o}>
-                      {o}
+                      {translateUi(o)}
                     </option>
-                  ))}
+                  )))}
                 </select>
-                <input className="input !w-auto min-w-[140px] flex-1" value={c.value} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))} placeholder={c.op === "in" || c.op === "not_in" ? "KP, IR, SY" : FIELD_HINT[c.field] ?? "value"} aria-label="Value" />
-                <Button type="button" size="sm" variant="ghost" onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))}>
-                  Remove
-                </Button>
+                <input className="input !w-auto min-w-[140px] flex-1" value={c.value} onChange={(e) => setConditions(conditions.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))} placeholder={translateUi(c.op === "in" || c.op === "not_in" ? translateUi("KP, IR, SY") : FIELD_HINT[c.field] ?? "value")} aria-label={translateUi("Value")} />
+                <Button type="button" size="sm" variant="ghost" onClick={() => setConditions(conditions.filter((_, idx) => idx !== i))}>{translateUi("Remove")}</Button>
               </div>
-            ))}
+            )))}
           </div>
         ) : (
-          <p className="text-[12.5px] text-ink-500">At least one condition is required.</p>
-        )}
+          <p className="text-[12.5px] text-ink-500">{translateUi("At least one condition is required.")}</p>
+        ))}
       </div>
     </div>
   );
@@ -179,6 +177,8 @@ function buildBody(form: RiskForm, conditions: ConditionRow[]) {
 // Create
 // ---------------------------------------------------------------------------
 export function CreateRiskRule({ merchants }: { merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -215,14 +215,12 @@ export function CreateRiskRule({ merchants }: { merchants: Array<{ id: string; n
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        New risk rule
-      </Button>
-      {open ? (
-        <Modal title="New risk rule" description="Rules are evaluated on every payment before routing, lowest priority number first. Block wins over review." onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create rule" loading={loading} error={error} width={620}>
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("New risk rule")}</Button>
+      {translateUi(open ? (
+        <Modal title={translateUi("New risk rule")} description={translateUi("Rules are evaluated on every payment before routing, lowest priority number first. Block wins over review.")} onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create rule" loading={loading} error={error} width={620}>
           <RiskRuleFields form={form} setForm={setForm} conditions={conditions} setConditions={setConditions} merchants={merchants} />
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }
@@ -231,6 +229,8 @@ export function CreateRiskRule({ merchants }: { merchants: Array<{ id: string; n
 // Per-row controls (enabled toggle, edit, delete)
 // ---------------------------------------------------------------------------
 export function RiskRuleControls({ rule, merchants }: { rule: RiskRule; merchants: Array<{ id: string; name: string }> }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const canManage = adminCan(session.user.role, "risk.manage");
@@ -294,28 +294,24 @@ export function RiskRuleControls({ rule, merchants }: { rule: RiskRule; merchant
     <>
       <td>
         <label className="flex items-center gap-2 text-[12px] text-ink-500">
-          <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={rule.enabled} disabled={!canManage || busy !== null} onChange={(e) => void toggle(e.target.checked)} aria-label={`Enable ${rule.name}`} />
-          {rule.enabled ? "on" : "off"}
+          <input type="checkbox" className="h-4 w-4 rounded border-ink-300" checked={rule.enabled} disabled={!canManage || busy !== null} onChange={(e) => void toggle(e.target.checked)} aria-label={translateUi(`Enable ${rule.name}`)} />
+          {translateUi(rule.enabled ? translateUi("on") : translateUi("off"))}
         </label>
       </td>
       <td>
-        {canManage ? (
+        {translateUi(canManage ? (
           <div className="flex items-center justify-end gap-1">
-            <Button size="sm" variant="ghost" onClick={() => { setError(null); setEditing(true); }}>
-              Edit
-            </Button>
-            <Button size="sm" variant="danger" loading={busy === "delete"} onClick={() => void remove()}>
-              Delete
-            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setError(null); setEditing(true); }}>{translateUi("Edit")}</Button>
+            <Button size="sm" variant="danger" loading={busy === "delete"} onClick={() => void remove()}>{translateUi("Delete")}</Button>
           </div>
         ) : (
-          <div className="text-right text-[11px] text-ink-400">read-only</div>
-        )}
-        {editing ? (
-          <Modal title={`Edit ${rule.name}`} description="Changes apply to payments created after saving." onClose={() => setEditing(false)} onSubmit={save} submitLabel="Save rule" loading={busy === "edit"} error={error} width={620}>
+          <div className="text-right text-[11px] text-ink-400">{translateUi("read-only")}</div>
+        ))}
+        {translateUi(editing ? (
+          <Modal title={translateUi(`Edit ${rule.name}`)} description={translateUi("Changes apply to payments created after saving.")} onClose={() => setEditing(false)} onSubmit={save} submitLabel="Save rule" loading={busy === "edit"} error={error} width={620}>
             <RiskRuleFields form={form} setForm={setForm} conditions={conditions} setConditions={setConditions} merchants={merchants} />
           </Modal>
-        ) : null}
+        ) : null)}
       </td>
     </>
   );

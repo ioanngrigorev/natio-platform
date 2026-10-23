@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -198,19 +200,21 @@ function pretty(value: unknown): string {
 
 /** Spec descriptions use Markdown backticks for code. Render those as <code>, leave the rest as text. */
 function SpecText({ text }: { text: string | undefined }): ReactNode {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   if (!text) return null;
   const parts = text.split("`");
   return (
     <>
-      {parts.map((part, i) =>
+      {translateUi(parts.map((part, i) =>
         i % 2 === 1 ? (
           <code key={i} className="font-mono text-[12px]">
             {part}
           </code>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={i}>{translateUi(part)}</span>
         ),
-      )}
+      ))}
     </>
   );
 }
@@ -255,6 +259,8 @@ function propertyRows(spec: Spec, schema: JsonSchema | undefined, depth = 0, max
 }
 
 function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | undefined }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const rows = propertyRows(spec, schema);
   if (!rows.length) return null;
   return (
@@ -266,21 +272,21 @@ function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | unde
         const constraints = constraintNote(row.schema);
         return [
           <span key={`${row.name}-${row.depth}`} style={{ paddingLeft: row.depth * 14 }} className="inline-block">
-            {row.depth > 0 ? <span className="mr-1 font-mono text-mist-600">└</span> : null}
+            {translateUi(row.depth > 0 ? <span className="mr-1 font-mono text-mist-600">└</span> : null)}
             <code className="font-mono text-[12px]">{row.name}</code>
-            {row.required ? <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wide text-rose-300">required</span> : null}
+            {translateUi(row.required ? <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wide text-rose-300">{translateUi("required")}</span> : null)}
           </span>,
           <span key={`${row.name}-t`} className="whitespace-nowrap font-mono text-[11.5px] text-mist-400">
-            {typeLabel(spec, row.schema)}
+            {translateUi(typeLabel(spec, row.schema))}
           </span>,
           <span key={`${row.name}-d`}>
-            {row.schema.description ? (
+            {translateUi(row.schema.description ? (
               <span className="block">
                 <SpecText text={row.schema.description} />
               </span>
-            ) : null}
-            {enums ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{enums}</span> : null}
-            {constraints ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{constraints}</span> : null}
+            ) : null)}
+            {translateUi(enums ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{translateUi(enums)}</span> : null)}
+            {translateUi(constraints ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{translateUi(constraints)}</span> : null)}
           </span>,
         ];
       })}
@@ -292,6 +298,8 @@ function PropertyTable({ spec, schema }: { spec: Spec; schema: JsonSchema | unde
 // Operation rendering
 // ---------------------------------------------------------------------------
 function ParameterTable({ spec, parameters }: { spec: Spec; parameters: Parameter[] }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const resolved = parameters.map((p) => (p.$ref ? (resolve<Parameter>(spec, p) ?? p) : p)).filter((p) => p.name);
   if (!resolved.length) return null;
   return (
@@ -303,18 +311,18 @@ function ParameterTable({ spec, parameters }: { spec: Spec; parameters: Paramete
           {p.name}
         </code>,
         <span key={`${p.name}-i`} className="font-mono text-[11.5px] text-mist-400">
-          {p.in ?? "—"}
+          {translateUi(p.in ?? "—")}
         </span>,
         <span key={`${p.name}-r`} className={p.required ? "text-[11px] font-medium uppercase tracking-wide text-rose-300" : "text-[11px] text-mist-400"}>
-          {p.required ? "required" : "optional"}
+          {translateUi(p.required ? translateUi("required") : translateUi("optional"))}
         </span>,
         <span key={`${p.name}-t`} className="whitespace-nowrap font-mono text-[11.5px] text-mist-400">
-          {typeLabel(spec, p.schema)}
-          {constraintNote(p.schema) ? <span className="ml-1 text-mist-400">({constraintNote(p.schema)})</span> : null}
+          {translateUi(typeLabel(spec, p.schema))}
+          {translateUi(constraintNote(p.schema) ? <span className="ml-1 text-mist-400">({translateUi(constraintNote(p.schema))})</span> : null)}
         </span>,
         <span key={`${p.name}-d`}>
           <SpecText text={p.description} />
-          {enumNote(p.schema) ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{enumNote(p.schema)}</span> : null}
+          {translateUi(enumNote(p.schema) ? <span className="mt-0.5 block font-mono text-[11px] text-mist-400">{translateUi(enumNote(p.schema))}</span> : null)}
         </span>,
       ])}
     />
@@ -330,6 +338,8 @@ function firstExample(media: MediaType | undefined): unknown {
 }
 
 function OperationBlock({ spec, method, path, operation }: { spec: Spec; method: string; path: string; operation: Operation }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const anchor = opAnchor(method, path);
   const params = operation.parameters ?? [];
   const body = operation.requestBody?.$ref ? resolve<RequestBody>(spec, operation.requestBody) : operation.requestBody;
@@ -344,47 +354,45 @@ function OperationBlock({ spec, method, path, operation }: { spec: Spec; method:
         <Method method={method} />
         <code className="font-mono text-[14px] font-medium text-mist-50">{path}</code>
       </div>
-      {operation.summary ? <h3 className="!mt-3 !mb-0 text-[16px] font-medium text-mist-50">{operation.summary}</h3> : null}
-      {operation.description ? (
+      {translateUi(operation.summary ? <h3 className="!mt-3 !mb-0 text-[16px] font-medium text-mist-50">{translateUi(operation.summary)}</h3> : null)}
+      {translateUi(operation.description ? (
         <p className="!mt-2">
           <SpecText text={operation.description} />
         </p>
-      ) : null}
+      ) : null)}
 
-      {params.length ? (
+      {translateUi(params.length ? (
         <>
-          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">Parameters</div>
+          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">{translateUi("Parameters")}</div>
           <ParameterTable spec={spec} parameters={params} />
         </>
-      ) : null}
+      ) : null)}
 
-      {body ? (
+      {translateUi(body ? (
         <>
-          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">
-            Request body
-            {body.required ? <span className="ml-2 text-rose-300">required</span> : null}
-            {bodySchemaRef ? (
+          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">{translateUi("Request body")}{translateUi(body.required ? <span className="ml-2 text-rose-300">{translateUi("required")}</span> : null)}
+            {translateUi(bodySchemaRef ? (
               <>
                 <span className="mx-2 text-mist-600">·</span>
                 <Link href={`#${schemaAnchor(refName(bodySchemaRef) ?? "")}`} className="font-mono normal-case tracking-normal text-iris">
-                  {refName(bodySchemaRef)}
+                  {translateUi(refName(bodySchemaRef))}
                 </Link>
               </>
-            ) : null}
+            ) : null)}
           </div>
-          {body.description ? (
+          {translateUi(body.description ? (
             <p className="!mt-0">
               <SpecText text={body.description} />
             </p>
-          ) : null}
+          ) : null)}
           <PropertyTable spec={spec} schema={media?.schema} />
-          {example !== undefined ? <Code caption="Example request" code={pretty(example)} /> : null}
+          {translateUi(example !== undefined ? <Code caption="Example request" code={pretty(example)} /> : null)}
         </>
-      ) : null}
+      ) : null)}
 
-      {responses.length ? (
+      {translateUi(responses.length ? (
         <>
-          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">Responses</div>
+          <div className="mt-6 mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">{translateUi("Responses")}</div>
           <DocTable
             dense
             columns={["Status", "Description", "Body"]}
@@ -396,12 +404,12 @@ function OperationBlock({ spec, method, path, operation }: { spec: Spec; method:
               const tone = !Number.isFinite(code) ? "text-mist-200" : code < 300 ? "text-lime" : code < 500 ? "text-amber-300" : "text-rose-300";
               return [
                 <span key={`${status}-s`} className={`whitespace-nowrap font-mono text-[12px] font-medium ${tone}`}>
-                  {status}
+                  {translateUi(status)}
                 </span>,
                 <SpecText key={`${status}-d`} text={response.description ?? (raw.$ref ? refName(raw.$ref) : undefined)} />,
                 name ? (
                   <Link key={`${status}-b`} href={`#${schemaAnchor(name)}`} className="font-mono text-[11.5px]">
-                    {name}
+                    {translateUi(name)}
                   </Link>
                 ) : (
                   <span key={`${status}-b`} className="text-mist-600">
@@ -412,7 +420,7 @@ function OperationBlock({ spec, method, path, operation }: { spec: Spec; method:
             })}
           />
         </>
-      ) : null}
+      ) : null)}
     </section>
   );
 }
@@ -468,20 +476,18 @@ function groupByTag(spec: Spec): Array<{ tag: string; description?: string; oper
 // Page
 // ---------------------------------------------------------------------------
 export default async function ApiReferencePage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const result = await loadSpec();
 
   if ("error" in result) {
     return (
       <>
-        <DocHeader eyebrow="Reference" title="API reference" lead="Every NATIO endpoint, rendered from the published OpenAPI 3.1 document." />
-        <Note tone="warn" title="The live specification could not be loaded">
-          {result.error} The OpenAPI 3.1 document is published at <Link href="/openapi.json">/openapi.json</Link> — open it directly, or point a generator at it, while this
-          page is unavailable.
-        </Note>
-        <p>
-          The narrative guides do not depend on this page: <Link href="/docs/quickstart">Quickstart</Link>, <Link href="/docs/payments">Payments</Link>,{" "}
-          <Link href="/docs/webhooks">Webhooks</Link> and <Link href="/docs/errors">Errors</Link> carry their own request and response examples.
-        </p>
+        <DocHeader eyebrow="Reference" title={translateUi("API reference")} lead="Every NATIO endpoint, rendered from the published OpenAPI 3.1 document." />
+        <Note tone="warn" title={translateUi("The live specification could not be loaded")}>
+          {translateUi(result.error)}{translateUi(" The OpenAPI 3.1 document is published at ")}<Link href="/openapi.json">{translateUi("/openapi.json")}</Link>{translateUi(" — open it directly, or point a generator at it, while this page is unavailable.")}</Note>
+        <p>{translateUi("The narrative guides do not depend on this page: ")}<Link href="/docs/quickstart">{translateUi("Quickstart")}</Link>, <Link href="/docs/payments">{translateUi("Payments")}</Link>,{translateUi(" ")}
+          <Link href="/docs/webhooks">{translateUi("Webhooks")}</Link>{translateUi(" and ")}<Link href="/docs/errors">{translateUi("Errors")}</Link>{translateUi(" carry their own request and response examples.")}</p>
       </>
     );
   }
@@ -497,22 +503,20 @@ export default async function ApiReferencePage() {
     <>
       <DocHeader
         eyebrow="Reference"
-        title="API reference"
+        title={translateUi("API reference")}
         lead={
           <>
-            {spec.info?.description ??
-              "One integration for payments, payouts, transactions and settlements across multiple providers."}
+            {translateUi(spec.info?.description ??
+              "One integration for payments, payouts, transactions and settlements across multiple providers.")}
           </>
         }
       />
 
-      <Note tone="info" title="Rendered from the live specification">
-        This page is generated at request time from the OpenAPI {spec.openapi ?? "3.1"} document served by the API — {operationCount} operations across {groups.length} tag
-        groups. The raw document is at <Link href="/openapi.json">/openapi.json</Link>.
+      <Note tone="info" title={translateUi("Rendered from the live specification")}>{translateUi("This page is generated at request time from the OpenAPI ")}{translateUi(spec.openapi ?? "3.1")}{translateUi(" document served by the API — ")}{translateUi(operationCount)}{translateUi(" operations across ")}{translateUi(groups.length)}{translateUi(" tag groups. The raw document is at ")}<Link href="/openapi.json">{translateUi("/openapi.json")}</Link>.
       </Note>
 
-      <H2 id="servers">Servers</H2>
-      {spec.servers?.length ? (
+      <H2 id="servers">{translateUi("Servers")}</H2>
+      {translateUi(spec.servers?.length ? (
         <DocTable
           columns={["URL", "Environment"]}
           rows={spec.servers.map((s) => [
@@ -523,120 +527,117 @@ export default async function ApiReferencePage() {
           ])}
         />
       ) : (
-        <p>The document does not declare any servers.</p>
-      )}
+        <p>{translateUi("The document does not declare any servers.")}</p>
+      ))}
 
-      <H2 id="authentication">Authentication</H2>
-      {securitySchemes.length ? (
+      <H2 id="authentication">{translateUi("Authentication")}</H2>
+      {translateUi(securitySchemes.length ? (
         <>
           <DocTable
             columns={["Scheme", "Type", "How it is sent", "Notes"]}
             rows={securitySchemes.map(([name, scheme]) => [
               <Tok key={name}>{name}</Tok>,
               <span key={`${name}-t`} className="font-mono text-[11.5px] text-mist-400">
-                {[scheme.type, scheme.scheme].filter(Boolean).join(" · ") || "—"}
+                {translateUi([scheme.type, scheme.scheme].filter(Boolean).join(" · ") || "—")}
               </span>,
               <span key={`${name}-h`} className="font-mono text-[11.5px] text-mist-400">
-                {scheme.type === "http" && scheme.scheme === "bearer"
-                  ? "Authorization: Bearer <key>"
+                {translateUi(scheme.type === "http" && scheme.scheme === "bearer"
+                  ? translateUi("Authorization: Bearer <key>")
                   : scheme.name
                     ? `${scheme.name}${scheme.in ? ` (${scheme.in})` : ""}`
-                    : "—"}
+                    : "—")}
               </span>,
               <SpecText key={`${name}-d`} text={scheme.description} />,
             ])}
           />
-          {globalSecurity.length ? (
-            <p>
-              Every operation requires{" "}
-              {globalSecurity.map((name, i) => (
+          {translateUi(globalSecurity.length ? (
+            <p>{translateUi("Every operation requires")}{translateUi(" ")}
+              {translateUi(globalSecurity.map((name, i) => (
                 <span key={name}>
-                  {i > 0 ? ", " : ""}
+                  {translateUi(i > 0 ? ", " : "")}
                   <Tok>{name}</Tok>
                 </span>
-              ))}{" "}
-              unless it says otherwise. See <Link href="/docs/authentication">Authentication</Link> for key modes, rotation and IP allow-lists.
-            </p>
-          ) : null}
+              )))}{translateUi(" ")}{translateUi("unless it says otherwise. See ")}<Link href="/docs/authentication">{translateUi("Authentication")}</Link>{translateUi(" for key modes, rotation and IP allow-lists.")}</p>
+          ) : null)}
         </>
       ) : (
-        <p>The document does not declare a security scheme.</p>
-      )}
+        <p>{translateUi("The document does not declare a security scheme.")}</p>
+      ))}
 
-      <H2 id="index">Index</H2>
+      <H2 id="index">{translateUi("Index")}</H2>
       <div className="mb-6 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
-        {groups.map((group) => (
+        {translateUi(groups.map((group) => (
           <div key={group.tag}>
             <div className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-mist-400">
               <Link href={`#tag-${slug(group.tag)}`} className="!text-mist-400 !no-underline hover:!text-mist-50">
-                {group.tag}
+                {translateUi(group.tag)}
               </Link>
             </div>
             <ul className="!mb-0 !list-none !pl-0">
-              {group.operations.map((op) => (
+              {translateUi(group.operations.map((op) => (
                 <li key={`${op.method}-${op.path}`} className="flex items-baseline gap-2 py-[2px]">
-                  <span className="w-[46px] shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-mist-400">{op.method}</span>
+                  <span className="w-[46px] shrink-0 text-right font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-mist-400">{translateUi(op.method)}</span>
                   <Link href={`#${opAnchor(op.method, op.path)}`} className="font-mono !text-[12px] !no-underline hover:!underline">
-                    {op.path}
+                    {translateUi(op.path)}
                   </Link>
                 </li>
-              ))}
+              )))}
             </ul>
           </div>
-        ))}
+        )))}
       </div>
 
-      {groups.map((group) => (
+      {translateUi(groups.map((group) => (
         <div key={group.tag}>
-          <H2 id={`tag-${slug(group.tag)}`}>{group.tag}</H2>
-          {group.description ? (
+          <H2 id={`tag-${slug(group.tag)}`}>{translateUi(group.tag)}</H2>
+          {translateUi(group.description ? (
             <p>
               <SpecText text={group.description} />
             </p>
-          ) : null}
-          {group.operations.map((op) => (
+          ) : null)}
+          {translateUi(group.operations.map((op) => (
             <OperationBlock key={`${op.method}-${op.path}`} spec={spec} method={op.method} path={op.path} operation={op.operation} />
-          ))}
+          )))}
         </div>
-      ))}
+      )))}
 
-      {schemas.length ? (
+      {translateUi(schemas.length ? (
         <>
-          <H2 id="schemas">Schemas</H2>
-          <p>
-            The component schemas referenced above. Every <Tok>$ref</Tok> in the document points into this section.
-          </p>
-          {schemas.map(([name, schema]) => (
+          <H2 id="schemas">{translateUi("Schemas")}</H2>
+          <p>{translateUi("The component schemas referenced above. Every ")}<Tok>{"$ref"}</Tok>{translateUi(" in the document points into this section.")}</p>
+          {translateUi(schemas.map(([name, schema]) => (
             <SchemaBlock key={name} spec={spec} name={name} schema={schema} />
-          ))}
+          )))}
         </>
-      ) : null}
+      ) : null)}
     </>
   );
 }
 
 function SchemaBlock({ spec, name, schema }: { spec: Spec; name: string; schema: JsonSchema }): ReactNode {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const rows = propertyRows(spec, schema);
   const enums = enumNote(schema);
   return (
     <section id={schemaAnchor(name)} className="mt-8 scroll-mt-20 border-t border-night-700 pt-5">
-      <h3 className="!mt-0 !mb-1 font-mono text-[15px] font-medium text-mist-50">{name}</h3>
-      {schema.description ? (
+      <h3 className="!mt-0 !mb-1 font-mono text-[15px] font-medium text-mist-50">{translateUi(name)}</h3>
+      {translateUi(schema.description ? (
         <p className="!mt-1">
           <SpecText text={schema.description} />
         </p>
-      ) : null}
-      {rows.length ? (
+      ) : null)}
+      {translateUi(rows.length ? (
         <PropertyTable spec={spec} schema={schema} />
       ) : enums ? (
         <p className="!mt-1">
-          <span className="font-mono text-[12px] text-mist-400">{typeLabel(spec, schema)}</span>
+          <span className="font-mono text-[12px] text-mist-400">{translateUi(typeLabel(spec, schema))}</span>
           <span className="mx-2 text-mist-600">·</span>
-          <span className="font-mono text-[12px] text-mist-400">{enums}</span>
+          <span className="font-mono text-[12px] text-mist-400">{translateUi(enums)}</span>
         </p>
       ) : (
-        <p className="!mt-1 font-mono text-[12px] text-mist-400">{typeLabel(spec, schema)}</p>
-      )}
+        <p className="!mt-1 font-mono text-[12px] text-mist-400">{translateUi(typeLabel(spec, schema))}</p>
+      ))}
     </section>
   );
 }

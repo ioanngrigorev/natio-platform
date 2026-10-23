@@ -30,6 +30,18 @@ export interface RecordTransactionInput {
 
 export async function recordTransaction(db: DbOrTx, input: RecordTransactionInput): Promise<TransactionRow> {
   const fee = input.feeAmount ?? 0;
+  // Snapshot observed routing and PSP evidence in the same transaction as the ledger entry.
+  // Never infer a customer's deposit history from their local payment sequence.
+  let trafficType='unknown', conversion:Record<string,unknown>|null=null;
+  if(input.paymentId){
+    const facts=await db.execute(sql`SELECT p.traffic_type,p.status,p.failure_code,p.processing_time_ms,
+      (SELECT count(*)::int FROM payment_attempts a WHERE a.payment_id=p.id AND a.request_sent_at IS NOT NULL) attempts,
+      (SELECT bool_or(a.status IN ('authorized','succeeded')) FROM payment_attempts a WHERE a.payment_id=p.id AND (a.status IN ('authorized','succeeded') OR a.outcome IN ('soft_decline','hard_decline'))) approved,
+      (SELECT bool_or(d.selected_provider_account_id IS NOT NULL) FROM routing_decisions d WHERE d.payment_id=p.id) selected
+      FROM payments p WHERE p.id=${input.paymentId} AND p.merchant_id=${input.merchantId} AND p.mode=${input.mode}`);
+    const f=facts.rows[0] as any;
+    if(f){trafficType=f.traffic_type;if(input.type==='payment')conversion={source:'observed',method_selected:f.selected,psp_submitted:f.attempts>0,psp_approved:f.approved,completed:input.status==='pending'?null:input.status==='successful',attempt_count:f.attempts,latency_ms:f.processing_time_ms,decline_reason:f.failure_code};}
+  }
   const [row] = await db
     .insert(transactions)
     .values({
@@ -38,6 +50,7 @@ export async function recordTransaction(db: DbOrTx, input: RecordTransactionInpu
       projectId: input.projectId,
       mode: input.mode,
       type: input.type,
+      trafficType, conversion,
       status: input.status,
       entityType: input.entityType,
       entityId: input.entityId,
@@ -92,6 +105,8 @@ export function serializeTransaction(t: TransactionRow & { providerName?: string
     mode: t.mode,
     type: t.type,
     status: t.status,
+    traffic_type: t.trafficType,
+    conversion: t.conversion,
     entity_type: t.entityType,
     entity_id: t.entityId,
     payment_id: t.paymentId,

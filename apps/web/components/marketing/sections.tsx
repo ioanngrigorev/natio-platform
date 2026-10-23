@@ -1,6 +1,9 @@
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { cx } from "@/components/ui";
+import {cx} from "@/lib/classnames";
 
 /**
  * Dark brand surface for natio.me and /docs.
@@ -45,15 +48,17 @@ export function GridBackdrop({ className, fade = true }: { className?: string; f
 }
 
 export function PageIntro({ eyebrow, title, lead, actions, wide }: { eyebrow?: ReactNode; title: ReactNode; lead?: ReactNode; actions?: ReactNode; wide?: boolean }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="relative overflow-hidden border-b border-night-700 bg-night-950">
       <GridBackdrop />
       <Container className="relative py-16 md:py-24">
         <div className={wide ? "max-w-[980px]" : "max-w-[820px]"}>
-          {eyebrow ? <Eyebrow className="mb-5">{eyebrow}</Eyebrow> : null}
-          <h1 className="text-[40px] font-medium leading-[1.02] tracking-[-0.032em] text-mist-50 md:text-[62px]">{title}</h1>
-          {lead ? <p className="mt-6 max-w-[660px] text-[16.5px] leading-[1.7] text-mist-400 md:text-[17px]">{lead}</p> : null}
-          {actions ? <div className="mt-9 flex flex-wrap items-center gap-3">{actions}</div> : null}
+          {translateUi(eyebrow ? <Eyebrow className="mb-5">{translateUi(eyebrow)}</Eyebrow> : null)}
+          <h1 className="text-[40px] font-medium leading-[1.02] tracking-[-0.032em] text-mist-50 md:text-[62px]">{translateUi(title)}</h1>
+          {translateUi(lead ? <p className="mt-6 max-w-[660px] text-[16.5px] leading-[1.7] text-mist-400 md:text-[17px]">{translateUi(lead)}</p> : null)}
+          {translateUi(actions ? <div className="mt-9 flex flex-wrap items-center gap-3">{translateUi(actions)}</div> : null)}
         </div>
       </Container>
     </div>
@@ -81,20 +86,22 @@ export function Section({
   aside?: ReactNode;
   grid?: boolean;
 }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <section id={id} className={cx("relative overflow-hidden border-b border-night-700", tone === "raised" ? "bg-night-900" : "bg-night-950", className)}>
-      {grid ? <GridBackdrop fade={false} className="opacity-60 [mask-image:linear-gradient(to_bottom,black,transparent)]" /> : null}
+      {translateUi(grid ? <GridBackdrop fade={false} className="opacity-60 [mask-image:linear-gradient(to_bottom,black,transparent)]" /> : null)}
       <Container className="relative py-16 md:py-24">
-        {title || eyebrow ? (
+        {translateUi(title || eyebrow ? (
           <div className={cx("mb-12 md:mb-14", aside ? "grid gap-8 md:grid-cols-[1fr_minmax(0,340px)] md:items-end" : "")}>
             <div className="max-w-[760px]">
-              {eyebrow ? <Eyebrow className="mb-4">{eyebrow}</Eyebrow> : null}
-              {title ? <h2 className="text-[30px] font-medium leading-[1.08] tracking-[-0.026em] text-mist-50 md:text-[42px]">{title}</h2> : null}
-              {lead ? <p className="mt-5 text-[15.5px] leading-[1.7] text-mist-400">{lead}</p> : null}
+              {translateUi(eyebrow ? <Eyebrow className="mb-4">{translateUi(eyebrow)}</Eyebrow> : null)}
+              {translateUi(title ? <h2 className="text-[30px] font-medium leading-[1.08] tracking-[-0.026em] text-mist-50 md:text-[42px]">{translateUi(title)}</h2> : null)}
+              {translateUi(lead ? <p className="mt-5 text-[15.5px] leading-[1.7] text-mist-400">{translateUi(lead)}</p> : null)}
             </div>
-            {aside ? <div className="text-[13.5px] leading-[1.7] text-mist-400">{aside}</div> : null}
+            {translateUi(aside ? <div className="text-[13.5px] leading-[1.7] text-mist-400">{translateUi(aside)}</div> : null)}
           </div>
-        ) : null}
+        ) : null)}
         {children}
       </Container>
     </section>
@@ -116,34 +123,40 @@ export function FeatureGrid({ children, cols = 3, className }: { children: React
 }
 
 export function Feature({ index, title, children, mono }: { index?: string | number; title: ReactNode; children?: ReactNode; mono?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="border-t border-night-700 pt-5">
-      {index !== undefined ? <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{typeof index === "number" ? String(index).padStart(2, "0") : index}</div> : null}
-      <h3 className="text-[16.5px] font-medium leading-snug tracking-[-0.01em] text-mist-50">{title}</h3>
-      {children ? <div className="mt-2.5 text-[14px] leading-[1.7] text-mist-400">{children}</div> : null}
-      {mono ? <div className="mt-3 font-mono text-[12px] text-iris">{mono}</div> : null}
+      {translateUi(index !== undefined ? <div className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-600">{translateUi(typeof index === "number" ? String(index).padStart(2, "0") : index)}</div> : null)}
+      <h3 className="text-[16.5px] font-medium leading-snug tracking-[-0.01em] text-mist-50">{translateUi(title)}</h3>
+      {translateUi(children ? <div className="mt-2.5 text-[14px] leading-[1.7] text-mist-400">{children}</div> : null)}
+      {translateUi(mono ? <div className="mt-3 font-mono text-[12px] text-iris">{translateUi(mono)}</div> : null)}
     </div>
   );
 }
 
 export function Split({ children, panel, reverse, align = "start" }: { children: ReactNode; panel: ReactNode; reverse?: boolean; align?: "start" | "center" }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className={cx("grid gap-10 lg:grid-cols-2 lg:gap-14", align === "center" && "lg:items-center")}>
       <div className={cx("min-w-0", reverse && "lg:order-2")}>{children}</div>
-      <div className={cx("min-w-0", reverse && "lg:order-1")}>{panel}</div>
+      <div className={cx("min-w-0", reverse && "lg:order-1")}>{translateUi(panel)}</div>
     </div>
   );
 }
 
 export function SpecList({ items, className }: { items: Array<{ term: ReactNode; detail: ReactNode }>; className?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <dl className={cx("divide-y divide-night-700 border-y border-night-700", className)}>
-      {items.map((it, i) => (
+      {translateUi(items.map((it, i) => (
         <div key={i} className="grid gap-1.5 py-4 md:grid-cols-[minmax(0,200px)_1fr] md:gap-8">
-          <dt className="font-mono text-[11.5px] uppercase tracking-[0.1em] text-mist-400">{it.term}</dt>
-          <dd className="text-[14.5px] leading-[1.7] text-mist-200">{it.detail}</dd>
+          <dt className="font-mono text-[11.5px] uppercase tracking-[0.1em] text-mist-400">{translateUi(it.term)}</dt>
+          <dd className="text-[14.5px] leading-[1.7] text-mist-200">{translateUi(it.detail)}</dd>
         </div>
-      ))}
+      )))}
     </dl>
   );
 }
@@ -153,11 +166,13 @@ export function SpecList({ items, className }: { items: Array<{ term: ReactNode;
  * wraps a divided list, so the hairlines run the full width of the card.
  */
 export function Panel({ children, className, title, glow, padded = true }: { children: ReactNode; className?: string; title?: ReactNode; glow?: boolean; padded?: boolean }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className={cx("overflow-hidden rounded-2xl border border-night-700 bg-night-850", padded && "p-6", glow && "shadow-glow", className)}>
-      {title ? (
-        <div className={cx("font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-400", padded ? "mb-4" : "border-b border-night-700 px-5 py-3")}>{title}</div>
-      ) : null}
+      {translateUi(title ? (
+        <div className={cx("font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist-400", padded ? "mb-4" : "border-b border-night-700 px-5 py-3")}>{translateUi(title)}</div>
+      ) : null)}
       {children}
     </div>
   );
@@ -177,25 +192,29 @@ export function Chip({ children, tone = "neutral" }: { children: ReactNode; tone
 
 /** Large number + mono caption. The metric vocabulary of the site. */
 export function Metric({ value, label, tone = "mist", sub }: { value: ReactNode; label: ReactNode; tone?: "mist" | "iris" | "lime" | "aqua"; sub?: ReactNode }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const map = { mist: "text-mist-50", iris: "text-iris", lime: "text-lime", aqua: "text-aqua" };
   return (
     <div>
-      <div className={cx("text-[30px] font-medium leading-none tracking-[-0.03em] md:text-[36px]", map[tone])}>{value}</div>
-      <div className="mt-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-mist-600">{label}</div>
-      {sub ? <div className="mt-1.5 text-[13px] leading-6 text-mist-400">{sub}</div> : null}
+      <div className={cx("text-[30px] font-medium leading-none tracking-[-0.03em] md:text-[36px]", map[tone])}>{translateUi(value)}</div>
+      <div className="mt-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-mist-600">{translateUi(label)}</div>
+      {translateUi(sub ? <div className="mt-1.5 text-[13px] leading-6 text-mist-400">{translateUi(sub)}</div> : null)}
     </div>
   );
 }
 
 /** Row of metrics divided by hairlines, as on the reference site. */
 export function MetricRow({ items, className }: { items: Array<{ value: ReactNode; label: ReactNode; tone?: "mist" | "iris" | "lime" | "aqua" }>; className?: string }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className={cx("grid grid-cols-2 gap-px overflow-hidden border-y border-night-700 bg-night-700 md:grid-cols-4", className)}>
-      {items.map((m, i) => (
+      {translateUi(items.map((m, i) => (
         <div key={i} className="bg-night-950 px-5 py-7 md:px-6">
-          <Metric value={m.value} label={m.label} tone={m.tone} />
+          <Metric value={m.value} label={translateUi(m.label)} tone={m.tone} />
         </div>
-      ))}
+      )))}
     </div>
   );
 }
@@ -249,18 +268,20 @@ export function CtaBand({
   primary?: ReactNode;
   secondary?: ReactNode;
 }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <section className="relative overflow-hidden border-b border-night-700 bg-night-900">
       <GridBackdrop fade={false} className="opacity-70 [mask-image:radial-gradient(ellipse_at_50%_120%,black,transparent_70%)]" />
       <Container className="relative py-16 md:py-20">
         <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
           <div className="max-w-[640px]">
-            <h2 className="text-[28px] font-medium leading-[1.1] tracking-[-0.026em] text-mist-50 md:text-[36px]">{title}</h2>
-            {lead ? <p className="mt-4 text-[15px] leading-[1.7] text-mist-400">{lead}</p> : null}
+            <h2 className="text-[28px] font-medium leading-[1.1] tracking-[-0.026em] text-mist-50 md:text-[36px]">{translateUi(title)}</h2>
+            {translateUi(lead ? <p className="mt-4 text-[15px] leading-[1.7] text-mist-400">{translateUi(lead)}</p> : null)}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {primary ?? <PrimaryCta size="lg" />}
-            {secondary ?? <SecondaryCta size="lg" />}
+            {translateUi(primary ?? <PrimaryCta size="lg" />)}
+            {translateUi(secondary ?? <SecondaryCta size="lg" />)}
           </div>
         </div>
       </Container>

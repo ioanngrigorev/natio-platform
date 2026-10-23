@@ -1,4 +1,8 @@
-import { Mono, Tag, cx } from "@/components/ui";
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
+import {Mono, Tag} from "@/components/ui";
+import {cx} from "@/lib/classnames";
 
 export interface Condition {
   field: string;
@@ -15,14 +19,16 @@ export function conditionText(c: Condition): string {
 
 /** Renders rule conditions as compact chips like `country = VN`, `amount > 500000`. */
 export function ConditionChips({ conditions, emptyLabel = "always", className }: { conditions: Condition[]; emptyLabel?: string; className?: string }) {
-  if (!conditions.length) return <span className="text-[12px] text-ink-400">{emptyLabel}</span>;
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
+  if (!conditions.length) return <span className="text-[12px] text-ink-400">{translateUi(emptyLabel)}</span>;
   return (
     <span className={cx("flex flex-wrap gap-1", className)}>
-      {conditions.map((c, i) => (
+      {translateUi(conditions.map((c, i) => (
         <Tag key={`${c.field}-${i}`}>
-          <Mono className="text-[11px]">{conditionText(c)}</Mono>
+          <Mono className="text-[11px]">{translateUi(conditionText(c))}</Mono>
         </Tag>
-      ))}
+      )))}
     </span>
   );
 }
@@ -30,5 +36,7 @@ export function ConditionChips({ conditions, emptyLabel = "always", className }:
 const LEVEL_TONE: Record<string, "ok" | "warn" | "bad" | "neutral"> = { info: "neutral", warning: "warn", error: "bad" };
 
 export function LevelTag({ level }: { level: string }) {
-  return <Tag tone={LEVEL_TONE[level] ?? "neutral"}>{level}</Tag>;
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
+  return <Tag tone={LEVEL_TONE[level] ?? "neutral"}>{translateUi(level)}</Tag>;
 }

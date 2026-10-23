@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import { AddWalletAccount, ArchiveWalletAccount } from "@/components/dashboard/wallet-accounts";
 import { Card, EmptyState, Mono, PageHeader, StatusBadge, Table, Tag } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
@@ -56,6 +58,8 @@ function decimalsFor(network: string, asset: string): number {
 }
 
 export default async function WalletsPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const accounts = await api.get<{ data: WalletAccount[] }>("/dashboard/wallets");
 
@@ -66,21 +70,21 @@ export default async function WalletsPage() {
   return (
     <>
       <PageHeader
-        title="Settlement keys"
-        subtitle={`On-chain payments in ${api.mode} mode settle straight to these wallets. NATIO derives addresses from them and never holds a key that could spend.`}
+        title={translateUi("Settlement keys")}
+        subtitle={translateUi(`On-chain payments in ${api.mode} mode settle straight to these wallets. NATIO derives addresses from them and never holds a key that could spend.`)}
         actions={<AddWalletAccount />}
       />
 
-      {accounts.data.length === 0 ? (
+      {translateUi(accounts.data.length === 0 ? (
         <Card>
           <EmptyState
-            title="No settlement key yet"
-            description="Register an extended public key from your own wallet to start taking on-chain payments. NATIO derives a fresh address for each invoice and watches it; the money goes from your customer to you with nothing in between."
+            title={translateUi("No settlement key yet")}
+            description={translateUi("Register an extended public key from your own wallet to start taking on-chain payments. NATIO derives a fresh address for each invoice and watches it; the money goes from your customer to you with nothing in between.")}
           />
         </Card>
-      ) : null}
+      ) : null)}
 
-      {accounts.data.map((account, i) => {
+      {translateUi(accounts.data.map((account, i) => {
         const decimals = decimalsFor(account.network, account.asset);
         const addresses = addressLists[i]!.data;
         return (
@@ -89,19 +93,18 @@ export default async function WalletsPage() {
             className="mb-6"
             padded={false}
             title={
-              <span className="flex items-center gap-2">
-                {account.label}
-                <Tag>{account.asset}</Tag>
-                <Tag>{account.network}</Tag>
-                {account.status === "archived" ? <StatusBadge status="archived" /> : null}
-              </span>
+              translateUi(<span className="flex items-center gap-2">
+                {translateUi(account.label)}
+                <Tag>{translateUi(account.asset)}</Tag>
+                <Tag>{translateUi(account.network)}</Tag>
+                {translateUi(account.status === "archived" ? <StatusBadge status="archived" /> : null)}
+              </span>)
             }
-            description={`${account.stats.addresses} address${account.stats.addresses === 1 ? "" : "es"} derived · ${account.stats.settled} settled · ${formatBaseUnits(account.stats.received_base_units, decimals)} ${account.asset} received`}
-            actions={account.status === "active" ? <ArchiveWalletAccount id={account.id} label={account.label} /> : undefined}
+            description={translateUi(`${account.stats.addresses} address${account.stats.addresses === 1 ? "" : "es"} derived · ${account.stats.settled} settled · ${formatBaseUnits(account.stats.received_base_units, decimals)} ${account.asset} received`)}
+            actions={account.status === "active" ? <ArchiveWalletAccount id={account.id} label={translateUi(account.label)} /> : undefined}
           >
-            <div className="border-b border-ink-200 px-5 py-3 text-[12.5px] text-ink-600">
-              Key <Mono>{account.key_fingerprint}…</Mono> · script <Mono>{account.script_type}</Mono> · next index{" "}
-              <Mono>{account.next_index}</Mono> · added {formatDateTime(account.created_at)}
+            <div className="border-b border-ink-200 px-5 py-3 text-[12.5px] text-ink-600">{translateUi("Key ")}<Mono>{translateUi(account.key_fingerprint)}…</Mono>{translateUi(" · script ")}<Mono>{translateUi(account.script_type)}</Mono>{translateUi(" · next index")}{translateUi(" ")}
+              <Mono>{translateUi(account.next_index)}</Mono>{translateUi(" · added ")}{translateUi(formatDateTime(account.created_at))}
               {/*
                 The key itself is deliberately absent. The merchant already has
                 it, and returning it would only put another copy somewhere it
@@ -110,47 +113,45 @@ export default async function WalletsPage() {
               */}
             </div>
 
-            {addresses.length ? (
+            {translateUi(addresses.length ? (
               <Table>
                 <thead>
                   <tr>
-                    <th>Address</th>
-                    <th>Path</th>
-                    <th>Status</th>
-                    <th className="text-right">Expected</th>
-                    <th className="text-right">Received</th>
-                    <th>Payment</th>
-                    <th>Created</th>
+                    <th>{translateUi("Address")}</th>
+                    <th>{translateUi("Path")}</th>
+                    <th>{translateUi("Status")}</th>
+                    <th className="text-right">{translateUi("Expected")}</th>
+                    <th className="text-right">{translateUi("Received")}</th>
+                    <th>{translateUi("Payment")}</th>
+                    <th>{translateUi("Created")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {addresses.map((a) => (
+                  {translateUi(addresses.map((a) => (
                     <tr key={a.id}>
-                      <td className="max-w-[260px] truncate font-mono text-[12px]" title={a.address}>
-                        {a.address}
+                      <td className="max-w-[260px] truncate font-mono text-[12px]" title={translateUi(a.address)}>
+                        {translateUi(a.address)}
                       </td>
                       <td>
-                        <Mono>{a.derivation_path}</Mono>
+                        <Mono>{translateUi(a.derivation_path)}</Mono>
                       </td>
                       <td>
                         <StatusBadge status={a.status} />
                       </td>
-                      <td className="text-right tabular-nums">{a.expected_amount ? formatBaseUnits(a.expected_amount, decimals) : "—"}</td>
-                      <td className="text-right tabular-nums">{formatBaseUnits(a.observed_amount, decimals)}</td>
-                      <td>{a.payment_id ? <Mono>{a.payment_id}</Mono> : "—"}</td>
-                      <td className="whitespace-nowrap text-ink-600">{formatDateTime(a.created_at)}</td>
+                      <td className="text-right tabular-nums">{translateUi(a.expected_amount ? formatBaseUnits(a.expected_amount, decimals) : "—")}</td>
+                      <td className="text-right tabular-nums">{translateUi(formatBaseUnits(a.observed_amount, decimals))}</td>
+                      <td>{translateUi(a.payment_id ? <Mono>{translateUi(a.payment_id)}</Mono> : "—")}</td>
+                      <td className="whitespace-nowrap text-ink-600">{translateUi(formatDateTime(a.created_at))}</td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </Table>
             ) : (
-              <div className="px-5 py-6 text-[13.5px] text-ink-600">
-                No addresses derived yet. One is created for each on-chain payment, and never reused.
-              </div>
-            )}
+              <div className="px-5 py-6 text-[13.5px] text-ink-600">{translateUi("No addresses derived yet. One is created for each on-chain payment, and never reused.")}</div>
+            ))}
           </Card>
         );
-      })}
+      }))}
     </>
   );
 }

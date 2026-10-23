@@ -1,9 +1,13 @@
+import {getI18n} from '@/lib/i18n/server';
+
 import Link from "next/link";
 import { Card, Table } from "@/components/ui";
 import { formatMoney } from "@/lib/format";
 import { serverApi } from "@/lib/session";
 import type { Quote } from "./strategy-types";
 export async function PaymentPricing({ id }: { id: string }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const r = await serverApi().get<{
     currency: string;
     merchant_fee: number;
@@ -18,62 +22,59 @@ export async function PaymentPricing({ id }: { id: string }) {
   const frozen = r.data.filter((a) => a.pricing);
   return (
     <Card
-      title="Tariff & margin evidence"
-      description="Pricing terms are frozen when an attempt is created. Recorded historical transactions are not repriced."
+      title={translateUi("Tariff & margin evidence")}
+      description={translateUi("Pricing terms are frozen when an attempt is created. Recorded historical transactions are not repriced.")}
     >
-      {!frozen.length ? (
-        <p className="text-sm text-ink-500">
-          Historical record: merchant fee{" "}
-          {formatMoney(r.merchant_fee, r.currency)}. No versioned tariff
-          snapshot was recorded for this payment.
-        </p>
+      {translateUi(!frozen.length ? (
+        <p className="text-sm text-ink-500">{translateUi("Historical record: merchant fee")}{translateUi(" ")}
+          {translateUi(formatMoney(r.merchant_fee, r.currency))}{translateUi(". No versioned tariff snapshot was recorded for this payment.")}</p>
       ) : (
         <Table>
           <thead>
             <tr>
-              <th>Attempt</th>
-              <th>Merchant fee</th>
-              <th>PSP cost</th>
-              <th>Gross margin</th>
-              <th>Versions</th>
+              <th>{translateUi("Attempt")}</th>
+              <th>{translateUi("Merchant fee")}</th>
+              <th>{translateUi("PSP cost")}</th>
+              <th>{translateUi("Gross margin")}</th>
+              <th>{translateUi("Versions")}</th>
             </tr>
           </thead>
           <tbody>
-            {frozen.map((a, i) => {
+            {translateUi(frozen.map((a, i) => {
               const q = a.captured_pricing ?? a.pricing!;
               return (
                 <tr key={a.id}>
                   <td>
-                    {i + 1} · {a.status}
+                    {translateUi(i + 1)} · {translateUi(a.status)}
                     <p className="text-xs text-ink-500">
-                      {a.captured_pricing ? "Captured" : "Quoted, not settled"}
+                      {translateUi(a.captured_pricing ? translateUi("Captured") : translateUi("Quoted, not settled"))}
                     </p>
                   </td>
-                  <td>{formatMoney(q.merchant.amount, r.currency)}</td>
-                  <td>{formatMoney(q.provider.amount, r.currency)}</td>
-                  <td>{formatMoney(q.margin, r.currency)}</td>
+                  <td>{translateUi(formatMoney(q.merchant.amount, r.currency))}</td>
+                  <td>{translateUi(formatMoney(q.provider.amount, r.currency))}</td>
+                  <td>{translateUi(formatMoney(q.margin, r.currency))}</td>
                   <td>
-                    {[q.merchant, q.provider].map((f, j) => (
+                    {translateUi([q.merchant, q.provider].map((f, j) => (
                       <div key={j}>
-                        {f.planId ? (
+                        {translateUi(f.planId ? (
                           <Link
                             className="text-brand-600 hover:underline"
                             href={`/admin/pricing?plan=${f.planId}`}
                           >
-                            {f.name} v{f.revision}
+                            {f.name}{translateUi(" v")}{translateUi(f.revision)}
                           </Link>
                         ) : (
                           f.name
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    )))}
                   </td>
                 </tr>
               );
-            })}
+            }))}
           </tbody>
         </Table>
-      )}
+      ))}
     </Card>
   );
 }

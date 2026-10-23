@@ -1,4 +1,6 @@
 "use client";
+import {useI18n} from '@/lib/i18n/provider';
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -17,6 +19,8 @@ const ROLE_HELP: Record<string, string> = {
 
 /** Role select + enable/disable for one admin user. Your own row is never editable. */
 export function AdminUserControls({ user, roles }: { user: AdminUser; roles: AdminRole[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,8 +43,8 @@ export function AdminUserControls({ user, roles }: { user: AdminUser; roles: Adm
   if (!canManage) {
     return (
       <div className="flex items-center justify-end gap-2 text-[12px] text-ink-400">
-        <span>{user.role}</span>
-        <span>{isSelf ? "· you" : "· read-only"}</span>
+        <span>{translateUi(user.role)}</span>
+        <span>{translateUi(isSelf ? translateUi("· you") : translateUi("· read-only"))}</span>
       </div>
     );
   }
@@ -48,12 +52,12 @@ export function AdminUserControls({ user, roles }: { user: AdminUser; roles: Adm
   const disabled = user.status === "disabled";
   return (
     <div className="flex items-center justify-end gap-2">
-      <select className="input !w-auto !py-[3px] text-[12px]" value={user.role} disabled={busy !== null} onChange={(e) => void patch(`role set to ${e.target.value}`, { role: e.target.value })} aria-label={`Role for ${user.name}`} title={ROLE_HELP[user.role]}>
-        {roles.map((r) => (
+      <select className="input !w-auto !py-[3px] text-[12px]" value={user.role} disabled={busy !== null} onChange={(e) => void patch(`role set to ${e.target.value}`, { role: e.target.value })} aria-label={translateUi(`Role for ${user.name}`)} title={translateUi(ROLE_HELP[user.role])}>
+        {translateUi(roles.map((r) => (
           <option key={r} value={r}>
-            {r}
+            {translateUi(r)}
           </option>
-        ))}
+        )))}
       </select>
       <Button
         size="sm"
@@ -63,7 +67,7 @@ export function AdminUserControls({ user, roles }: { user: AdminUser; roles: Adm
           if (disabled || confirm(`Disable ${user.name}? They can no longer sign in to the admin panel.`)) void patch(disabled ? "enabled" : "disabled", { status: disabled ? "active" : "disabled" });
         }}
       >
-        {disabled ? "Enable" : "Disable"}
+        {translateUi(disabled ? translateUi("Enable") : translateUi("Disable"))}
       </Button>
     </div>
   );
@@ -73,6 +77,8 @@ export function AdminUserControls({ user, roles }: { user: AdminUser; roles: Adm
 // Create admin user
 // ---------------------------------------------------------------------------
 export function CreateAdminUser({ roles }: { roles: AdminRole[] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   const session = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -104,33 +110,31 @@ export function CreateAdminUser({ roles }: { roles: AdminRole[] }) {
 
   return (
     <>
-      <Button variant="primary" onClick={() => setOpen(true)}>
-        Create admin user
-      </Button>
-      {open ? (
-        <Modal title="Create admin user" description="Internal NATIO staff account for this panel. The password is set here and can be changed by the user after signing in." onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create user" loading={loading} error={error}>
+      <Button variant="primary" onClick={() => setOpen(true)}>{translateUi("Create admin user")}</Button>
+      {translateUi(open ? (
+        <Modal title={translateUi("Create admin user")} description={translateUi("Internal NATIO staff account for this panel. The password is set here and can be changed by the user after signing in.")} onClose={() => setOpen(false)} onSubmit={submit} submitLabel="Create user" loading={loading} error={error}>
           <div className="space-y-3">
-            <Field label="Email" htmlFor="au-email">
-              <input id="au-email" type="email" className="input" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@natio.local" />
+            <Field label={translateUi("Email")} htmlFor="au-email">
+              <input id="au-email" type="email" className="input" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={translateUi("name@natio.local")} />
             </Field>
-            <Field label="Name" htmlFor="au-name">
+            <Field label={translateUi("Name")} htmlFor="au-name">
               <input id="au-name" className="input" required minLength={2} maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </Field>
-            <Field label="Role" htmlFor="au-role" help={ROLE_HELP[form.role]}>
+            <Field label={translateUi("Role")} htmlFor="au-role" help={translateUi(ROLE_HELP[form.role])}>
               <select id="au-role" className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                {roles.map((r) => (
+                {translateUi(roles.map((r) => (
                   <option key={r} value={r}>
-                    {r}
+                    {translateUi(r)}
                   </option>
-                ))}
+                )))}
               </select>
             </Field>
-            <Field label="Password" htmlFor="au-password" help="At least 12 characters">
+            <Field label={translateUi("Password")} htmlFor="au-password" help={translateUi("At least 12 characters")}>
               <input id="au-password" type="password" className="input" required minLength={12} maxLength={200} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" />
             </Field>
           </div>
         </Modal>
-      ) : null}
+      ) : null)}
     </>
   );
 }

@@ -16,6 +16,7 @@ export const connectionSpec = z.object({
 }).strict();
 export type ConnectionSpec = z.infer<typeof connectionSpec>;
 export const assistantInput = z.object({
+ locale:z.enum(['en','ru','es','ar','pt']).default('en'),
  question:z.string().trim().min(2).max(2000), page:z.string().max(160).regex(/^\/admin(?:\/[a-zA-Z0-9_-]+)*$/),
  history:z.array(z.object({role:z.enum(['user','assistant']),content:z.string().max(2000)})).max(6).default([]),
 }).strict();

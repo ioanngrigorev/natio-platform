@@ -1,4 +1,7 @@
-import { cx } from "@/components/ui";
+"use client";
+import {useI18n} from '@/lib/i18n/provider';
+
+import {cx} from "@/lib/classnames";
 import type { ReconBatch } from "@/lib/types";
 
 export const RECON_STATUSES = ["MATCHED", "MISSING_PROVIDER", "MISSING_NATIO", "AMOUNT_MISMATCH", "STATUS_MISMATCH"] as const;
@@ -22,13 +25,15 @@ const TONES: Record<ReconStatus, string> = {
 
 /** Compact inline counts for the batches table. Zero counts are muted. */
 export function ReconTotals({ totals }: { totals: ReconBatch["totals"] }) {
+ const {t:translateUi,locale:uiLocale}=useI18n();
+
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
-      {RECON_STATUSES.map((s) => (
-        <span key={s} className={cx("tabular", totals[s] ? TONES[s] : "text-ink-300")} title={RECON_LABELS[s]}>
-          <span className="font-semibold">{totals[s]}</span> {s.toLowerCase().replace(/_/g, " ")}
+      {translateUi(RECON_STATUSES.map((s) => (
+        <span key={s} className={cx("tabular", totals[s] ? TONES[s] : "text-ink-300")} title={translateUi(RECON_LABELS[s])}>
+          <span className="font-semibold">{translateUi(totals[s])}</span> {translateUi(s.toLowerCase().replace(/_/g, " "))}
         </span>
-      ))}
+      )))}
     </div>
   );
 }

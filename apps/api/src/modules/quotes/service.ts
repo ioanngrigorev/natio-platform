@@ -1,0 +1,5 @@
+import library from './library.json' with {type:'json'};
+export const quoteLibrary=library;
+const selected=['0685b3dcc07bc09e','51fd6bca529566b0','0b190e81dddd8045','12e9448292794559','16eddd75941bc734','172f059f3f2cbb8b','5efbdd1b810d8b42','6992f0f6f55423fe','73884b611dcd4505','d848f22a0a5ba027','f1683e0f3db35888','f9ed8823689d6cdf','fbf8a90ee63d5da6','15cd51c3a30c845e'];
+export const greetingQuotes=selected.map(id=>library.find(q=>q.id===id)!).filter(Boolean);
+export function searchQuotes(query='',topic='',page=1){const q=query.trim().toLocaleLowerCase();const result=library.filter(r=>(!topic||r.topics.includes(topic))&&(!q||(r.text+' '+r.author).toLocaleLowerCase().includes(q)));return {total:result.length,page,pages:Math.ceil(result.length/24),data:result.slice((page-1)*24,page*24),topics:[...new Set(library.flatMap(q=>q.topics))],source:'James Wood · Dictionary of Quotations · 1893',note:'Historical attributions are reproduced from the anthology. Subjects include finance, risk, judgment, work and broader reflections.'};}

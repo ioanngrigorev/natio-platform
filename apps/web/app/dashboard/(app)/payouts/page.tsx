@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { CreatePayout } from "@/components/dashboard/create-payout";
 import { FilterBar } from "@/components/dashboard/filters";
@@ -12,6 +14,8 @@ export const metadata = { title: "Payouts" };
 const STATUSES = ["created", "pending", "processing", "successful", "failed", "cancelled"];
 
 export default async function PayoutsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const query = qs({
     status: searchParams.status,
@@ -26,7 +30,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Reco
 
   return (
     <>
-      <PageHeader title="Payouts" subtitle="Transfers to bank accounts, wallets and card tokens, executed by the provider selected by routing." actions={<CreatePayout />} />
+      <PageHeader title={translateUi("Payouts")} subtitle={translateUi("Transfers to bank accounts, wallets and card tokens, executed by the provider selected by routing.")} actions={<CreatePayout />} />
       <FilterBar
         filters={[
           { name: "search", label: "Search", type: "text", placeholder: "po_…, reference, provider id" },
@@ -37,54 +41,54 @@ export default async function PayoutsPage({ searchParams }: { searchParams: Reco
         ]}
       />
       <Card padded={false}>
-        {page.data.length ? (
+        {translateUi(page.data.length ? (
           <Table>
             <thead>
               <tr>
-                <th>Payout</th>
-                <th>Status</th>
-                <th className="num">Amount</th>
-                <th>Destination</th>
-                <th>Provider</th>
-                <th className="num">Fee</th>
-                <th>Created</th>
-                <th>Error</th>
+                <th>{translateUi("Payout")}</th>
+                <th>{translateUi("Status")}</th>
+                <th className="num">{translateUi("Amount")}</th>
+                <th>{translateUi("Destination")}</th>
+                <th>{translateUi("Provider")}</th>
+                <th className="num">{translateUi("Fee")}</th>
+                <th>{translateUi("Created")}</th>
+                <th>{translateUi("Error")}</th>
               </tr>
             </thead>
             <tbody>
-              {page.data.map((p) => (
+              {translateUi(page.data.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <Link href={`/dashboard/payouts/${p.id}`} className="font-medium text-brand-600 hover:underline">
-                      <Mono>{shortId(p.id, 10)}</Mono>
+                      <Mono>{translateUi(shortId(p.id, 10))}</Mono>
                     </Link>
-                    {p.reference ? <div className="text-[11px] text-ink-500">{p.reference}</div> : null}
+                    {translateUi(p.reference ? <div className="text-[11px] text-ink-500">{p.reference}</div> : null)}
                   </td>
                   <td>
                     <StatusBadge status={p.status} />
                   </td>
-                  <td className="num font-medium">{formatMoney(p.amount, p.currency)}</td>
+                  <td className="num font-medium">{translateUi(formatMoney(p.amount, p.currency))}</td>
                   <td>
-                    {p.destination.display}
+                    {translateUi(p.destination.display)}
                     <div className="text-[11px] text-ink-500">
-                      {titleCase(p.destination.type)}
-                      {p.destination.country ? ` · ${p.destination.country}` : ""}
+                      {translateUi(titleCase(p.destination.type))}
+                      {translateUi(p.destination.country ? ` · ${p.destination.country}` : "")}
                     </div>
                   </td>
                   <td>
-                    {p.route.provider_name ?? <span className="text-ink-400">—</span>}
-                    {p.route.provider_account_name ? <div className="text-[11px] text-ink-500">{p.route.provider_account_name}</div> : null}
+                    {translateUi(p.route.provider_name ?? <span className="text-ink-400">—</span>)}
+                    {translateUi(p.route.provider_account_name ? <div className="text-[11px] text-ink-500">{translateUi(p.route.provider_account_name)}</div> : null)}
                   </td>
-                  <td className="num">{formatMoney(p.fee.amount, p.fee.currency)}</td>
-                  <td className="text-ink-500">{formatDateTime(p.created_at)}</td>
-                  <td>{p.failure ? <Mono className="text-bad">{p.failure.code}</Mono> : <span className="text-ink-400">—</span>}</td>
+                  <td className="num">{translateUi(formatMoney(p.fee.amount, p.fee.currency))}</td>
+                  <td className="text-ink-500">{translateUi(formatDateTime(p.created_at))}</td>
+                  <td>{translateUi(p.failure ? <Mono className="text-bad">{translateUi(p.failure.code)}</Mono> : <span className="text-ink-400">—</span>)}</td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </Table>
         ) : (
-          <EmptyState title="No payouts" description="Payouts created through the API or this dashboard will appear here." />
-        )}
+          <EmptyState title={translateUi("No payouts")} description={translateUi("Payouts created through the API or this dashboard will appear here.")} />
+        ))}
         <Pagination hasMore={page.has_more} nextCursor={page.next_cursor} baseHref="/dashboard/payouts" params={searchParams} />
       </Card>
     </>

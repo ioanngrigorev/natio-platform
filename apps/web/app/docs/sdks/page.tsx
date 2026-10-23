@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code, DocHeader, DocTable, H2, H3, Note, Tok } from "@/components/docs/parts";
@@ -375,24 +377,20 @@ for await (const p of natio.eachPayment({ status: "failed", limit: 100 })) {
 }`;
 
 export default function SdksPage() {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   return (
     <>
       <DocHeader
         eyebrow="Reference"
-        title="SDKs and clients"
+        title={translateUi("SDKs and clients")}
         lead="There are no official NATIO SDKs yet. The API is deliberately plain HTTP and JSON, and the full OpenAPI 3.1 document is published, so a generated client or a small hand-written wrapper is all you need."
       />
 
-      <Note tone="warn" title="No official SDKs at this time">
-        NATIO does not currently publish or maintain client libraries for any language. Nothing on this page is a NATIO-supported package: the generators below are third-party
-        tools, and the wrapper further down is example code for you to copy into your own repository and own.
-      </Note>
+      <Note tone="warn" title={translateUi("No official SDKs at this time")}>{translateUi("NATIO does not currently publish or maintain client libraries for any language. Nothing on this page is a NATIO-supported package: the generators below are third-party tools, and the wrapper further down is example code for you to copy into your own repository and own.")}</Note>
 
-      <H2 id="spec">The OpenAPI document</H2>
-      <p>
-        The machine-readable contract is the source of truth for everything in this portal. It is OpenAPI 3.1, it is generated from the API itself rather than maintained by
-        hand, and it is served without authentication.
-      </p>
+      <H2 id="spec">{translateUi("The OpenAPI document")}</H2>
+      <p>{translateUi("The machine-readable contract is the source of truth for everything in this portal. It is OpenAPI 3.1, it is generated from the API itself rather than maintained by hand, and it is served without authentication.")}</p>
       <Code
         caption="Fetch the spec"
         code={`# On the website origin
@@ -401,18 +399,13 @@ curl -s https://natio.me/openapi.json
 # Or directly from the API
 curl -s https://api.natio.me/openapi.json`}
       />
-      <p>
-        The same document is rendered, endpoint by endpoint, in the <Link href="/docs/api-reference">API reference</Link> — including the server list, the security scheme, every
-        parameter and every response code.
-      </p>
+      <p>{translateUi("The same document is rendered, endpoint by endpoint, in the ")}<Link href="/docs/api-reference">{translateUi("API reference")}</Link>{translateUi(" — including the server list, the security scheme, every parameter and every response code.")}</p>
 
-      <H2 id="generate">Generating a client</H2>
-      <H3 id="typescript">TypeScript types</H3>
-      <p>
-        If you already have a fetch layer, the lightest option is to generate types only and keep your own transport. No runtime dependency is added.
-      </p>
+      <H2 id="generate">{translateUi("Generating a client")}</H2>
+      <H3 id="typescript">{translateUi("TypeScript types")}</H3>
+      <p>{translateUi("If you already have a fetch layer, the lightest option is to generate types only and keep your own transport. No runtime dependency is added.")}</p>
       <Code caption="openapi-typescript" code={GEN_TS} />
-      <H3 id="full-client">A full client, any language</H3>
+      <H3 id="full-client">{translateUi("A full client, any language")}</H3>
       <Code caption="openapi-generator" code={GEN_OTHER} />
       <DocTable
         columns={["Tool", "Produces", "Good when"]}
@@ -422,32 +415,23 @@ curl -s https://api.natio.me/openapi.json`}
           ["Your own wrapper", "Exactly the surface your codebase needs", "You use a handful of endpoints — which is most integrations. Start from the code below."],
         ]}
       />
-      <Note tone="info" title="Whatever you generate, keep these three things">
-        Send an <Tok>Idempotency-Key</Tok> on every mutating call; log <Tok>x-request-id</Tok> from every response; and branch on <Tok>error.code</Tok> and{" "}
-        <Tok>failure.category</Tok>, never on message text. Generators do not do any of that for you.
-      </Note>
+      <Note tone="info" title={translateUi("Whatever you generate, keep these three things")}>{translateUi("Send an ")}<Tok>{"Idempotency-Key"}</Tok>{translateUi(" on every mutating call; log ")}<Tok>{"x-request-id"}</Tok>{translateUi(" from every response; and branch on ")}<Tok>{"error.code"}</Tok>{translateUi(" and")}{translateUi(" ")}
+        <Tok>{"failure.category"}</Tok>{translateUi(", never on message text. Generators do not do any of that for you.")}</Note>
 
-      <H2 id="wrapper">A minimal typed TypeScript client</H2>
-      <p>
-        Complete and dependency-free: create, read and list payments, capture, cancel and refund, idempotency-key support, a request timeout, cursor paging and a typed error
-        class. Copy it into your project as <Tok>natio.ts</Tok> and extend it as you need more endpoints.
-      </p>
+      <H2 id="wrapper">{translateUi("A minimal typed TypeScript client")}</H2>
+      <p>{translateUi("Complete and dependency-free: create, read and list payments, capture, cancel and refund, idempotency-key support, a request timeout, cursor paging and a typed error class. Copy it into your project as ")}<Tok>{"natio.ts"}</Tok>{translateUi(" and extend it as you need more endpoints.")}</p>
       <Code caption="natio.ts" code={CLIENT} />
 
-      <H3 id="usage">Using it</H3>
+      <H3 id="usage">{translateUi("Using it")}</H3>
       <Code caption="Example" code={USAGE} />
-      <p>
-        Two details are worth keeping when you adapt this. The idempotency key is derived from <em>your</em> identifier for the operation, not generated per call — that is what
-        makes a retry a replay instead of a second payment. And an error thrown by the transport (<Tok>NatioApiError</Tok>) is a different thing from a payment whose{" "}
-        <Tok>status</Tok> is <Tok>failed</Tok>; the two are handled in different places above for exactly that reason. Both are covered in{" "}
-        <Link href="/docs/errors">Errors and failure codes</Link>.
+      <p>{translateUi("Two details are worth keeping when you adapt this. The idempotency key is derived from ")}<em>{translateUi("your")}</em>{translateUi(" identifier for the operation, not generated per call — that is what makes a retry a replay instead of a second payment. And an error thrown by the transport (")}<Tok>{"NatioApiError"}</Tok>{translateUi(") is a different thing from a payment whose")}{translateUi(" ")}
+        <Tok>{"status"}</Tok>{translateUi(" is ")}<Tok>{"failed"}</Tok>{translateUi("; the two are handled in different places above for exactly that reason. Both are covered in")}{translateUi(" ")}
+        <Link href="/docs/errors">{translateUi("Errors and failure codes")}</Link>.
       </p>
 
-      <H2 id="webhook-receiver">Receiving webhooks</H2>
-      <p>
-        A client library does not help with the other half of the integration. Signature verification is a dozen lines and is given in full, in Node and Python, in{" "}
-        <Link href="/docs/webhooks">Webhooks</Link> — including the one rule that a generated client will never enforce for you: verify against the raw request body.
-      </p>
+      <H2 id="webhook-receiver">{translateUi("Receiving webhooks")}</H2>
+      <p>{translateUi("A client library does not help with the other half of the integration. Signature verification is a dozen lines and is given in full, in Node and Python, in")}{translateUi(" ")}
+        <Link href="/docs/webhooks">{translateUi("Webhooks")}</Link>{translateUi(" — including the one rule that a generated client will never enforce for you: verify against the raw request body.")}</p>
     </>
   );
 }

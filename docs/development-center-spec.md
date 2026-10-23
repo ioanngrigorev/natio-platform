@@ -1,6 +1,6 @@
 # Development Center and merchant plans
 
-Status: implementation and regression verification, 23 October 2026. Release is not complete until production smoke tests pass.
+Status: follow-up release acceptance is tracked in [the consolidated matrix](release-2026-10-23.md). Initial release 84f6c22 is superseded when the new production verification report confirms rollout.
 
 ## Workflow
 
@@ -8,7 +8,7 @@ All authenticated admin and merchant roles can see shared roadmap summaries. Pre
 
 An author reviews and saves the specification before choosing Ideas, Backlog, Rejected or Archive. Rejection and archive require a reason. The author can queue their approved request in To do or return it to the backlog. Operations/superadmin staff perform actual development transitions: In progress → Code review → Test → Done. Done requires recorded review/test/release evidence. No coding agent or production deployment is automatically launched by changing a task status.
 
-Specifications support browser Print / Save PDF with a dedicated A4 layout and an editable BPMN 2.0 XML export. Two non-executable responsibility-flow templates cover feature delivery and payment interactions. They are conceptual diagrams; they do not claim a payment integration is already deployed or substitute for complete exception handling.
+Specifications support browser Print / Save PDF with a dedicated A4 layout and an editable BPMN 2.0 XML export. Two non-executable BPMN collaboration templates cover feature delivery and payment interactions. External participants are separate pools; internal roles are lanes. Message start events, end events, typed tasks, exclusive gateways and labelled default/conditional branches use standard notation. Solid sequence flows remain in a process; dashed message flows connect participants. All waypoints are orthogonal and are shared by the SVG preview and BPMN DI export. Payment exceptions stay away from the ledger, and failed QA returns to engineering. The XML is checked against the [OMG BPMN 2.0.2 schemas](https://www.omg.org/spec/BPMN/2.0.2). They are conceptual diagrams; they do not claim a payment integration is already deployed or substitute for complete exception handling.
 
 ## Prioritization
 
@@ -31,13 +31,13 @@ Test/live isolation applies to records and notices. Private requirements are vis
 
 ## History and opportunities
 
-The seed creates 33 implemented module retrospectives and four milestones across 2025, with explicitly fictional names, dates, deadline performance and lifecycle events. It creates no financial records and does not claim actual historical revenue. Existing functionality is checked against repository evidence. The current ledger is an immutable financial-movement journal; no unsupported double-entry accounting claim is made. Demo records are excluded from actual performance metrics. Outstanding AI activation and a real dispute feed remain backlog items.
+The seed creates 33 implemented module retrospectives and four milestones across 2025, with explicitly fictional names, dates, deadline performance and lifecycle events. It creates no financial records and does not claim actual historical revenue. Existing functionality is checked against repository evidence. The current ledger is an immutable financial-movement journal; no unsupported double-entry accounting claim is made. Demo records are excluded from actual performance metrics. The initial seed included AI activation and a real dispute feed as backlog items. AI activation is closed only after real verification; an authorized production dispute feed remains an external dependency.
 
 Shared actual releases automatically create in-app notices. Staff can publish reviewed market/product opportunities with a source URL. A bell and Opportunities inbox show unread notices; requesting an integration creates a prefilled specification draft, not an active PSP. This release does not automatically research all market developments or scrape private Telegram channels.
 
 ## Plans and billing boundaries
 
-Draft monthly prices: Light $99, Optimal $299, Premium $999. Superadmins can edit prices and assign access; merchant owners/admins can request changes. Approval changes entitlements, never charges a card. No recurring billing, invoicing, taxes or payment collection is enabled. Unassigned demo/legacy merchants retain Premium until explicitly changed. New self-registered merchants start on Light.
+Demo monthly prices: Light $9,900, Optimal $29,900, Premium $99,900. Superadmins can edit prices/packages and assign access. Merchant owners/admins can request changes or use explicit demo checkout. Successful simulated checkout changes Test entitlements only. Included credits are 1,000 / 5,000 / 25,000; optional demo overage is $0.50 / $0.40 / $0.25 per credit. No real recurring collection, taxes or payment capture is enabled. Unassigned demo/legacy merchants retain Premium until explicitly changed. New self-registered merchants start on Light.
 
 - Light: overview dashboards, read financial records, shared product roadmap.
 - Optimal: Light plus advanced reports and AI design/workflow recommendations.
@@ -55,3 +55,11 @@ Authorization is enforced on the API (including existing API keys); frontend nav
 ## Verification
 
 Backend regression: 487 tests across 38 files passed. Additional targeted tests cover Light dashboard access, denied writes and denied API-key access after downgrade. Production frontend build passed. Browser, export and deployment verification is recorded in the release report.
+
+## AI connectivity follow-up
+
+The funded project key is stored only in the protected server environment. Live text, BI proposals, specification generation and synthetic-audio transcription passed on 23 October 2026. Credit exhaustion retains a distinct safe error. File-analysis and release checks are recorded separately; raw credentials never appear in UI or Git.
+
+## Follow-up delivery plan
+
+The Gantt opens in a month with weekly ticks. Expandable phase rows distinguish analysis, development, testing, deployment and monitoring. Quarter/year/full-plan views, focus, date editing and Excel phase export preserve the same recorded dates. Synthetic dates are visibly labelled and do not influence real delivery metrics.

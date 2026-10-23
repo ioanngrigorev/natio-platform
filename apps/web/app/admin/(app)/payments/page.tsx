@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import { FilterBar } from "@/components/dashboard/filters";
 import { PaymentsTable } from "@/components/dashboard/payments-table";
 import { Card, PageHeader, Pagination } from "@/components/ui";
@@ -12,6 +14,8 @@ const STATUSES = ["created", "pending", "processing", "authorized", "successful"
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"];
 
 export default async function AdminPaymentsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const query = qs({
     provider_account_id: searchParams.provider_account_id,
@@ -31,7 +35,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <PageHeader title={searchParams.status === "pending" ? "Payments · review queue" : "Payments"} subtitle={merchantName ? `Payments of ${merchantName} in ${api.mode} mode.` : `All payments across merchants in ${api.mode} mode. Pending payments are waiting for a manual risk review.`} />
+      <PageHeader title={translateUi(searchParams.status === "pending" ? translateUi("Payments · review queue") : translateUi("Payments"))} subtitle={translateUi(merchantName ? `Payments of ${merchantName} in ${api.mode} mode.` : `All payments across merchants in ${api.mode} mode. Pending payments are waiting for a manual risk review.`)} />
       <FilterBar
         filters={[
           { name: "provider_account_id", label: "Provider account", type: "text", placeholder: "Account ID" },

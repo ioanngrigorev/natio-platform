@@ -1,3 +1,5 @@
+
+import {getI18n} from '@/lib/i18n/server';
 import Link from "next/link";
 import { LevelTag } from "@/components/admin/condition-chips";
 import { FilterBar } from "@/components/dashboard/filters";
@@ -13,12 +15,14 @@ const LEVELS = ["info", "warning", "error"];
 const SOURCES = ["admin", "orchestrator", "provider", "worker", "webhook", "csv"];
 
 export default async function SystemEventsPage({ searchParams }: { searchParams: { level?: string; source?: string } }) {
+ const {t:translateUi,locale:uiLocale}=getI18n();
+
   const api = serverApi();
   const { data } = await api.get<{ data: SystemEvent[] }>(`/admin/system-events${qs({ level: searchParams.level, source: searchParams.source, limit: 200 })}`);
 
   return (
     <>
-      <PageHeader title="System events" subtitle="Platform events emitted by providers, the orchestrator, background workers and admin actions. Merchant-visible activity lives in the audit log." />
+      <PageHeader title={translateUi("System events")} subtitle={translateUi("Platform events emitted by providers, the orchestrator, background workers and admin actions. Merchant-visible activity lives in the audit log.")} />
 
       <FilterBar
         filters={[
@@ -28,60 +32,60 @@ export default async function SystemEventsPage({ searchParams }: { searchParams:
       />
 
       <Card padded={false}>
-        {data.length ? (
+        {translateUi(data.length ? (
           <Table>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Level</th>
-                <th>Source</th>
-                <th>Type</th>
-                <th>Message</th>
-                <th>Provider account</th>
-                <th>Merchant</th>
+                <th>{translateUi("Time")}</th>
+                <th>{translateUi("Level")}</th>
+                <th>{translateUi("Source")}</th>
+                <th>{translateUi("Type")}</th>
+                <th>{translateUi("Message")}</th>
+                <th>{translateUi("Provider account")}</th>
+                <th>{translateUi("Merchant")}</th>
               </tr>
             </thead>
             <tbody>
-              {data.map((e) => (
+              {translateUi(data.map((e) => (
                 <tr key={e.id}>
-                  <td className="text-ink-500">{formatDateTime(e.createdAt)}</td>
+                  <td className="text-ink-500">{translateUi(formatDateTime(e.createdAt))}</td>
                   <td>
                     <LevelTag level={e.level} />
                   </td>
-                  <td>{e.source}</td>
+                  <td>{translateUi(e.source)}</td>
                   <td>
-                    <Mono>{e.type}</Mono>
+                    <Mono>{translateUi(e.type)}</Mono>
                   </td>
-                  <td className="max-w-[560px] truncate text-ink-700" title={e.message}>
-                    {e.message}
+                  <td className="max-w-[560px] truncate text-ink-700" title={translateUi(e.message)}>
+                    {translateUi(e.message)}
                   </td>
                   <td>
-                    {e.providerAccountId ? (
+                    {translateUi(e.providerAccountId ? (
                       <Link href="/admin/providers" className="text-brand-600 hover:underline">
-                        <Mono>{shortId(e.providerAccountId, 10)}</Mono>
+                        <Mono>{translateUi(shortId(e.providerAccountId, 10))}</Mono>
                       </Link>
                     ) : (
                       <span className="text-ink-400">—</span>
-                    )}
+                    ))}
                   </td>
                   <td>
-                    {e.merchantId ? (
+                    {translateUi(e.merchantId ? (
                       <Link href={`/admin/merchants/${e.merchantId}`} className="text-brand-600 hover:underline">
-                        <Mono>{shortId(e.merchantId, 10)}</Mono>
+                        <Mono>{translateUi(shortId(e.merchantId, 10))}</Mono>
                       </Link>
                     ) : (
                       <span className="text-ink-400">—</span>
-                    )}
+                    ))}
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </Table>
         ) : (
-          <EmptyState title="No system events" description={searchParams.level || searchParams.source ? "No events match these filters." : "Events appear as providers are called, health checks run and admins act."} />
-        )}
+          <EmptyState title={translateUi("No system events")} description={translateUi(searchParams.level || searchParams.source ? translateUi("No events match these filters.") : translateUi("Events appear as providers are called, health checks run and admins act."))} />
+        ))}
       </Card>
-      <p className="mt-2 text-[11px] text-ink-400">Showing the 200 most recent events.</p>
+      <p className="mt-2 text-[11px] text-ink-400">{translateUi("Showing the 200 most recent events.")}</p>
     </>
   );
 }
