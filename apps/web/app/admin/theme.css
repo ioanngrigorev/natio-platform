@@ -154,17 +154,30 @@
 
 
 
-/* The white workspace can keep a separate high-contrast navigation surface. */
-.admin-theme .sidebar-tone button[aria-pressed="true"] {background:#eeecff;color:#1d17f3;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar {background:#161b2c;color:#fff;border-color:#30374e;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar :is(.text-ink-400,.text-ink-500,.text-ink-600,.text-ink-800,.text-ink-900) {color:#e0e5f1;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar :is(.border-ink-100,.border-ink-200) {border-color:#30374e;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar .bg-ink-100 {background:#30374e;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar nav a {color:#eef0f7;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar nav a:hover {background:#252c42;color:white;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar nav a[aria-current="page"] {background:#34315b;color:white;box-shadow:inset 3px 0 #a9a4ff;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .natio-sidebar .nav-section-icon {color:#c5c0ff;background:#302e50;border-color:#4b466f;}
-.admin-theme[data-theme="light"][data-sidebar="dark"] .sidebar-tone button[aria-pressed="true"] {background:#373354;color:white;}
+/* Navigation owns its surface tokens so menu tone is independent of workspace theme. */
+.admin-theme[data-sidebar] .natio-sidebar {
+  --surface:#fff; --foreground:#19182f; --muted:#655f79; --line:#e8e5f2;
+  --surface-hover:#f0eeff; --accent:#1d17f3; --accent-text:#1d17f3;
+  --accent-ink:#fff; --accent-soft:#eeecff; --chart-1:#1d17f3;
+  color-scheme:light; background:var(--surface); color:var(--foreground); border-color:var(--line);
+}
+.admin-theme[data-sidebar="dark"] .natio-sidebar {
+  --surface:#171a21; --foreground:#f5f6fa; --muted:#c1c8d6; --line:#303744;
+  --surface-hover:#282d38; --accent:#a99aff; --accent-text:#c6bbff;
+  --accent-ink:#161126; --accent-soft:#302747; --chart-1:#c6bbff;
+  color-scheme:dark;
+}
+.admin-theme[data-theme="mint"][data-sidebar="light"] .natio-sidebar {
+  --surface-hover:#e5f6ef; --accent:#8ce7c4; --accent-text:#087761;
+  --accent-ink:#123f34; --accent-soft:#d7f6e9; --chart-1:#087761;
+}
+.admin-theme[data-theme="mint"][data-sidebar="dark"] .natio-sidebar {
+  --accent:#8ce7c4; --accent-text:#a7efd4; --accent-ink:#123f34;
+  --accent-soft:#233c37; --chart-1:#a7efd4;
+}
+.admin-theme .natio-sidebar nav a:hover {background:var(--surface-hover);color:var(--foreground);}
+.admin-theme .sidebar-tone {color:var(--muted);}
+.admin-theme .sidebar-tone button[aria-pressed="true"] {background:var(--accent-soft);color:var(--accent-text);}
 
 /* A small editorial moment, not another KPI card. */
 .admin-greeting {display:grid;grid-template-columns:minmax(280px,.9fr) minmax(0,1.2fr);align-items:center;gap:32px;margin:0 0 30px;padding:22px 0 26px;border-bottom:1px solid var(--line);}

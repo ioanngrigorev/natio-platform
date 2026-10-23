@@ -3,6 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {Gantt} from '../components/development/gantt';
 import {emptyData, type Item} from '../components/development/model';
 import {LocaleProvider} from '../lib/i18n/provider';
+import {AdminThemeProvider, SidebarThemeToggle} from '../components/admin/theme-provider';
+import {EngineeringEstimate} from '../components/development/estimate';
 import {ServiceError} from '../components/service-error';
 
 function item(overrides: Partial<Item> = {}): Item {
@@ -30,5 +32,22 @@ describe('failure view',()=>{
     const error=Object.assign(new Error('postgres://private-credentials@server'),{digest:'diagnostic-reference'});
     const html=renderToStaticMarkup(<ServiceError error={error} reset={()=>undefined}/>);
     expect(html).toContain('Try again');expect(html).toContain('diagnostic-reference');expect(html).not.toContain('private-credentials');
+  });
+});
+
+describe('navigation tone and delivery estimates',()=>{
+  it.each(['light','dark','mint'] as const)('exposes both menu tones in the %s workspace',theme=>{
+    for(const sidebar of ['light','dark'] as const){
+      const html=renderToStaticMarkup(<LocaleProvider locale="en" dictionary={{}}><AdminThemeProvider initialTheme={theme} initialSidebar={sidebar}><SidebarThemeToggle/></AdminThemeProvider></LocaleProvider>);
+      expect(html).toContain('Sidebar appearance');expect(html).toContain('Light menu');expect(html).toContain('Dark menu');expect(html).toContain(`data-sidebar="${sidebar}"`);
+    }
+  });
+  it('keeps a three-day deployment duration visible at quarter scale',()=>{
+    const task=item();task.data.phases=[{id:'short',kind:'deployment',name:'Deployment',start:'2025-02-03',end:'2025-02-05',owner:'Demo',progress:100}];
+    const html=render([task]);expect(html).toContain('data-phase-duration');expect(html).toContain('3 days');expect(html).toContain('calc(100% + 6px)');
+  });
+  it('shows the agreed hourly rate and a cost that follows effort',()=>{
+    const renderCost=(hours:number)=>renderToStaticMarkup(<LocaleProvider locale="en" dictionary={{}}><EngineeringEstimate hours={hours}/></LocaleProvider>);
+    expect(renderCost(40)).toContain('$1,200');expect(renderCost(40)).toContain('$30');expect(renderCost(8)).toContain('$240');expect(renderCost(40)).not.toContain('Risk-adjusted');
   });
 });
