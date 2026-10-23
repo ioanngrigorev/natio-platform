@@ -221,3 +221,10 @@ body {
  .dev-pdf-only svg { min-width:0!important; }
  @page { size:A4; margin:10mm; }
 }
+
+/* BPMN is neutral ink on every admin theme; SVG and XML share the same geometry. */
+.bpmn-canvas { --bpmn-paper: var(--surface, #fff); --bpmn-lane: var(--surface, #f7f8fa); --bpmn-border: var(--chart-grid, #dedee8); color: inherit; }
+@media print {
+  .bpmn-diagram { break-inside: avoid; }
+  .bpmn-canvas { min-width: 0 !important; --bpmn-paper: #fff; --bpmn-lane: #f7f8fa; --bpmn-border: #d8dbe0; color: #192332 !important; }
+}

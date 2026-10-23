@@ -1,6 +1,6 @@
 # Development Center and merchant plans
 
-Status: implementation and regression verification, 23 October 2026. Release is not complete until production smoke tests pass.
+Status: initial release 84f6c22 deployed and production smoke tests passed, 23 October 2026. BPMN notation follow-up is undergoing release verification.
 
 ## Workflow
 
@@ -8,7 +8,7 @@ All authenticated admin and merchant roles can see shared roadmap summaries. Pre
 
 An author reviews and saves the specification before choosing Ideas, Backlog, Rejected or Archive. Rejection and archive require a reason. The author can queue their approved request in To do or return it to the backlog. Operations/superadmin staff perform actual development transitions: In progress → Code review → Test → Done. Done requires recorded review/test/release evidence. No coding agent or production deployment is automatically launched by changing a task status.
 
-Specifications support browser Print / Save PDF with a dedicated A4 layout and an editable BPMN 2.0 XML export. Two non-executable responsibility-flow templates cover feature delivery and payment interactions. They are conceptual diagrams; they do not claim a payment integration is already deployed or substitute for complete exception handling.
+Specifications support browser Print / Save PDF with a dedicated A4 layout and an editable BPMN 2.0 XML export. Two non-executable BPMN collaboration templates cover feature delivery and payment interactions. External participants are separate pools; internal roles are lanes. Message start events, end events, typed tasks, exclusive gateways and labelled default/conditional branches use standard notation. Solid sequence flows remain in a process; dashed message flows connect participants. All waypoints are orthogonal and are shared by the SVG preview and BPMN DI export. Payment exceptions stay away from the ledger, and failed QA returns to engineering. The XML is checked against the [OMG BPMN 2.0.2 schemas](https://www.omg.org/spec/BPMN/2.0.2). They are conceptual diagrams; they do not claim a payment integration is already deployed or substitute for complete exception handling.
 
 ## Prioritization
 
@@ -55,3 +55,7 @@ Authorization is enforced on the API (including existing API keys); frontend nav
 ## Verification
 
 Backend regression: 487 tests across 38 files passed. Additional targeted tests cover Light dashboard access, denied writes and denied API-key access after downgrade. Production frontend build passed. Browser, export and deployment verification is recorded in the release report.
+
+## AI connectivity follow-up
+
+The supplied project key is stored only in the protected server environment. A real Responses request reached OpenAI but returned credit_balance_exhausted / insufficient_quota. Credit exhaustion now has a distinct safe error, separate from transient rate limits. No successful AI generation is claimed until a live request completes.

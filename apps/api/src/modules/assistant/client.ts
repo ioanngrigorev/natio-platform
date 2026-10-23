@@ -12,7 +12,15 @@ const unavailable=(code='assistant_unavailable')=>new ApiError(503,'provider_err
 export async function openai(path:string,body:string|FormData,json=true){
  const cfg=loadConfig();if(!cfg.OPENAI_API_KEY)throw unavailable('assistant_not_configured');
  let res:Response;try{res=await fetch(`https://api.openai.com/v1/${path}`,{method:'POST',headers:{authorization:`Bearer ${cfg.OPENAI_API_KEY}`,...(json?{'content-type':'application/json'}:{})},body,signal:AbortSignal.timeout(25000)});}catch{throw unavailable('assistant_timeout');}
- if(!res.ok)throw unavailable(res.status===401?'assistant_credentials_invalid':res.status===429?'assistant_capacity':'assistant_upstream');
+ if(!res.ok){
+  if(res.status===429){
+   // Inspect only the error category; never forward raw provider content or credentials.
+   const detail=await res.json().catch(()=>null) as {error?:{code?:string;type?:string}}|null;
+   if(detail?.error?.type==='insufficient_quota'||['insufficient_quota','credit_balance_exhausted'].includes(detail?.error?.code||''))
+    throw new ApiError(503,'provider_error','assistant_quota_exhausted','ИИ подключён, но API-баланс OpenAI исчерпан. Администратору нужно пополнить баланс проекта. База знаний, BI и Lab доступны.');
+  }
+  throw unavailable(res.status===401?'assistant_credentials_invalid':res.status===429?'assistant_capacity':'assistant_upstream');
+ }
  try{return await res.json() as any;}catch{throw unavailable('assistant_invalid_response');}
 }
 export function validateAnswer(raw:unknown){
