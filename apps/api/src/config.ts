@@ -26,6 +26,14 @@ const schema = z.object({
   PUBLIC_API_URL: z.string().url().default("http://localhost:4000"),
   CORS_ORIGINS: z.string().default("http://localhost:3000"),
 
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+  TELEGRAM_SUPPORT_USERNAME: z.string().regex(/^[A-Za-z0-9_]{5,32}$/).default("natiohelpbot"),
+
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_ASSISTANT_MODEL: z.string().default("gpt-4.1-mini"),
+  OPENAI_TRANSCRIPTION_MODEL: z.string().default("gpt-transcribe"),
+
   DATABASE_URL: z.string().default("postgres://natio:natio@localhost:5432/natio"),
   DATABASE_POOL_MAX: int(10),
   DATABASE_SSL: z.enum(["disable", "require"]).default("disable"),

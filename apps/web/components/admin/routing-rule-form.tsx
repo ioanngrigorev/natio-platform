@@ -117,6 +117,7 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!canManage) { setError("Preview only: saving requires routing management access."); return; }
     setError(null);
     let parsed: Condition[];
     try {
@@ -163,9 +164,9 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
 
 
   return (
-    <form onSubmit={submit} className="space-y-4"><fieldset disabled={!canManage || loading} className="space-y-4">
-      {!canManage && <Alert tone="warn">Read-only access. You can inspect this rule and explore alternatives in Routing studio.</Alert>}
-      <Card title="Ranking & cascade controls"><RoutingPolicyEditor value={policy} onChange={setPolicy}/></Card>
+    <form onSubmit={submit} className="space-y-4"><fieldset disabled={loading} className="space-y-4">
+      {!canManage && <Alert tone="warn">Preview mode. You can change options and simulate ranking and cascading. Saving a working rule requires routing management access.</Alert>}
+      <Card title="Ranking & cascade controls"><RoutingPolicyEditor value={policy} onChange={p=>{setPolicy(p);setForm(f=>({...f,strategy:"score"}));}}/><div className="mt-4 flex items-center gap-3"><Button type="button" onClick={()=>router.push("/admin/routing/studio?preview="+encodeURIComponent(JSON.stringify(policy))+"&merchant_id="+encodeURIComponent(form.merchant_id))}>Simulate ranking & cascade →</Button><span className="text-xs text-ink-500">Preview these policy settings against published provider scope; rule conditions and draft chain are not applied.</span></div></Card>
       {error ? <Alert tone="bad">{error}</Alert> : null}
 
       <Card title="Rule" description="Rules are evaluated per transaction, lowest priority number first; the first matching rule decides the provider chain.">
@@ -351,8 +352,8 @@ export function RoutingRuleForm({ rule, accounts, merchants }: { rule?: RoutingR
       </Card>
 
       <div className="flex items-center gap-2">
-        <Button type="submit" variant="primary" loading={loading}>
-          {rule ? "Save rule" : "Create rule"}
+        <Button type="submit" variant="primary" loading={loading} disabled={!canManage}>
+          {!canManage ? "Save requires management access" : rule ? "Save rule" : "Create rule"}
         </Button>
         <LinkButton href="/admin/routing" variant="ghost">
           Cancel

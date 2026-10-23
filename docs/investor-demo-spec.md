@@ -98,3 +98,38 @@ References: [PostgreSQL grouping sets](https://www.postgresql.org/docs/16/querie
 
 - Status badges now use consistent semantic colors across all admin themes: success green, pending/processing orange, failure red, action/info blue, disabled/cancelled grey. Transaction-outcome sectors use the same meaning. Text labels remain visible.
 - Native select controls retain keyboard behavior with a custom chevron inset 0.8rem from the right edge and 2.5rem text padding.
+
+## Admin workspace — 23 October 2026
+
+- Knowledge base: 16 searchable Russian articles, workflow diagrams, source section links and assistant handoff. Static search remains usable when the AI provider is unavailable.
+- Global assistant: persistent panel across admin sections, page context, text input, bounded voice recording/transcription, optional browser speech output. Server calls OpenAI Responses with `store:false` and strict structured outputs; no automatic financial row or credential transmission. Invalid/timeout/auth upstream responses are explicit errors, never fabricated success. Production voice/text still requires a valid server key; the previously selected key failed validation with 401 and was not installed.
+- Assistant visual answers: chart cards computed through authenticated BI, metrics, date/currency/mode labels and Excel/CSV downloads. Charts use actual server results, not model-generated numbers. Editable proposals can be saved as private, mode-separated dashboards.
+- Connection Lab: private sandbox drafts with parameter review and explicit confirmation. Three fictional connector templates; seven executable checks for health, outage, retry decisions and unknown timeout safety. Persistent run history and measured durations. Does not create payments, contact live PSPs or activate routing.
+- Risk intelligence: date/currency/merchant/PSP filters, internal threshold controls, payment failure trend, PSP concentration, large-payment observations, KYB warnings, daily activity spikes, evidence queue and Excel workbook. Concentration denominator uses all successful payment volume; provider list shows top 100. Dispute/fraud feed is unavailable and clearly labelled. Separate Test-only same-cohort chargeback exposure calculator; no network-program compliance is claimed. Industry playbooks use declared profile metadata and never infer industry from names.
+- KYB/account UX: verification, account access and live processing eligibility have distinct columns. Current eligibility is rechecked at payment creation, payout creation, capture and manual approval. Refund/cancellation paths remain available under their existing permissions.
+- Routing demo: read-only users can edit a local preview and choose any ranking profile. A policy handoff opens Routing Studio with the selected profile and score simulation. Saving published rules still requires `routing.manage`; the draft conditions/chain are explicitly not included in this policy preview.
+- Microphone permissions: allowed for same-origin admin pages only, still requiring the browser user's grant; camera/geolocation/payment permissions remain disabled.
+
+Research references reviewed 23 October 2026:
+- https://docs.adyen.com/risk-management/dispute-and-fraud-monitoring
+- https://corporate.visa.com/content/dam/VCOM/corporate/visa-perspectives/security-and-trust/documents/visa-acquirer-monitoring-program-fact-sheet-2025.pdf
+- https://developer.paypal.com/braintree/articles/risk-and-security/card-brand-monitoring-programs/mastercard-programs/excessive-chargeback-program
+- https://www.adyen.com/de_DE/legal/list-restricted-prohibited/
+- https://developers.openai.com/api/docs/models/gpt-4.1-mini
+- https://developers.openai.com/api/docs/guides/speech-to-text
+
+Financial definitions: failure rate uses failed / (successful + failed) payment operations. Refund amount is separate. The what-if dispute ratio uses disputed / settled within the explicitly entered same cohort; it is not VAMP or ECP. Actual network monitoring requires PSP/scheme data, reporting periods and applicable exclusions.
+
+### Market, support and report visualizations — 23 October 2026
+- Report tabs now have contextual visualizations before the ledger: volume/financial position, outcome distribution and operation counts. A separate backend aggregate covers all matching rows; top-12 and daily-731 limits are explicit, currencies are selectable and never added together. Pagination does not change the chart scope.
+- Market intelligence: 17 supported FX base/quote choices, 90-day history, indicative converter, source date and stale/error states. Frankfurter daily reference rates do not change stored ledger amounts or PSP pricing.
+- News stream: public Telegram previews from Gambling Radar and monoup; five-minute server cache, one-minute visible-page refresh, category/search/source filters, short headlines with original post links. Gaming Voice and Product HUB require private-channel authorization; their archive contents are not imported.
+- Support: account-scoped tickets, support-role inbox, replies and open/in-progress/resolved states; persistent link in the top bar and hand-off from AI panel. @natiohelpbot links a private chat using a hashed one-time 10-minute token. Signed webhook, duplicate update protection, private-account boundaries and bounded retry outbox. Telegram sends only after configuration; no service-level response time is promised.
+- Elegant line icons and separators distinguish Operations, Customers, Finance, Payment setup, Platform and Support in all themes.
+- Primary integration references: https://frankfurter.dev/ (daily reference rates); https://core.telegram.org/bots/api (webhook secret, updates and messages); https://core.telegram.org/bots/features#deep-linking (account linking).
+
+### Workspace release verification — 23 October 2026
+- API regression: 476 tests across 37 files passed; an additional targeted run passed 8 market/support tests after cache and disconnect changes.
+- Browser: knowledge search and article flow, a Lab run (7/7 checks), actual FX/news feeds, contextual report charts, and support request/reply/resolution verified against the local production build. No browser errors observed.
+- AI UI and guarded server integration are implemented; live AI and voice responses remain unavailable until a valid OpenAI key is provisioned (existing credential returns 401). No placeholder AI answer is presented as a live result.
+- Telegram support uses @natiohelpbot with per-user one-time account linking. Private Telegram news channels remain marked Access required; public previews are refreshed every five minutes.

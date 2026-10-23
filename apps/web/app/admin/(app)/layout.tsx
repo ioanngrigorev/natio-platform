@@ -6,6 +6,9 @@ import { getAdminSession } from "@/lib/session";
 const NAV: NavItem[] = [
   { href: "/admin", label: "Overview", exact: true },
   { href: "/admin/bi", label: "BI & Reports" },
+  { href: "/admin/boards", label: "My dashboards" },
+  { href: "/admin/risk-dashboard", label: "Risk dashboard" },
+  { href: "/admin/market", label: "Market intelligence" },
   { href: "/admin/payments", label: "Payments", section: "Operations" },
   { href: "/admin/transactions", label: "Transactions", section: "Operations" },
   { href: "/admin/payouts", label: "Payouts", section: "Operations" },
@@ -18,12 +21,15 @@ const NAV: NavItem[] = [
   { href: "/admin/settlements", label: "Settlements", section: "Finance" },
   { href: "/admin/reconciliation", label: "Reconciliation", section: "Finance" },
   { href: "/admin/providers", label: "Providers", section: "Payment setup" },
+  { href: "/admin/lab", label: "Connection Lab", section: "Payment setup" },
   { href: "/admin/catalog", label: "Payment catalog", section: "Payment setup" },
   { href: "/admin/routing/studio", label: "Routing studio", section: "Payment setup" },
   { href: "/admin/routing", exact: true, label: "Routing rules", section: "Payment setup" },
   { href: "/admin/risk", label: "Risk rules", section: "Payment setup" },
   { href: "/admin/system-events", label: "System events", section: "Platform" },
   { href: "/admin/audit", label: "Audit log", section: "Platform" },
+  { href: "/admin/knowledge", label: "Knowledge base", section: "Support" },
+  { href: "/admin/support", label: "Contact support", section: "Support" },
 ];
 
 export const dynamic = "force-dynamic";

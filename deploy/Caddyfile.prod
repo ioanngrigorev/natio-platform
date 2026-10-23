@@ -24,8 +24,12 @@
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
 	}
+	@voice_ui path /admin /admin/*
+	@non_voice_ui not path /admin /admin/*
+	header @voice_ui Permissions-Policy "camera=(), microphone=(self), geolocation=(), payment=()"
+	header @non_voice_ui Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
 	encode zstd gzip
 }
 

@@ -1,3 +1,4 @@
+import { requireProcessingEligibility } from "../merchants/eligibility.js";
 import { and, desc, eq, gte, ilike, inArray, lte, or, sql, type SQL } from "drizzle-orm";
 import type { Db, DbOrTx } from "../../db/client.js";
 import { customers, paymentAttempts, paymentMethods, payments, projects, providerAccounts, providers, routingDecisions } from "../../db/schema/index.js";
@@ -78,6 +79,7 @@ export async function createPayment(
   input: CreatePaymentInput,
   opts: { actor: Actor; ip?: string; userAgent?: string; idempotencyKey?: string },
 ): Promise<PaymentRow> {
+  await requireProcessingEligibility(db, scope.merchantId, scope.mode);
   const [project] = await db.select().from(projects).where(eq(projects.id, scope.projectId)).limit(1);
   if (!project) throw Errors.notFound("Project", scope.projectId);
   const method = typeof input.payment_method === "string" ? { type: input.payment_method } : input.payment_method;
@@ -373,6 +375,7 @@ async function providerFor(db: DbOrTx, providerAccountId: string) {
 }
 
 export async function capturePayment(db: Db, payment: PaymentRow, input: { amount?: number }, actor: Actor): Promise<PaymentRow> {
+  await requireProcessingEligibility(db, payment.merchantId, payment.mode);
   if (payment.status !== "authorized") throw Errors.invalidTransition("payment", payment.status, "successful");
   const amount = input.amount ?? payment.amount;
   if (amount > payment.amount) throw Errors.badRequest("amount_exceeds_authorization", "Capture amount exceeds the authorized amount", "amount");
@@ -490,6 +493,7 @@ export async function cancelPayment(db: Db, payment: PaymentRow, input: { reason
 
 /** Admin: approve a payment held for review and resume orchestration. */
 export async function reviewPayment(db: Db, payment: PaymentRow, decision: "approve" | "reject", actor: Actor): Promise<PaymentRow> {
+  if (decision === "approve") await requireProcessingEligibility(db, payment.merchantId, payment.mode);
   if (payment.status !== "pending") throw Errors.conflict("not_pending", "Only payments pending review can be reviewed");
   await addTimeline(db, {
     paymentId: payment.id,

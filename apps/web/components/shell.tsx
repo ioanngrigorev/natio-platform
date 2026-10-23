@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
+const AdminAssistant = dynamic(() => import("@/components/admin/assistant").then(m => m.AdminAssistant), { ssr: false });
+import { SectionIcon } from "@/components/admin/section-icon";
 import { AdminThemeToggle } from "@/components/admin/theme-provider";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -49,7 +52,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {sections.map((s) => (
             <div key={s.section || "root"} className="mb-4">
-              {s.section ? <div className="px-2 pb-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-400">{s.section}</div> : null}
+              {s.section ? <div className="nav-section-heading flex items-center gap-2 px-2 pb-2 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-500">{session.kind === "admin" ? <SectionIcon name={s.section}/> : null}<span>{s.section}</span><span className="ml-1 h-px flex-1 bg-ink-100" aria-hidden="true"/></div> : null}
               {s.items.map((item) => {
                 const active = item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
@@ -74,7 +77,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           </div>
           <div className="hidden text-[13px] text-ink-500 md:block">{brand.subtitle}</div>
           <div className="ml-auto flex items-center gap-3">
-            {session.kind === "admin" ? <AdminThemeToggle /> : null}
+            {session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">Support ↗</Link><AdminThemeToggle /></> : null}
             <ModeToggle />
             <button onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">
               Sign out
@@ -86,6 +89,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="mx-auto max-w-[1280px]">{children}</div>
         </main>
       </div>
+      {session.kind === "admin" ? <AdminAssistant /> : null}
     </div>
   );
 }

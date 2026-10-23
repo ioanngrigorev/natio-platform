@@ -1,3 +1,4 @@
+import { requireProcessingEligibility } from "../merchants/eligibility.js";
 import { and, desc, eq, gte, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { Db, DbOrTx } from "../../db/client.js";
@@ -85,6 +86,7 @@ export async function createPayout(
   input: CreatePayoutInput,
   opts: { actor: Actor; idempotencyKey?: string },
 ): Promise<PayoutRow> {
+  await requireProcessingEligibility(db, scope.merchantId, scope.mode);
   const destination: PayoutDestination = {
     type: input.destination.type,
     display: input.destination.display,

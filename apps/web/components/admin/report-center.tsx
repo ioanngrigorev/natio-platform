@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+const ReportInsights=dynamic(()=>import("./report-insights").then(m=>m.ReportInsights),{ssr:false});
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui";
@@ -22,6 +24,7 @@ export function ReportCenter({query,mode,userId}:{query:string;mode:'test'|'live
   const key=`natio.report-views.${userId}.${mode}`;
   const params=new URLSearchParams(query);params.set('kind',kind);params.set('all_currencies',all?'1':'0');params.set('sort',sort);params.set('direction',direction);params.set('page',String(page));params.set('limit','25');
   const request=params.toString();
+  const chartParams=new URLSearchParams(params);["page","limit","sort","direction"].forEach(k=>chartParams.delete(k));
   useEffect(()=>{try{const saved=JSON.parse(localStorage.getItem(key)||'[]');setViews(Array.isArray(saved)?saved.filter(v=>typeof v.name==='string'&&typeof v.query==='string').slice(0,20):[]);}catch{setViews([]);}},[key]);
   useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');setPreview(null);
     fetch(`/api/admin/bi/report?${request}`,{headers:{'x-natio-mode':mode},signal:controller.signal,cache:'no-store'}).then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error?.message||`Report failed (${r.status})`);return data;}).then(setPreview).catch(e=>{if(e.name!=='AbortError')setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
@@ -58,6 +61,7 @@ export function ReportCenter({query,mode,userId}:{query:string;mode:'test'|'live
         {busy&&<button onClick={()=>abort.current?.abort()} className="text-sm text-brand-600">Cancel download</button>}
       </div>
       <p className="mb-3 text-xs text-ink-500">{params.get('from')} — {params.get('to')} UTC · {mode==='test'?'Synthetic demo data':'Live data'} · {all?'All currencies, separate rows':params.get('currency')} · All page filters apply. No currency conversion.</p>
+      <ReportInsights query={chartParams.toString()} mode={mode}/>
       {downloadStatus&&<p className="mb-3 text-sm text-brand-600" role="status">{downloadStatus}</p>}
       {loading?<p className="py-10 text-center text-ink-500" role="status">Building report preview…</p>:error?<p className="py-6 text-center text-bad" role="alert">{error}</p>:preview&&<>
         <p className="mb-3 text-sm text-ink-500">{preview.total.toLocaleString('en')} rows · Preview {preview.total?((page-1)*25+1).toLocaleString('en'):0}–{Math.min(page*25,preview.total).toLocaleString('en')}. Exports contain every matching row.</p>

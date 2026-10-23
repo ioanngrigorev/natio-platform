@@ -1,4 +1,6 @@
 import ExcelJS from "exceljs";
+import { SnapshotCache } from "./snapshot-cache.js";
+const insightCache=new SnapshotCache();
 import { PassThrough } from "node:stream";
 import { getPool } from "../../db/client.js";
 import { biWhere, measures, type BiQuery } from "./bi.js";
@@ -109,4 +111,14 @@ export function tabularReport(q:BiQuery,mode:"test"|"live",format:"xlsx"|"csv") 
   })();
   completed.catch(error=>stream.destroy(error instanceof Error?error:new Error(String(error))));
   return {stream,completed};
+}
+
+/** Chart groups use the full filtered report, never the 25-row table page. */
+export async function reportInsights(q:BiQuery,mode:'test'|'live'){
+ const {page,limit,sort,direction,...filters}=q;return insightCache.get(JSON.stringify([mode,filters]),()=>buildReportInsights(q,mode));
+}
+async function buildReportInsights(q:BiQuery,mode:'test'|'live'){
+ const kind=q.kind==='transactions'?'daily':q.kind,p=reportPlan({...q,kind},mode),daily=kind==='daily',limit=daily?731:12;
+ const result=await getPool().query(`WITH result AS MATERIALIZED (${p.sql}), ranked AS (SELECT *,row_number() OVER(PARTITION BY currency ORDER BY ${daily?'label ASC':'volume DESC, label ASC'}) rn FROM result), totals AS (SELECT currency,count(*)::int groups,sum(transactions)::bigint transactions,sum(successful)::bigint successful,sum(failed)::bigint failed,sum(pending)::bigint pending,sum(volume)::bigint volume,sum(fees)::bigint fees,sum(payouts)::bigint payouts,sum(ledger_net)::bigint ledger_net,sum(settled)::bigint settled,sum(unsettled)::bigint unsettled FROM result GROUP BY currency) SELECT coalesce((SELECT json_agg(totals ORDER BY currency) FROM totals),'[]') totals,coalesce((SELECT json_agg(ranked ORDER BY currency,rn) FROM ranked WHERE rn<=$${p.values.length+1}),'[]') rows`,[...p.values,limit]);
+ const data=result.rows[0];return {kind:q.kind,grouping:kind,limit,units:'Major currency units; currencies are never combined',period:{from:q.from,to:q.to},totals:data.totals.map((r:any)=>reportRow(r,p.columns,mode)),rows:data.rows.map((r:any)=>reportRow(r,p.columns,mode))};
 }
