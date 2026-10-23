@@ -47,8 +47,8 @@ const OUTCOMES: Array<{ outcome: string; tone: "warn" | "bad" | "muted" | "neutr
   { outcome: "provider unavailable", tone: "muted", retry: "Fails over", detail: "The provider or the account is down, disabled or rejecting traffic. The next eligible candidate is tried." },
 ];
 
-export default function RoutingPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function RoutingPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

@@ -31,7 +31,14 @@ async function main() {
     }
   }
 
+  let stopping = false;
   const shutdown = async (signal: string) => {
+    if (stopping) return;
+    stopping = true;
+    // The container stop grace period must exceed this deadline. A stuck remote
+    // connection must not leave an old worker alive throughout a deployment.
+    const deadline = setTimeout(() => { logger.error("graceful shutdown deadline exceeded"); process.exit(1); }, 25_000);
+    deadline.unref();
     logger.info({ signal }, "shutting down");
     try {
       if (heartbeat) { clearInterval(heartbeat); try { unlinkSync("/tmp/natio-worker-heartbeat"); } catch {} }
@@ -42,6 +49,7 @@ async function main() {
     } catch (err) {
       logger.error({ err }, "error during shutdown");
     } finally {
+      clearTimeout(deadline);
       process.exit(0);
     }
   };

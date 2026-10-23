@@ -6,9 +6,9 @@ import { formatMoney } from "@/lib/format";
 import { serverApi } from "@/lib/session";
 import type { Quote } from "./strategy-types";
 export async function PaymentPricing({ id }: { id: string }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const r = await serverApi().get<{
+  const r = await (await serverApi()).get<{
     currency: string;
     merchant_fee: number;
     data: {

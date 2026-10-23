@@ -15,10 +15,11 @@ export const metadata = { title: "Transactions" };
 const TYPES = ["payment", "refund", "payout", "fee", "adjustment"];
 const STATUSES = ["successful", "failed", "pending", "cancelled"];
 
-export default async function AdminTransactionsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminTransactionsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ provider_account_id: searchParams.provider_account_id, project_id: searchParams.project_id, merchant_id: searchParams.merchant_id, type: searchParams.type, status: searchParams.status, currency: searchParams.currency, search: searchParams.search, from: searchParams.from ? new Date(searchParams.from).toISOString() : undefined, to: searchParams.to ? new Date(searchParams.to).toISOString() : undefined, cursor: searchParams.cursor, limit: 50 });
   const [page, merchants] = await Promise.all([api.get<Paginated<Transaction>>(`/admin/transactions${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 

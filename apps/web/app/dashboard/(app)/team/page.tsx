@@ -9,9 +9,9 @@ import type { TeamMember } from "@/lib/types";
 export const metadata = { title: "Team" };
 
 export default async function TeamPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const team = await api.get<{ data: TeamMember[]; roles: string[]; assignable_roles: string[] }>("/dashboard/team");
 
   return (

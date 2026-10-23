@@ -15,10 +15,11 @@ export const metadata = { title: "Settlements" };
 
 const STATUSES = ["pending", "settled", "failed"];
 
-export default async function AdminSettlementsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminSettlementsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ merchant_id: searchParams.merchant_id, provider_account_id: searchParams.provider_account_id, status: searchParams.status, limit: 200 });
   const [settlements, merchants, providers] = await Promise.all([
     api.get<{ data: Settlement[] }>(`/admin/settlements${query}`),

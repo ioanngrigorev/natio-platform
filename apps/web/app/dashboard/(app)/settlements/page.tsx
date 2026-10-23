@@ -13,8 +13,8 @@ export const metadata = { title: "Settlements" };
 const CUSTODIAN_NOTE = "Funds are held and settled by licensed providers; NATIO reports provider settlement data and does not hold merchant funds.";
 const STATUSES = ["pending", "settled", "failed"];
 
-function BalanceRow({ label, value, currency, muted, strong }: { label: string; value: number; currency: string; muted?: boolean; strong?: boolean }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+async function BalanceRow({ label, value, currency, muted, strong }: { label: string; value: number; currency: string; muted?: boolean; strong?: boolean }) {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
@@ -24,10 +24,11 @@ function BalanceRow({ label, value, currency, muted, strong }: { label: string; 
   );
 }
 
-export default async function SettlementsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function SettlementsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ status: searchParams.status, provider_account_id: searchParams.provider_account_id, limit: 100 });
   const [balances, settlements] = await Promise.all([api.get<{ custodian: boolean; data: Balance[] }>("/dashboard/balances"), api.get<{ data: Settlement[] }>(`/dashboard/settlements${query}`)]);
 

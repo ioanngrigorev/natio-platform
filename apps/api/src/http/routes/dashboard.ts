@@ -28,7 +28,7 @@ import { createEndpoint, deleteEndpoint, getDeliveryDetail, listDeliveries, list
 import { listProvidersWithAccounts, providerHealth } from "../../modules/providers/service.js";
 import { listRulesAdmin } from "../../modules/routing/service.js";
 import { actorFromRequest } from "../context.js";
-import { requireMerchant } from "../guards.js";
+import { requireMerchant, checkCsrf } from "../guards.js";
 import { clearSessionCookie, dateOrUndefined, periodFromQuery, setSessionCookie } from "../helpers.js";
 import { parse, parseQuery } from "../validate.js";
 import { archiveWalletAccount, listWalletAccounts, listWalletAddresses, registerWalletAccount } from "../../modules/wallets/service.js";
@@ -81,7 +81,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       if (token) {
         const { resolveMerchantSession } = await import("../../modules/auth/service.js");
         const principal = await resolveMerchantSession(db, token);
-        if (principal) await revokeSession(db, principal.session.id);
+        if (principal) { checkCsrf(req, principal.session.csrfToken); await revokeSession(db, principal.session.id); }
       }
       clearSessionCookie(reply, "merchant");
       return { ok: true };

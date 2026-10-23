@@ -13,10 +13,11 @@ import type { RiskRule } from "@/lib/types";
 
 export const metadata = { title: "Risk rules" };
 
-export default async function RiskPage({ searchParams }: { searchParams: { decision?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function RiskPage(props: { searchParams: Promise<{ decision?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [rules, merchants, decisions] = await Promise.all([
     api.get<{ data: RiskRule[] }>(`/admin/risk/rules?mode=${api.mode}`),
     api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500"),

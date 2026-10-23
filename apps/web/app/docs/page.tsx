@@ -32,8 +32,8 @@ const OBJECTS: Array<[string, string, string]> = [
   ["webhook event", "evt_…", "An immutable record of something that happened, delivered to your endpoints and replayable from the dashboard."],
 ];
 
-export default function DocsOverviewPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function DocsOverviewPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

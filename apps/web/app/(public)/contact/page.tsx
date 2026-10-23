@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: "Tell us about your markets, payment methods and providers. We will reply with a straight answer about whether payment orchestration helps and what an integration would involve.",
 };
 
-export default function ContactPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function ContactPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

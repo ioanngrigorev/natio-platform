@@ -175,8 +175,8 @@ const TEST_EVENT = `curl -X POST https://api.natio.me/v1/webhooks/test \\
   -H "Content-Type: application/json" \\
   -d '{ "event_type": "payment.successful" }'`;
 
-export default function WebhooksPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function WebhooksPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

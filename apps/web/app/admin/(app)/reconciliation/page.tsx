@@ -14,10 +14,11 @@ import type { Provider, ReconBatch } from "@/lib/types";
 
 export const metadata = { title: "Reconciliation" };
 
-export default async function AdminReconciliationPage({ searchParams }: { searchParams: { merchant_id?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminReconciliationPage(props: { searchParams: Promise<{ merchant_id?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [batches, merchants, providers] = await Promise.all([
     api.get<{ data: ReconBatch[] }>(`/admin/reconciliation/batches${qs({ merchant_id: searchParams.merchant_id })}`),
     api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500"),

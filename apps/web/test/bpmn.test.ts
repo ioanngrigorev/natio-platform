@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {processModel,bpmnXml,type Bounds,type Point} from '../../../web/lib/bpmn-model';
+import {processModel,bpmnXml,type Bounds,type Point} from '../lib/bpmn-model';
 const onBorder=(p:Point,b:Bounds)=>((p[0]===b.x||p[0]===b.x+b.width)&&p[1]>=b.y&&p[1]<=b.y+b.height)||((p[1]===b.y||p[1]===b.y+b.height)&&p[0]>=b.x&&p[0]<=b.x+b.width);
 const intersects=(a:Point,b:Point,n:Bounds)=>a[0]===b[0]?a[0]>n.x&&a[0]<n.x+n.width&&Math.max(a[1],b[1])>n.y&&Math.min(a[1],b[1])<n.y+n.height:a[1]>n.y&&a[1]<n.y+n.height&&Math.max(a[0],b[0])>n.x&&Math.min(a[0],b[0])<n.x+n.width;
 for(const type of ['payment','delivery'] as const)describe(`${type} BPMN collaboration`,()=>{

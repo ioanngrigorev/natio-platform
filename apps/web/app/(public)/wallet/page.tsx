@@ -55,8 +55,8 @@ const KEY_FACTS: Array<{ term: string; detail: string }> = [
   { term: "Where verification data would go", detail: "To an identity provider, when a jurisdiction requires it, so NATIO keeps the decision and a reference rather than your passport scan. This is the intended design; no identity provider is connected yet." },
 ];
 
-export default function WalletPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function WalletPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

@@ -13,10 +13,11 @@ export const metadata = { title: "Payments" };
 const STATUSES = ["created", "pending", "processing", "authorized", "successful", "failed", "cancelled", "refunded", "partially_refunded"];
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local"];
 
-export default async function PaymentsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PaymentsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ status: searchParams.status, currency: searchParams.currency, country: searchParams.country, payment_method: searchParams.payment_method, search: searchParams.search, from: searchParams.from ? new Date(searchParams.from).toISOString() : undefined, to: searchParams.to ? new Date(searchParams.to).toISOString() : undefined, cursor: searchParams.cursor, limit: 50 });
   const [page, scenarios] = await Promise.all([api.get<Paginated<Payment>>(`/dashboard/payments${query}`), api.get<{ data: Array<{ name: string; description: string }> }>("/dashboard/payments/scenarios")]);
 

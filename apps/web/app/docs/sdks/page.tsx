@@ -376,8 +376,8 @@ for await (const p of natio.eachPayment({ status: "failed", limit: 100 })) {
   await analyse(p);
 }`;
 
-export default function SdksPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function SdksPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

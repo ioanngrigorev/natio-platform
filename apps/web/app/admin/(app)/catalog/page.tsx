@@ -4,8 +4,9 @@ import Link from "next/link";
 import catalog from "@/lib/demo-catalog.json";
 import { Card, Grid, Kpi, PageHeader, Table } from "@/components/ui";
 export const metadata={title:"Payment catalog"};
-export default function CatalogPage({searchParams:q}:{searchParams:Record<string,string|undefined>}) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function CatalogPage(props:{searchParams:Promise<Record<string,string|undefined>>}) {
+ const q = await props.searchParams;
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
  const currencies=[...new Set(catalog.map(c=>c.currency))].sort(),countries=[...new Set(catalog.map(c=>c.country))].sort();
  const names=new Intl.DisplayNames(["en"],{type:"region"});

@@ -9,9 +9,9 @@ import type { ApiKey } from "@/lib/types";
 export const metadata = { title: "API keys" };
 
 export default async function ApiKeysPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [keys, session] = await Promise.all([api.get<{ data: ApiKey[] }>("/dashboard/api-keys"), getMerchantSession()]);
   const projects = new Map((session?.projects ?? []).map((p) => [p.id, p.name]));
   const kyb = session?.merchant.kyb_status ?? "not_started";

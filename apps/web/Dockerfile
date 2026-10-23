@@ -4,7 +4,7 @@ WORKDIR /repo
 RUN corepack enable
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY apps/web/package.json apps/web/
-RUN pnpm install --filter @natio/web... --frozen-lockfile || pnpm install --filter @natio/web...
+RUN pnpm install --filter @natio/web... --frozen-lockfile
 COPY apps/web apps/web
 # Git does not store empty directories, so a clean clone can arrive without
 # apps/web/public even though it exists in every developer's working tree.
@@ -13,6 +13,8 @@ COPY apps/web apps/web
 # fresh clone — which is to say, only in production.
 RUN mkdir -p apps/web/public
 # NEXT_PUBLIC_* values are inlined at build time.
+ARG API_INTERNAL_URL=http://api:4000
+ENV API_INTERNAL_URL=$API_INTERNAL_URL
 ARG NEXT_PUBLIC_API_URL=https://api.natio.me
 ARG NEXT_PUBLIC_SITE_URL=https://natio.me
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NODE_ENV=production

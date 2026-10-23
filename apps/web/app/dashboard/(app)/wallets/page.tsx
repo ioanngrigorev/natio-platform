@@ -58,9 +58,9 @@ function decimalsFor(network: string, asset: string): number {
 }
 
 export default async function WalletsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const accounts = await api.get<{ data: WalletAccount[] }>("/dashboard/wallets");
 
   const addressLists = await Promise.all(

@@ -9,8 +9,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://natio.me"),
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const {locale,dictionary}=getI18n();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const {locale,dictionary}=(await getI18n());
   return (
     <html lang={locale} dir={locale==='ar'?'rtl':'ltr'}>
       <body><LocaleProvider locale={locale} dictionary={dictionary}>{children}<div className="global-language-picker"><LanguagePicker compact/></div></LocaleProvider></body>

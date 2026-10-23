@@ -11,10 +11,11 @@ import type { Payout } from "@/lib/types";
 
 type Detail = Payout & { metadata?: Record<string, unknown> };
 
-export default async function AdminPayoutDetailPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminPayoutDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let p: Detail;
   try {
     p = await api.get<Detail>(`/admin/payouts/${params.id}`);

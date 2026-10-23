@@ -60,8 +60,8 @@ const MODULES: Array<{ href: string; title: string; body: string; items: string[
   },
 ];
 
-export default function ProductPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function ProductPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

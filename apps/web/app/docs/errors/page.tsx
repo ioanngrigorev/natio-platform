@@ -74,8 +74,8 @@ const TONE: Record<string, "ok" | "bad" | "warn" | "info"> = {
   policy: "ok",
 };
 
-export default function ErrorsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function ErrorsPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

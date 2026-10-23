@@ -13,10 +13,11 @@ const TYPES = ["payment", "refund", "payout", "fee", "adjustment"];
 const STATUSES = ["pending", "successful", "failed", "cancelled"];
 const METHODS = ["card", "bank_transfer", "qr", "open_banking", "wallet", "instant", "local", "bank_account", "card_token"];
 
-export default async function TransactionsPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function TransactionsPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({
     search: searchParams.search,
     type: searchParams.type,

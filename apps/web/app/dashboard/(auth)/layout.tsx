@@ -7,7 +7,7 @@ import { getMerchantSession } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardAuthLayout({ children }: { children: React.ReactNode }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const session = await getMerchantSession();
   if (session) redirect("/dashboard");

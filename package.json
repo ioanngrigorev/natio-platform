@@ -2,24 +2,32 @@
   "name": "natio",
   "private": true,
   "version": "0.1.0",
-  "description": "NATIO — payment orchestration platform (modular monolith: API + web)",
+  "description": "NATIO \u2014 payment orchestration platform (modular monolith: API + web)",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=20.11"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "msgpackr-extract"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msgpackr-extract"
+    ],
+    "overrides": {
+      "postcss@<8.5.23": "8.5.23",
+      "source-map-js@<1.2.2": "1.2.2",
+      "uuid@<11.1.1": "11.1.1"
+    }
   },
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
-    "build": "pnpm -r run build",
-    "test": "pnpm -r run test",
-    "typecheck": "pnpm -r run typecheck",
-    "lint": "pnpm -r run lint",
-    "db:migrate": "pnpm --filter @natio/api run db:migrate",
-    "db:seed": "pnpm --filter @natio/api run db:seed",
-    "api": "pnpm --filter @natio/api run dev",
-    "web": "pnpm --filter @natio/web run dev",
-    "worker": "pnpm --filter @natio/api run worker"
+    "dev": "corepack pnpm -r --parallel run dev",
+    "build": "corepack pnpm -r run build",
+    "test": "corepack pnpm -r run test",
+    "typecheck": "corepack pnpm -r run typecheck",
+    "lint": "corepack pnpm -r run lint",
+    "db:migrate": "corepack pnpm --filter @natio/api run db:migrate",
+    "db:seed": "corepack pnpm --filter @natio/api run db:seed",
+    "api": "corepack pnpm --filter @natio/api run dev",
+    "web": "corepack pnpm --filter @natio/web run dev",
+    "worker": "corepack pnpm --filter @natio/api run worker"
   }
 }

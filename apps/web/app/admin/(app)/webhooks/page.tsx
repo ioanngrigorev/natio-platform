@@ -15,10 +15,11 @@ export const metadata = { title: "Webhook deliveries" };
 const STATUSES = ["pending", "delivering", "succeeded", "failed", "exhausted"];
 const EVENT_TYPES = ["payment.created", "payment.processing", "payment.succeeded", "payment.failed", "payment.cancelled", "payment.refunded", "payout.created", "payout.paid", "payout.failed", "refund.succeeded"];
 
-export default async function AdminWebhooksPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminWebhooksPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const query = qs({ merchant_id: searchParams.merchant_id, status: searchParams.status, event_type: searchParams.event_type, cursor: searchParams.cursor, limit: 50 });
   const [page, merchants] = await Promise.all([api.get<Paginated<WebhookDelivery>>(`/admin/webhooks/deliveries${query}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
   const merchantName = new Map(merchants.data.map((m) => [m.id, m.name]));

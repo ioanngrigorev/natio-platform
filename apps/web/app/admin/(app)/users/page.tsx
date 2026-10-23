@@ -12,10 +12,11 @@ import type { AdminMerchant, AdminUsersResponse } from "@/lib/admin-types";
 
 export const metadata = { title: "Users" };
 
-export default async function AdminUsersPage({ searchParams }: { searchParams: { merchant_id?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminUsersPage(props: { searchParams: Promise<{ merchant_id?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [users, merchants] = await Promise.all([api.get<AdminUsersResponse>(`/admin/users${qs({ merchant_id: searchParams.merchant_id })}`), api.get<{ data: AdminMerchant[] }>("/admin/merchants?fields=options&limit=500")]);
 
   return (

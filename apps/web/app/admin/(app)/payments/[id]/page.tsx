@@ -19,10 +19,11 @@ function ctxValue(v: unknown): string {
   return String(v);
 }
 
-export default async function AdminPaymentDetailPage({ params }: { params: { id: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminPaymentDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   let p: AdminPaymentDetail;
   try {
     p = await api.get<AdminPaymentDetail>(`/admin/payments/${params.id}`);

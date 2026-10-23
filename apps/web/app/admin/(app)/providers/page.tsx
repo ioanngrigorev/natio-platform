@@ -39,10 +39,13 @@ function listSummary(values: string[], allLabel: string) {
   );
 }
 
-export default async function AdminProvidersPage({ searchParams }: { searchParams: { days?: string; search?: string; page?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function AdminProvidersPage(
+  props: { searchParams: Promise<{ days?: string; search?: string; page?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const {days, from, to, label} = await getAdminPeriod(searchParams.days);
   const page = Math.max(1,Math.floor(Number(searchParams.page)||1));
   const search = searchParams.search || "";
@@ -114,7 +117,7 @@ export default async function AdminProvidersPage({ searchParams }: { searchParam
 }
 
 async function ProviderComparisonCard({ result, label }: { result: Promise<{ currency: string | null; rows: ProviderComparisonRow[] }>; label: string }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   const comparison = await result;
   return <>      <Card

@@ -1,6 +1,7 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { loadConfig } from "../config.js";
+import { logger } from "../lib/logger.js";
 import * as schema from "./schema/index.js";
 
 export type Db = NodePgDatabase<typeof schema>;
@@ -33,9 +34,14 @@ export function getPool(): pg.Pool {
   pool = new pg.Pool({
     connectionString: cfg.DATABASE_URL,
     max: cfg.DATABASE_POOL_MAX,
+    connectionTimeoutMillis: 5_000,
+    idleTimeoutMillis: 30_000,
     ssl: cfg.DATABASE_SSL === "require" ? { rejectUnauthorized: true } : undefined,
     application_name: `natio-${cfg.NATIO_PROCESS_ROLE}`,
   });
+  // Idle connections can be terminated during a DB restart. pg removes them;
+  // handling this event lets later requests reconnect instead of crashing Node.
+  pool.on("error", (err) => logger.error({ err }, "idle database connection failed"));
   return pool;
 }
 

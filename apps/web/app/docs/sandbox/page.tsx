@@ -68,8 +68,8 @@ const CSV = `provider_reference,natio_reference,type,amount,currency,status
 mp_mock_acquirer_2F5S5ySxFfbcpW,pay_GhIQ6vl0fEbcIpC2VsQz,payment,5000,EUR,settled
 mp_mock_acquirer_jzQP8MGRTSYTsZ,pay_3dIYLVfvZh2jXf34PKEK,payment,2000,GBP,settled`;
 
-export default function SandboxPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function SandboxPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

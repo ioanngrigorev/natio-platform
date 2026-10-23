@@ -14,10 +14,11 @@ export const metadata = { title: "System events" };
 const LEVELS = ["info", "warning", "error"];
 const SOURCES = ["admin", "orchestrator", "provider", "worker", "webhook", "csv"];
 
-export default async function SystemEventsPage({ searchParams }: { searchParams: { level?: string; source?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function SystemEventsPage(props: { searchParams: Promise<{ level?: string; source?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const { data } = await api.get<{ data: SystemEvent[] }>(`/admin/system-events${qs({ level: searchParams.level, source: searchParams.source, limit: 200 })}`);
 
   return (

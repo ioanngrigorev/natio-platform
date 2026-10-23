@@ -40,8 +40,8 @@ const TIMELINE: Array<{ type: string; title: string; description: string; tone?:
 
 const TONE_DOT = { ok: "bg-lime", bad: "bg-rose-400", warn: "bg-amber-400", info: "bg-aqua" } as const;
 
-export default function OrchestrationPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function OrchestrationPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

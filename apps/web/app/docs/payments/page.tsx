@@ -195,8 +195,8 @@ POST /v1/payments   Idempotency-Key: order-1001   { "amount": 20000, ... }
     "request_id": "req_..."
   }`;
 
-export default function PaymentsPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function PaymentsPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

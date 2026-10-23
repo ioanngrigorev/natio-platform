@@ -12,10 +12,11 @@ import { formatMoney, formatNumber, formatPercent } from "@/lib/format";
 import type { BiReport } from "@/lib/bi-types";
 
 export const metadata={title:"BI & Reports"};
-export default async function BiPage({searchParams:q}:{searchParams:Record<string,string|undefined>}) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function BiPage(props:{searchParams:Promise<Record<string,string|undefined>>}) {
+  const q = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api=serverApi();
+  const api=(await serverApi());
   const params=new URLSearchParams({from:q.from||"2025-01-01",to:q.to||"2025-12-31",currency:q.currency||"EUR"});
   for(const key of ["traffic_type","merchant_id","method","status","type","country","provider_account_id"])if(q[key])params.set(key,q[key]!);
   const session=await getAdminSession();

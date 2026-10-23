@@ -17,10 +17,11 @@ interface StatusResponse {
   providers: Array<{ provider: string; account: string; status: string; health_1h: { attempts: number; approval_rate: number | null; uptime: number | null } | null; health_24h: { attempts: number; approval_rate: number | null; uptime: number | null; avg_latency_ms: number | null } | null }>;
 }
 
-export default async function OverviewPage({ searchParams }: { searchParams: { days?: string } }) {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function OverviewPage(props: { searchParams: Promise<{ days?: string }> }) {
+  const searchParams = await props.searchParams;
+  const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const days = searchParams.days ?? "1";
   const from = isoDaysAgo(Number(days) || 1);
   const bucket = days === "1" ? "hour" : "day";

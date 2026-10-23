@@ -7,8 +7,8 @@ import Link from "next/link";
  * public site. The dashboard and admin ship their own light not-found files so
  * an in-app notFound() does not drop a dark page into a light surface.
  */
-export default function NotFound() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function NotFound() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-night-950 px-5 text-center">

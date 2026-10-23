@@ -4,8 +4,8 @@ import Link from "next/link";
 import { EmptyState, LinkButton } from "@/components/ui";
 
 /** Light not-found for in-app notFound() calls (payment/payout/settlement detail pages). */
-export default function DashboardNotFound() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function DashboardNotFound() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <div className="py-10">

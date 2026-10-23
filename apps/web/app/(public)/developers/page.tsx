@@ -50,8 +50,8 @@ const ENDPOINTS: Array<{ method: string; path: string; detail: string }> = [
 
 const SCENARIOS = ["success", "failover", "timeout", "timeout_recovered", "unavailable", "hard_decline", "soft_decline", "all_fail"];
 
-export default function DevelopersPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+export default async function DevelopersPage() {
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
   return (
     <>

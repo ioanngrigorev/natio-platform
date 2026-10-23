@@ -8,6 +8,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { Redis } from "ioredis";
 import { loadConfig } from "./config.js";
+import { isDependencyUnavailable } from "./lib/dependency-errors.js";
 import { ApiError, Errors } from "./lib/errors.js";
 import { newRequestId } from "./lib/ids.js";
 import { logger } from "./lib/logger.js";
@@ -92,10 +93,14 @@ export async function buildServer(): Promise<FastifyInstance> {
     if (err instanceof ApiError) {
       return reply.status(err.status).send({ ...err.toJSON(), request_id: req.requestId });
     }
+    if (isDependencyUnavailable(err)) {
+      req.log.error({ err, requestId: req.requestId }, "dependency unavailable");
+      return reply.header("retry-after", "5").status(503).send({ error: { type: "internal_error", code: "service_unavailable", message: "Service is temporarily unavailable. Check the operation status before retrying." }, request_id: req.requestId });
+    }
     const fastifyErr = err as { statusCode?: number; validation?: unknown; code?: string; message?: string };
     if (fastifyErr.statusCode === 429) return reply.status(429).send({ ...Errors.rateLimited().toJSON(), request_id: req.requestId });
     if (fastifyErr.statusCode === 413) return reply.status(413).send({ error: { type: "invalid_request_error", code: "payload_too_large", message: "Request body is too large" }, request_id: req.requestId });
-    if (fastifyErr.statusCode === 400 && fastifyErr.code === "FST_ERR_CTP_INVALID_JSON_BODY") {
+    if (fastifyErr.statusCode === 400 && ["FST_ERR_CTP_INVALID_JSON_BODY", "FST_ERR_CTP_EMPTY_JSON_BODY"].includes(fastifyErr.code ?? "")) {
       return reply.status(400).send({ error: { type: "invalid_request_error", code: "invalid_json", message: "Request body is not valid JSON" }, request_id: req.requestId });
     }
     if (fastifyErr.statusCode === 415) return reply.status(415).send({ error: { type: "invalid_request_error", code: "unsupported_media_type", message: "Use application/json" }, request_id: req.requestId });
@@ -119,7 +124,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerSupportRoutes(app);
 
   app.addHook("onClose", async () => {
-    await redis?.quit().catch(() => undefined);
+    redis?.disconnect();
   });
   return app;
 }

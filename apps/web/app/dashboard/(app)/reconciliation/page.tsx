@@ -16,9 +16,9 @@ mp_abc124,pay_9c7Q2…,payment,4500,USD,failed
 mr_xyz900,ref_1a2B3…,refund,-2000,USD,settled`;
 
 export default async function ReconciliationPage() {
- const {t:translateUi,locale:uiLocale}=getI18n();
+ const {t:translateUi,locale:uiLocale}=(await getI18n());
 
-  const api = serverApi();
+  const api = (await serverApi());
   const [batches, providers] = await Promise.all([api.get<{ data: ReconBatch[] }>("/dashboard/reconciliation/batches"), api.get<{ data: Provider[] }>("/dashboard/providers")]);
   const accounts: AccountOption[] = providers.data.flatMap((p) => p.accounts.filter((a) => a.mode === api.mode).map((a) => ({ id: a.id, label: a.name, provider: p.name })));
 
