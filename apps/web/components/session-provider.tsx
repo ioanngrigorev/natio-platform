@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiClient, ApiRequestError, type ClientFetchOptions, type Mode } from "@/lib/api";
 
 export interface SessionInfo {
+  plan?: "light" | "optimal" | "premium";
   kind: "merchant" | "admin";
   csrf: string;
   mode: Mode;

@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, ne } from "drizzle-orm";
+import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import { loadConfig } from "../../config.js";
 import type { Db, DbOrTx } from "../../db/client.js";
 import { adminUsers, merchantUsers, merchants, projects, sessions } from "../../db/schema/index.js";
@@ -131,6 +131,7 @@ export async function registerMerchant(
         settings: {},
       })
       .returning();
+    await tx.execute(sql`INSERT INTO merchant_plans(merchant_id,plan) VALUES (${merchantId},'light')`);
     const [project] = await tx
       .insert(projects)
       .values({ id: newId("project"), merchantId, name: "Default", slug: "default", settings: { captureMethod: "automatic" } })

@@ -1,0 +1,59 @@
+/** Explicitly fictional 2025 development chronology. No customer/payment records are created. */
+import {createHash} from 'node:crypto';
+import {getPool} from '../../db/client.js';
+import {developmentData} from './model.js';
+const uuid=(s:string)=>{const h=createHash('sha256').update('natio-development-demo-v1:'+s).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`};
+const modules=[
+ ['architecture','Platform architecture & environments','Modular API, workers, PostgreSQL and Redis; isolated test/live data.','src/server.ts; docker-compose.prod.yml',1],
+ ['auth','Authentication & role permissions','Merchant sessions, admin sessions, CSRF checks and role-scoped access.','modules/auth/service.ts; http/guards.ts',1],
+ ['ledger','Immutable transaction ledger','Immutable financial movement records, settlement linkage and calculated balances.','modules/transactions/service.ts; db/migrations/0001_immutability.sql',1],
+ ['merchants','Merchant onboarding & KYB','Company registration, KYB review and live-processing eligibility.','modules/merchants/eligibility.ts',2],
+ ['team','Merchant teams & access roles','Owners, admins, developers, finance, analysts, support and viewers.','modules/auth/permissions.ts',2],
+ ['api','API key lifecycle & developer portal','Scoped project keys, documentation and integration credentials.','modules/api-keys/service.ts',2],
+ ['payments','Payment orchestration','Validated payment creation, state transitions and provider processing.','modules/payments/orchestrator.ts',3],
+ ['idempotency','Idempotency & safe retries','Deduplicated requests and conflict detection for repeated operations.','modules/idempotency/service.ts',3],
+ ['providers','Provider account management','Provider configuration, modes, capabilities and operational status.','modules/providers/service.ts',3],
+ ['routing','Routing engine & rule matching','Eligibility filters and ordering across currencies, methods and geography.','modules/routing/engine.ts',4],
+ ['cascade','Payment cascading & safe failover','Failure classification, budgets and no-charge confirmation before retries.','modules/routing/cascade.ts',4],
+ ['pricing','Amount-based merchant & PSP tariffs','Tariff tiers, effective prices, margin simulation and route scoring.','modules/pricing/engine.ts',4],
+ ['refunds','Refund lifecycle','Authorized refunds, state checks and ledger consistency.','modules/refunds/service.ts',5],
+ ['payouts','Payout processing','Payout requests, eligibility checks and auditable state transitions.','modules/payouts/service.ts',5],
+ ['transactions','Transaction explorer','Filtered history, entity details, currency-safe values and pagination.','modules/transactions/service.ts',5],
+ ['webhooks','Webhooks & delivery retries','Signed events, endpoint management and retry delivery.','modules/webhooks/service.ts',6],
+ ['audit','Audit log & system events','Actor-attributed changes, redacted sensitive values and operational events.','modules/audit/service.ts',6],
+ ['settlements','Settlement lifecycle','Settlement records and merchant financial operations.','modules/settlements/service.ts',6],
+ ['reconciliation','Reconciliation workspace','PSP comparison and discrepancy review workflows.','modules/reconciliation/service.ts',7],
+ ['wallets','Settlement wallet infrastructure','Address derivation and supported chain watchers.','modules/wallets/service.ts; modules/wallets/chains/',7],
+ ['risk','Risk rules & operational signals','Rules, risk dashboards and clearly labelled dispute scenarios.','modules/risk/engine.ts; modules/analytics/risk-dashboard.ts',7],
+ ['reports','BI & interactive reports','Filtered volume, outcomes, daily activity, merchant and provider analytics.','modules/analytics/bi.ts; modules/analytics/reports.ts',8],
+ ['exports','Excel & CSV report exports','Filtered exports, full matching rows and explicit currency scope.','modules/analytics/excel.ts',8],
+ ['charts','Interactive financial charts','Daily/weekly/monthly aggregation, zoom navigator and actual-value scale.','apps/web/components/admin/',8],
+ ['catalog','Demo payment catalog','Fictional method names, currencies, geographies and provider profiles.','modules/demo/method-aliases.ts',9],
+ ['themes','Light, Dark & Mint themes','Persistent admin colour themes and semantic status badges.','apps/web/app/admin/theme.css',9],
+ ['receipts','PDF receipt review','Document analysis, PSP matching and review decisions; no claim of universal forgery detection.','modules/receipts/analysis.ts; modules/receipts/service.ts',9],
+ ['lab','Connection Lab','Executable sandbox connector checks and measured test outcomes.','modules/assistant/lab.ts',10],
+ ['knowledge','Searchable admin knowledge base','Localized articles, procedure diagrams and contextual navigation.','modules/assistant/knowledge.ts',10],
+ ['boards','Saved BI dashboards','Private saved filter sets and reusable chart configurations.','http/routes/workspace.ts',10],
+ ['support','Support tickets & Telegram integration','Ticket tracking, authorized replies, Telegram linking and delivery outbox.','modules/support/service.ts',11],
+ ['market','FX & market intelligence','Dated FX references and configured public news previews with source links.','modules/market/service.ts',11],
+ ['deployment','Deployment & regression operations','Versioned deploy pipeline, migration checks, backup and health verification.','deploy/self-update.sh; test/e2e/',12],
+] as const;
+const devs=['Ethan Brooks','Olivia Bennett','Noah Sullivan','Charlotte Reed','James Carter','Amelia Parker'];
+const qas=['Sophia Hughes','Lucas Mitchell','Isabella Hayes'];
+const analysts=['Emma Collins','William Foster'];
+const ops=['Henry Morgan','Grace Thompson'];
+export async function seedDevelopmentDemo(){const p=getPool(),c=await p.connect();try{await c.query('BEGIN');const owner=(await c.query("SELECT id FROM admin_users WHERE role='superadmin' ORDER BY created_at LIMIT 1")).rows[0]?.id;if(!owner)throw Error('A superadmin is required');
+ let inserted=0;const prior:string[]=[];
+ for(const [index,[key,title,summary,evidence,month]] of modules.entries()){
+ const id=uuid(key),day=2+(index%3)*7,start=`2025-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,deadline=`2025-${String(month).padStart(2,'0')}-${String(day+6).padStart(2,'0')}`,endDay=day+6+(index%9===7?1:0),finished=`2025-${String(month).padStart(2,'0')}-${String(endDay).padStart(2,'0')}`;
+ const d=developmentData.parse({request:'Demonstration retrospective of the implemented '+title+' module.',source_path:'/admin',spec:{objective:summary,users:'Merchant users, platform administrators and operations staff according to RBAC.',scope:summary,acceptance:'Relevant automated regression tests pass; authorized UI/API flow available; no cross-tenant or mode leakage.',technical:'Implementation evidence: '+evidence+'. Baseline shipped in c2849a1 or earlier. This record is a demo retrospective, not actual historical delivery evidence.',risks:'Production controls and external dependencies must be verified independently. All dates, team members and deadline outcomes in this retrospective are fictional.',questions:''},method:index%4===0?'pmbok':'scrum',worker:'hybrid',assignee:devs[index%devs.length],qa_owner:qas[index%qas.length],analyst:analysts[index%2],devops:ops[index%2],plan_start:start,plan_end:deadline,effort_hours:24+(index%6)*16,complexity:2+index%4,confidence_pct:0,market_pct:0,evidence:`Implemented capability: ${key}. Repository evidence: ${evidence}. Calendar/team/value assumptions are synthetic. No historical revenue is claimed.`,completion_evidence:'Implementation exists in baseline c2849a1. Baseline regression: 476 tests. Demonstration completion date is not the real deployment date.',story_points:[3,5,8,13][index%4],dependencies:index===0?[]:[prior[index-1]],process_type:['payments','routing','cascade','ledger'].includes(key)?'payment':'delivery'});
+ const r=await c.query("INSERT INTO development_items(id,mode,owner_kind,owner_id,title,public_summary,visibility,status,data,is_demo,started_at,completed_at,created_at,updated_at) VALUES($1,'test','admin',$2,$3,$4,'shared','done',$5,true,$6,$7,$6,$7) ON CONFLICT(id) DO NOTHING RETURNING id",[id,owner,title,summary,JSON.stringify(d),start+'T09:00:00Z',finished+'T16:00:00Z']);prior.push(id);if(!r.rowCount)continue;inserted++;
+ for(const [step,event] of ['analysis_completed','backlog_approved','development_started','code_review_passed','regression_passed','deployment_verified','release_completed'].entries()){const when=new Date(start+'T09:00:00Z');when.setUTCDate(when.getUTCDate()+step);if(step===6)when.setTime(Date.parse(finished+'T16:00:00Z'));const person=step<2?d.analyst:step<4?d.assignee:step===4?d.qa_owner:d.devops;await c.query('INSERT INTO development_events(item_id,actor_kind,actor_id,event,detail,created_at) VALUES($1,$2,$3,$4,$5,$6)',[id,'admin',owner,event,JSON.stringify({note:'DEMO history · '+person+' · fictional person and date; '+(step===6?'module implementation is available':'simulated lifecycle step')}),when])}
+ }
+ for(const [i,name] of ['Core platform foundation','Payment orchestration release','Finance & analytics release','Operations workspace release'].entries()){
+ const date=`2025-${String((i+1)*3).padStart(2,'0')}-28`,id=uuid('milestone'+i),d=developmentData.parse({spec:{objective:name,users:'All platform roles',scope:'Quarterly demonstration milestone',acceptance:'Associated implemented modules are available',technical:'See linked module records',risks:'Fictional schedule and team',questions:''},method:'pmbok',milestone:true,plan_start:date,plan_end:date,assignee:devs[i],qa_owner:qas[i%3],devops:ops[i%2],analyst:analysts[i%2],evidence:'DEMO milestone: dates and people are fictional.',completion_evidence:'Feature inventory confirmed against repository; demo chronology only.'});await c.query("INSERT INTO development_items(id,mode,owner_kind,owner_id,title,public_summary,visibility,status,data,is_demo,started_at,completed_at) VALUES($1,'test','admin',$2,$3,$4,'shared','done',$5,true,$6,$6) ON CONFLICT(id) DO NOTHING",[id,owner,name,'Demonstration milestone for the implemented NATIO feature inventory.',JSON.stringify(d),date+'T12:00:00Z']);
+ }
+ const future=[['Activate live AI assistant','Connect a valid OpenAI project key, fund API usage and verify text, voice and requirements generation.'],['Connect a production dispute feed','Add a real authorized PSP dispute feed before presenting chargeback monitoring as live.']];
+ for(const [key,summary] of future){const d=developmentData.parse({spec:{objective:summary,users:'Platform operators and merchants',scope:summary,acceptance:'A real authorized end-to-end request succeeds, access is enforced and tests pass.',technical:'Existing interfaces are implemented; the external dependency must be configured and verified.',risks:'Do not publish unverified results or treat simulated signals as live.',questions:'External account access / configuration is pending.'},method:'kanban',evidence:'Actual open dependency as of 2026-10-23.',effort_hours:2});await c.query("INSERT INTO development_items(id,mode,owner_kind,owner_id,title,public_summary,visibility,status,data,is_demo) VALUES($1,'test','admin',$2,$3,$4,'shared','backlog',$5,false) ON CONFLICT(id) DO NOTHING",[uuid(key),owner,key,summary,JSON.stringify(d)])}
+ const nid=uuid('notice-lab');await c.query("INSERT INTO development_notices(id,mode,title,body) VALUES($1,'test','Explore new capabilities in Connection Lab','Sandbox connector tests, dynamic tariffs and routing simulations are available. Request an integration assessment from Development Center; no provider is activated automatically.') ON CONFLICT(id) DO NOTHING",[nid]);await c.query('COMMIT');return {inserted_modules:inserted,demo_milestones:4,actual_open_dependencies:2};
+ }catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}

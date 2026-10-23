@@ -17,6 +17,9 @@ const NAV: NavItem[] = [
   { href: "/dashboard/api-keys", label: "API keys", section: "Integration" },
   { href: "/dashboard/webhooks", label: "Webhooks", section: "Integration" },
   { href: "/dashboard/team", label: "Team", section: "Account" },
+  { href: "/dashboard/development", label: "Development Center", section: "Product" },
+  { href: "/dashboard/recommendations", label: "Recommendations", section: "Product" },
+  { href: "/dashboard/plans", label: "Plans & upgrades", section: "Product" },
   { href: "/dashboard/settings", label: "Settings", section: "Account" },
 ];
 
@@ -29,6 +32,7 @@ export default async function DashboardAppLayout({ children }: { children: React
     <SessionProvider
       session={{
         kind: "merchant",
+        plan: session.plan,
         csrf: session.csrf_token,
         mode: session.mode,
         permissions: session.permissions,
