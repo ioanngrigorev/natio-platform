@@ -165,9 +165,14 @@ describe("routing and pricing integration", () => {
         currency: "USD",
         payment_method: "card",
         failure: "timeout_unknown",
+        strategy: "score",
+        policy: { profile: "cost" },
       });
       expect(sim.statusCode, sim.body).toBe(200);
       expect(sim.json().cascade.retry).toBe(false);
+      expect(sim.json().strategy).toBe("score");
+      expect(sim.json().policy.profile).toBe("cost");
+      expect(sim.json().preview_override).toBe(true);
     } finally {
       await db()
         .update(adminUsers)

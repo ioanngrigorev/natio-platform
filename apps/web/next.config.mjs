@@ -30,7 +30,7 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [{ source: "/(.*)", headers: securityHeaders }, { source: "/admin/:path*", headers: [{ key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" }] }];
   },
   async rewrites() {
     // Browser calls go to /api/* on the same origin and are proxied to the API service.

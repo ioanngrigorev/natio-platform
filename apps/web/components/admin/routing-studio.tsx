@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { parsePolicyPreview } from "./strategy-types";
 import { useState } from "react";
 import { errorMessage, useSession } from "@/components/session-provider";
 import { Alert, Button, Card, Field, Table, Tag } from "@/components/ui";
@@ -44,21 +46,22 @@ export function RoutingStudio({
   merchants: { id: string; name: string }[];
 }) {
   const s = useSession();
+  const params=useSearchParams(), preview=parsePolicyPreview(params.get("preview"));
   const [form, setForm] = useState({
-      merchant_id: merchants[0]?.id ?? "",
+      merchant_id: merchants.find(m=>m.id===params.get("merchant_id"))?.id ?? merchants[0]?.id ?? "",
       amount: "10000",
       currency: "EUR",
       country: "DE",
       payment_method: "card",
       failure: "technical_error",
     }),
-    [policy, setPolicy] = useState<Policy>({
+    [policy, setPolicy] = useState<Policy>(preview ?? {
       profile: "balanced",
       maxAttempts: 2,
       maxElapsedMs: 30000,
       minSamples: 20,
     }),
-    [override, setOverride] = useState(false),
+    [override, setOverride] = useState(!!preview),
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -78,6 +81,7 @@ export function RoutingStudio({
             country: form.country || undefined,
             mode: s.mode,
             policy: override ? policy : undefined,
+            strategy: override ? "score" : undefined,
           },
         }),
       );
@@ -187,7 +191,7 @@ export function RoutingStudio({
             checked={override}
             onChange={(e) => setOverride(e.target.checked)}
           />
-          Preview a different policy (does not save a rule)
+          Preview score ranking & cascade policy (does not save a rule)
         </label>
         {override && (
           <RoutingPolicyEditor value={policy} onChange={setPolicy} />

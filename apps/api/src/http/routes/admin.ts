@@ -13,7 +13,7 @@ import { Errors } from "../../lib/errors.js";
 import { newId } from "../../lib/ids.js";
 import { hashPassword } from "../../lib/crypto.js";
 import { biQuery, businessIntelligence } from "../../modules/analytics/bi.js";
-import { reportPreview, tabularReport } from "../../modules/analytics/reports.js";
+import { reportPreview, reportInsights, tabularReport } from "../../modules/analytics/reports.js";
 import { excelReport } from "../../modules/analytics/excel.js";
 import { platformOverview, providerComparison } from "../../modules/analytics/service.js";
 import { SnapshotCache } from "../../modules/analytics/snapshot-cache.js";
@@ -106,6 +106,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         const query = parseQuery(biQuery, req.query);
         return snapshot(req, "bi", query, () => businessIntelligence(query, req.dashboardMode));
       });
+      r.get("/bi/report-insights", async (req) => reportInsights(parseQuery(biQuery, req.query), req.dashboardMode));
       r.get("/bi/report", async (req) => reportPreview(parseQuery(biQuery, req.query), req.dashboardMode));
       r.get("/bi/export.csv", { config: { rateLimit: { max: 4, timeWindow: "1 minute" } } }, async (req, reply) => {
         const q=parseQuery(biQuery,req.query);
@@ -382,6 +383,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
             country: z.string().length(2).optional(),
             risk_score: z.number().min(0).max(100).optional(),
             policy: policySchema.optional(),
+            strategy: z.enum(["ordered", "weighted", "score"]).optional(),
             failure: z.enum(["technical_error", "issuer_unavailable", "insufficient_funds", "stolen_card", "authentication_required", "timeout_unknown", "timeout_safe"]).optional(),
           }),
           req.body,
@@ -391,7 +393,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           const [p] = await db.select().from(projects).where(eq(projects.merchantId, body.merchant_id)).limit(1);
           projectId = p?.id ?? "";
         }
-        const result = await simulateRoute(db, { transactionType: body.transaction_type, merchantId: body.merchant_id, projectId, mode: body.mode, amount: body.amount, currency: body.currency.toUpperCase(), paymentMethod: body.payment_method, country: body.country, riskScore: body.risk_score, policyOverride: body.policy, seed: "simulation" });
+        const result = await simulateRoute(db, { transactionType: body.transaction_type, merchantId: body.merchant_id, projectId, mode: body.mode, amount: body.amount, currency: body.currency.toUpperCase(), paymentMethod: body.payment_method, country: body.country, riskScore: body.risk_score, policyOverride: body.policy, strategyOverride: body.strategy, seed: "simulation" });
         const [project] = await db.select().from(projects).where(and(eq(projects.id, projectId), eq(projects.merchantId, body.merchant_id)));
         if (!project) throw Errors.validation("Select a merchant and a project belonging to that merchant");
         const defaults = resolveRetryPolicy(project);
@@ -402,7 +404,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         const rank = new Map(result.ordered.map((c,i)=>[c.account.id,i]));
         const evidence = [...result.candidates].sort((a,b)=>(rank.get(a.providerAccountId)??Infinity)-(rank.get(b.providerAccountId)??Infinity) || b.score-a.score);
         const exclusionReasons:Record<string,number>={};for(const c of result.candidates)for(const reason of c.reasons)exclusionReasons[reason]=(exclusionReasons[reason]??0)+1;
-        return { eligible_candidates: result.ordered.length, exclusion_reasons: exclusionReasons, amount: body.amount, currency: body.currency.toUpperCase(), rule: result.rule ? { id: result.rule.id, name: result.rule.name } : null, strategy: result.strategy, reason: result.reason, policy: result.policy, retry_policy: retryPolicy, preview_override: !!body.policy, cascade: { ...cascade, failure, next_account_id: cascade.retry ? result.ordered[1]?.account.id : null }, total_candidates: result.candidates.length, ordered: result.ordered.slice(0, 100).map((c) => ({ provider_account_id: c.account.id, provider_id: c.provider.id, provider: c.provider.name, account: c.account.name, pricing: c.pricing })), candidates: evidence.slice(0, 200) };
+        return { eligible_candidates: result.ordered.length, exclusion_reasons: exclusionReasons, amount: body.amount, currency: body.currency.toUpperCase(), rule: result.rule ? { id: result.rule.id, name: result.rule.name } : null, strategy: result.strategy, reason: result.reason, policy: result.policy, retry_policy: retryPolicy, preview_override: !!body.policy || !!body.strategy, cascade: { ...cascade, failure, next_account_id: cascade.retry ? result.ordered[1]?.account.id : null }, total_candidates: result.candidates.length, ordered: result.ordered.slice(0, 100).map((c) => ({ provider_account_id: c.account.id, provider_id: c.provider.id, provider: c.provider.name, account: c.account.name, pricing: c.pricing })), candidates: evidence.slice(0, 200) };
       });
 
       r.get<{ Params: { id: string } }>("/payments/:id/pricing", async req => {

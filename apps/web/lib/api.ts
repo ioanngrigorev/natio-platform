@@ -68,6 +68,7 @@ export interface ClientFetchOptions {
   csrf?: string;
   mode?: Mode;
   formData?: FormData;
+  signal?: AbortSignal;
 }
 
 /** Browser-side fetch through the /api rewrite. */
@@ -81,7 +82,7 @@ export async function apiClient<T>(path: string, opts: ClientFetchOptions = {}):
     headers["content-type"] = "application/json";
     body = JSON.stringify(opts.body);
   }
-  const res = await fetch(`/api${path}`, { method: opts.method ?? (body ? "POST" : "GET"), headers, body, credentials: "same-origin" });
+  const res = await fetch(`/api${path}`, { method: opts.method ?? (body ? "POST" : "GET"), headers, body, signal: opts.signal, credentials: "same-origin" });
   return parseResponse<T>(res);
 }
 

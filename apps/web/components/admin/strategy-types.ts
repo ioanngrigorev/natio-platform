@@ -84,3 +84,13 @@ export const PROFILES = [
     weights: "25 approval · 5 cost · 55 uptime · 15 latency",
   },
 ] as const;
+
+/** URL carries an unsaved, non-secret preview only. Reject malformed fields before rendering. */
+export function parsePolicyPreview(raw:string|null):Policy|undefined {
+ if(!raw||raw.length>1600)return;
+ try {const p=JSON.parse(raw);if(!p||typeof p!=="object"||Array.isArray(p))return;
+ const nums=["maxAttempts","maxElapsedMs","minSamples","minApprovalRate","minUptime","maxLatencyMs"],bools=["retryOnSoftDecline","retryOnTimeout","requireHealthData","blockNegativeMargin"];
+ for(const [key,value] of Object.entries(p)){if(key==="profile"){if(!["balanced","conversion","cost","reliability"].includes(String(value)))return;}else if(nums.includes(key)){if(typeof value!=="number"||!Number.isFinite(value))return;}else if(bools.includes(key)){if(typeof value!=="boolean")return;}else return;}
+ return p as Policy;
+ }catch{return;}
+}

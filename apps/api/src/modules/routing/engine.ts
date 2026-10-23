@@ -57,6 +57,8 @@ export interface RoutingContext {
   /** Accounts already attempted for this payment, excluded from the route. */
   excludeAccountIds?: string[];
   policyOverride?: RoutingPolicy;
+  /** Read-only simulation override; execution callers never set this. */
+  strategyOverride?: "ordered" | "weighted" | "score";
   captureMethod?: "automatic" | "manual";
 }
 
@@ -331,6 +333,7 @@ export function buildRoute(rules: RuleWithRoutes[], allCandidates: Candidate[], 
     if (reasons.length === 0) eligible.push(c);
   }
 
+  if (ctx.strategyOverride) { strategy = ctx.strategyOverride; reason += `; preview ${strategy} ranking`; }
   let ordered: Candidate[];
   if (strategy === "ordered") ordered = eligible;
   else if (strategy === "weighted") ordered = weightedOrder(eligible, (c) => routeWeights.get(c.account.id) ?? 100, ctx.seed ?? ctx.merchantId);

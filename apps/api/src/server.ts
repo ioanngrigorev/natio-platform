@@ -13,6 +13,9 @@ import "./http/context.js";
 import { registerV1Routes } from "./http/routes/v1.js";
 import { registerDashboardRoutes } from "./http/routes/dashboard.js";
 import { registerAdminRoutes } from "./http/routes/admin.js";
+import { registerSupportRoutes } from "./http/routes/support.js";
+import { registerMarketRoutes } from "./http/routes/market.js";
+import { registerWorkspaceRoutes } from "./http/routes/workspace.js";
 import { registerPricingRoutes } from "./http/routes/pricing.js";
 import { registerReceiptRoutes } from "./http/routes/receipts.js";
 import { registerPublicRoutes } from "./http/routes/public.js";
@@ -107,6 +110,9 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerAdminRoutes(app);
   await registerReceiptRoutes(app);
   await registerPricingRoutes(app);
+  await registerWorkspaceRoutes(app);
+  await registerMarketRoutes(app);
+  await registerSupportRoutes(app);
 
   app.addHook("onClose", async () => {
     await redis?.quit().catch(() => undefined);
