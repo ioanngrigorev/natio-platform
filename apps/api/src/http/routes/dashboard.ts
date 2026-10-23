@@ -105,7 +105,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
       m.get("/auth/me", async (req) => {
         const { user, merchant, session } = me(req);
         const projects = await listProjects(db, merchant.id);
-        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, mode: req.dashboardMode, plan: await merchantPlan(merchant.id) };
+        return { user: serializeUser(user), merchant: serializeMerchant(merchant), projects: projects.map(serializeProject), permissions: permissionsForRole(user.role), csrf_token: session.csrfToken, mode: req.dashboardMode, plan: await merchantPlan(merchant.id,req.dashboardMode) };
       });
 
       m.post("/auth/password", async (req) => {

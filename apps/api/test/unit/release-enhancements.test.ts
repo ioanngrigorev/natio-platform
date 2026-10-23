@@ -1,0 +1,19 @@
+import {describe,it,expect} from 'vitest';
+import {validateAttachment,attachmentContent} from '../../src/modules/assistant/attachments.js';
+import {quoteLibrary,greetingQuotes,searchQuotes} from '../../src/modules/quotes/service.js';
+import {timeOfDay,dailyQuoteIndex} from '../../../web/lib/greeting.js';
+import {trafficRates} from '../../src/modules/analytics/traffic.js';
+import {readFileSync} from 'node:fs';
+describe('bounded assistant attachments',()=>{
+ it('rejects renamed binary files, oversized text and malformed UTF-8',()=>{for(const [n,b] of [['evil.pdf',Buffer.from('not a pdf')],['script.js',Buffer.from('alert(1)')],['huge.txt',Buffer.alloc(256*1024+1,65)],['bad.txt',Buffer.from([255,255])]] as const)expect(()=>validateAttachment(n,b)).toThrow();});
+ it('normalizes names and sends only the supported typed content',()=>{const f=validateAttachment('../report.csv',Buffer.from('amount,currency\n10,EUR'));expect(f.name).toBe('report.csv');expect(attachmentContent(f)).toMatchObject({type:'input_file',filename:'report.csv'});const image=validateAttachment('photo.png',Buffer.from([137,80,78,71,13,10,26,10,0]));expect(attachmentContent(image)).toMatchObject({type:'input_image',detail:'auto'});});
+});
+describe('editorial greetings',()=>{
+ it('switches at all four local-time boundaries without remote time assumptions',()=>{expect([0,4,5,11,12,17,18,22,23].map(timeOfDay)).toEqual(['night','night','morning','morning','day','day','evening','evening','night']);expect(dailyQuoteIndex('2026-10-23','user',14)).toBe(dailyQuoteIndex('2026-10-23','user',14));expect(dailyQuoteIndex('2026-10-23','user',14,1)).not.toBe(dailyQuoteIndex('2026-10-23','user',14));});
+ it('contains ten thousand unique source-linked historical entries and a valid shortlist',()=>{expect(quoteLibrary).toHaveLength(10000);expect(new Set(quoteLibrary.map(q=>q.id)).size).toBe(10000);expect(new Set(quoteLibrary.map(q=>q.text)).size).toBe(10000);expect(quoteLibrary.every(q=>q.author&&q.source.includes('#page_'))).toBe(true);expect(greetingQuotes.length).toBeGreaterThan(10);expect(searchQuotes('commerce','Finance').data.some(q=>q.author==='Emerson')).toBe(true);expect(searchQuotes('surely nonexistent abcxyz').total).toBe(0);expect(searchQuotes('', '', 500).data).toHaveLength(0);});
+});
+describe('financial funnel semantics',()=>{
+ it('does not substitute zero for missing evidence and keeps the three denominators separate',()=>{const r=trafficRates({selected:8,selection_known:10,approved:5,declined:1,completed:4,submitted:8,recovered:1,retried:2,observed:10,operations:12,volume:'2000'});expect(r).toMatchObject({method_success_rate:80,approval_rate:100*5/6,payment_success_rate:50,recovery_rate:50,volume:2000});expect(trafficRates({selected:0,selection_known:0,approved:0,declined:0,completed:0,submitted:0,recovered:0,retried:0,observed:0,operations:0,volume:'0'})).toMatchObject({method_success_rate:null,approval_rate:null,payment_success_rate:null});});
+});
+function luminance(hex:string){const a=hex.slice(1).match(/../g)!.map(c=>parseInt(c,16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);return a[0]*.2126+a[1]*.7152+a[2]*.0722}
+it('Dark and Mint meet normal-text contrast on cards and primary controls',()=>{const css=readFileSync(new URL('../../../web/app/admin/theme.css',import.meta.url),'utf8');for(const name of ['dark','mint']){const block=css.match(new RegExp('\\.admin-theme\\[data-theme="'+name+'"\\] \\{([^}]+)'))![1];const token=(n:string)=>block.match(new RegExp('--'+n+':(#[0-9a-f]{6})'))![1];const contrast=(a:string,b:string)=>{const x=luminance(token(a)),y=luminance(token(b));return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};expect(contrast('foreground','surface')).toBeGreaterThanOrEqual(4.5);expect(contrast('muted','surface')).toBeGreaterThanOrEqual(4.5);expect(contrast('accent-ink','accent')).toBeGreaterThanOrEqual(4.5)}});

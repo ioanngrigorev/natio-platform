@@ -1,5 +1,5 @@
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest';
-import { validateAnswer,askAssistant,transcribeAudio } from '../../src/modules/assistant/client.js';
+import { validateAnswer,askAssistant,transcribeAudio,responseSchema } from '../../src/modules/assistant/client.js';
 import { resetConfigForTests } from '../../src/config.js';
 import { buildSignals,riskThresholds } from '../../src/modules/analytics/risk-dashboard.js';
 const valid={answer:'График будет рассчитан по данным системы.',sources:['charts','nonexistent'],action:'dashboard',dashboard:{name:'Оборот',from:'2025-01-01',to:'2025-12-31',currency:'EUR',merchant_id:null,country:null,widgets:['volume','outcomes']},connection:null};
@@ -9,6 +9,17 @@ describe('assistant response boundary',()=>{
  it('accepts bounded actions and filters unknown sources',()=>{const r=validateAnswer(structuredClone(valid));expect(r.dashboard?.filters.currency).toBe('EUR');expect(r.sources).toEqual(['charts'])});
  it('rejects hallucinated actions, bad dates and conflicting action payloads',()=>{for(const r of [{...valid,action:'execute_sql'},{...valid,action:'none'},{...valid,dashboard:{...valid.dashboard,from:'2025-02-31'}}])expect(()=>validateAnswer(structuredClone(r))).toThrow()});
  it('uses strict output and store:false without sending financial records',async()=>{const f=vi.fn().mockResolvedValue(new Response(JSON.stringify({output:[{content:[{type:'output_text',text:JSON.stringify(valid)}]}]}),{status:200}));vi.stubGlobal('fetch',f);const r=await askAssistant({question:'Покажи графики',page:'/admin/bi',history:[]},'test');expect(r.action).toBe('dashboard');const request=JSON.parse(f.mock.calls[0][1].body);expect(request.store).toBe(false);expect(request.text.format.strict).toBe(true);expect(request.input.at(-1).content).toBe('Покажи графики');expect(JSON.stringify(request)).not.toContain('test-not-a-real-secret')});
+ it('requires explicit connection geography and mirrors server constraints in structured output',async()=>{
+  const proposal={answer:'Проверьте тестовый проект подключения.',sources:['lab'],action:'connection',dashboard:null,connection:{name:'Aurora Demo',adapter:'mock_acquirer',currencies:['EUR'],countries:['DE'],methods:['card'],timeout_ms:10000}};
+  expect(validateAnswer(structuredClone(proposal)).connection?.countries).toEqual(['DE']);
+  expect(()=>validateAnswer({...proposal,connection:{...proposal.connection,countries:[]}})).toThrow();
+  const schema=(responseSchema as any).properties.connection.anyOf[0].properties;
+  expect(schema.countries.minItems).toBe(1);expect(schema.timeout_ms.minimum).toBe(1000);expect(schema.timeout_ms.maximum).toBe(30000);
+  const clarification={answer:'Для какой страны подготовить подключение?',sources:['lab'],action:'none',dashboard:null,connection:null};
+  const f=vi.fn().mockResolvedValue(new Response(JSON.stringify({output:[{content:[{type:'output_text',text:JSON.stringify(clarification)}]}]})));
+  vi.stubGlobal('fetch',f);expect((await askAssistant({question:'PSP Aurora Demo для EUR и card',page:'/admin/lab',history:[]},'test')).action).toBe('none');
+  expect(JSON.parse(f.mock.calls[0][1].body).instructions).toContain('Never invent a country');
+ });
  it('reports invalid credentials without leaking upstream content',async()=>{vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('secret-from-upstream',{status:401})));await expect(askAssistant({question:'Помоги',page:'/admin',history:[]},'test')).rejects.toMatchObject({status:503,code:'assistant_credentials_invalid'});});
  it('distinguishes exhausted credit from temporary rate limits without exposing provider details',async()=>{
   for(const code of ['insufficient_quota','credit_balance_exhausted']){

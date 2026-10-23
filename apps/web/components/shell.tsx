@@ -4,8 +4,9 @@ import Link from "next/link";
 import { DevelopmentNotifications } from "@/components/development/notifications";
 import dynamic from "next/dynamic";
 const AdminAssistant = dynamic(() => import("@/components/admin/assistant").then(m => m.AdminAssistant), { ssr: false });
+import {AdminGreeting} from "@/components/admin/greeting";
 import { SectionIcon } from "@/components/admin/section-icon";
-import { AdminThemeToggle } from "@/components/admin/theme-provider";
+import { AdminThemeToggle, SidebarThemeToggle } from "@/components/admin/theme-provider";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { cx } from "@/components/ui";
@@ -50,6 +51,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           </Link>
           <span className="ml-auto rounded bg-ink-100 px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wide text-ink-600">{brand.title}</span>
         </div>
+        {session.kind === "admin" ? <SidebarThemeToggle/> : null}
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           {sections.map((s) => (
             <div key={s.section || "root"} className="mb-4">
@@ -91,7 +93,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
         </header>
         {opening ? <div role="status" className="border-b border-ink-100 bg-ink-50 px-6 py-2 text-xs text-brand-600">Opening {opening}…</div> : null}
         <main className="natio-workspace flex-1 px-4 py-6 md:px-6">
-          <div className="mx-auto max-w-[1280px]">{children}</div>
+          <div className="mx-auto max-w-[1280px]">{session.kind === "admin" ? <AdminGreeting/> : null}{children}</div>
         </main>
       </div>
       {session.kind === "admin" ? <AdminAssistant /> : null}

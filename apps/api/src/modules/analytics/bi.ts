@@ -8,10 +8,11 @@ export const biQuery = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/).default("EUR"),
   merchant_id: z.string().max(100).optional(), method: z.string().max(160).optional(),
   country: z.string().regex(/^[A-Z]{2}$/).optional(),
+  traffic_type: z.enum(["ftd","std","unknown"]).optional(),
   status: z.enum(["successful","failed","pending","cancelled"]).optional(),
   type: z.enum(["payment","payout","refund","adjustment","fee"]).optional(),
   provider_account_id: z.string().max(100).optional(),
-  kind: z.enum(["summary", "transactions", "daily", "merchants", "providers", "methods", "countries", "balances"]).default("summary"),
+  kind: z.enum(["summary", "transactions", "daily", "merchants", "providers", "methods", "countries", "balances", "traffic"]).default("summary"),
   all_currencies: z.enum(["0", "1"]).default("0"),
   page: z.coerce.number().int().min(1).max(1000000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -23,7 +24,7 @@ export type BiQuery = z.infer<typeof biQuery>;
 export function biWhere(q: BiQuery, mode: "test" | "live", currency = true) {
   const values: unknown[] = [mode, q.from, q.to];
   let where = "t.mode=$1 AND t.occurred_at >= $2::date AND t.occurred_at < $3::date + interval '1 day'";
-  for (const [column, value] of [["t.currency", currency ? q.currency : undefined], ["t.merchant_id", q.merchant_id], ["t.payment_method_type", mode === "test" && q.method ? storedMethod(q.method) : q.method], ["t.country",q.country], ["t.status",q.status], ["t.type",q.type], ["t.provider_account_id",q.provider_account_id]] as const) {
+  for (const [column, value] of [["t.traffic_type", q.traffic_type], ["t.currency", currency ? q.currency : undefined], ["t.merchant_id", q.merchant_id], ["t.payment_method_type", mode === "test" && q.method ? storedMethod(q.method) : q.method], ["t.country",q.country], ["t.status",q.status], ["t.type",q.type], ["t.provider_account_id",q.provider_account_id]] as const) {
     if (value) {
       values.push(value); const match=`${column}=$${values.length}`;
       if(column==="t.payment_method_type" && mode==="test" && q.method!==value){values.push(q.method);where+=` AND (${match} OR ${column}=$${values.length})`;}

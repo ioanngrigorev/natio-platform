@@ -35,6 +35,7 @@ export function serializePayment(p: PaymentRow, opts: SerializeOpts = {}) {
         ? { id: p.customerId }
         : null,
     metadata: p.metadata,
+    traffic_type: p.trafficType,
     route: {
       provider: opts.provider ? { id: opts.provider.id, code: opts.provider.code, name: opts.provider.name } : p.providerId ? { id: p.providerId } : null,
       provider_account_id: p.providerAccountId,

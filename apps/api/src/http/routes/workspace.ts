@@ -1,3 +1,6 @@
+import {trafficAnalytics} from '../../modules/analytics/traffic.js';
+import {biQuery} from '../../modules/analytics/bi.js';
+import {greetingQuotes,searchQuotes} from '../../modules/quotes/service.js';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../guards.js';
@@ -7,6 +10,8 @@ import { Errors } from '../../lib/errors.js';
 import { loadConfig } from '../../config.js';
 import { knowledge, knowledgeVersion, searchKnowledge } from '../../modules/assistant/knowledge.js';
 import { assistantInput, dashboardSpec, connectionSpec } from '../../modules/assistant/schemas.js';
+import {validateAttachment,type Attachment} from '../../modules/assistant/attachments.js';
+import {billingActor,meteredAi} from '../../modules/plans/billing.js';
 import { askAssistant, transcribeAudio } from '../../modules/assistant/client.js';
 import { createLab, getLab, runLab, labTemplates } from '../../modules/assistant/lab.js';
 import { riskDashboard, riskQuery, riskThresholds } from '../../modules/analytics/risk-dashboard.js';
@@ -28,9 +33,21 @@ export async function registerWorkspaceRoutes(app:FastifyInstance){
  });
  app.get("/admin/risk-dashboard",{preHandler:guard},async(req)=>{parse(riskQuery,req.query);parse(riskThresholds,req.query);return snapshots.get(JSON.stringify([req.dashboardMode,req.query]),()=>riskDashboard(req.query,req.dashboardMode!));});
  app.get('/admin/knowledge',{preHandler:guard},async(req)=>{const q=parse(z.object({q:z.string().max(300).default(''),category:z.string().max(60).optional()}),req.query);return {version:knowledgeVersion,categories:[...new Set(knowledge.map(a=>a.category))],data:searchKnowledge(q.q,q.category)};});
+ app.get('/admin/bi/traffic',{preHandler:guard},async req=>trafficAnalytics(parse(biQuery,req.query),req.dashboardMode));
+ app.get('/admin/greeting-quotes',{preHandler:guard},async()=>({data:greetingQuotes}));
+ app.get('/admin/quotes',{preHandler:guard},async req=>{const b=parse(z.object({q:z.string().max(200).default(''),topic:z.string().max(60).default(''),page:z.coerce.number().int().min(1).max(10000).default(1)}),req.query);return searchQuotes(b.q,b.topic,b.page)});
  app.get('/admin/assistant/status',{preHandler:guard},async()=>({configured:!!loadConfig().OPENAI_API_KEY,knowledge_version:knowledgeVersion}));
- app.post('/admin/assistant/chat',{preHandler:guard,config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req)=>askAssistant(parse(assistantInput,req.body),req.dashboardMode!));
- app.post('/admin/assistant/transcribe',{preHandler:guard,config:{rateLimit:{max:8,timeWindow:'1 minute'}}},async(req)=>{const file=await req.file({limits:{fileSize:5*1024*1024,files:1}});if(!file)throw Errors.validation('Audio file required');return transcribeAudio(await file.toBuffer(),file.mimetype);});
+ app.post('/admin/assistant/chat',{preHandler:guard,config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req)=>{const input=parse(assistantInput,req.body);return meteredAi(billingActor(req),'text',()=>askAssistant(input,req.dashboardMode!))});
+ app.post('/admin/assistant/chat-with-files',{preHandler:guard,bodyLimit:11*1024*1024,config:{rateLimit:{max:8,timeWindow:'1 minute'}}},async req=>{
+  let metadata:unknown,bytes=0;const files:Attachment[]=[];
+  for await(const part of req.parts({limits:{fileSize:5*1024*1024,files:4,fields:1,fieldSize:20000,parts:5}})){
+   if(part.type==='file'){const b=await part.toBuffer();bytes+=b.length;if(bytes>10*1024*1024)throw Errors.validation('Maximum 10 MB of attachments per message');files.push(validateAttachment(part.filename,b));}
+   else if(part.fieldname==='request'&&!metadata){try{metadata=JSON.parse(String(part.value))}catch{throw Errors.validation('Invalid message metadata')}}else throw Errors.validation('Unexpected attachment field');
+  }
+  const input=parse(assistantInput,metadata);if(!files.length)throw Errors.validation('Attach at least one file');
+  return meteredAi(billingActor(req),'attachments',()=>askAssistant(input,req.dashboardMode!,files));
+ });
+ app.post('/admin/assistant/transcribe',{preHandler:guard,config:{rateLimit:{max:8,timeWindow:'1 minute'}}},async(req)=>{const file=await req.file({limits:{fileSize:5*1024*1024,files:1}});if(!file)throw Errors.validation('Audio file required');const bytes=await file.toBuffer();return meteredAi(billingActor(req),'voice',()=>transcribeAudio(bytes,file.mimetype));});
  app.get('/admin/boards',{preHandler:guard},async(req)=>({data:(await pool.query('SELECT * FROM admin_dashboards WHERE owner_id=$1 AND mode=$2 ORDER BY updated_at DESC LIMIT 100',[req.admin!.admin.id,req.dashboardMode])).rows}));
  app.post('/admin/boards',{preHandler:guard},async(req)=>{
   const b=parse(z.object({id,spec:dashboardSpec}).strict(),req.body), owner=req.admin!.admin.id;

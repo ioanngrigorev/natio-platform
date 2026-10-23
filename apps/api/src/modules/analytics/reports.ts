@@ -17,8 +17,8 @@ export function reportPlan(q:BiQuery, mode:"test"|"live") {
   const f=biWhere(q,mode,q.all_currencies!=="1");
   let sql:string, columns:ReportColumn[], fallback:string;
   if(q.kind==="transactions") {
-    columns=[text("id","Transaction ID"),text("merchant","Merchant","/admin/merchants/"),text("account","Provider account","/admin/provider-accounts/"),text("occurred_at","Date UTC"),text("type","Type"),text("status","Status"),text("method","Payment method"),text("country","Country"),text("currency","Currency"),money("amount","Amount"),money("fees","Fee"),money("net","Net"),text("provider_reference","Gateway reference")];
-    sql=`SELECT t.id,t.merchant_id,t.provider_account_id,m.name merchant,a.name account,to_char(t.occurred_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') occurred_at,t.type,t.status,t.payment_method_type method,t.country,t.currency,t.amount,t.fee_amount fees,t.net_amount net,t.provider_reference FROM transactions t JOIN merchants m ON m.id=t.merchant_id LEFT JOIN provider_accounts a ON a.id=t.provider_account_id WHERE ${f.where}`;
+    columns=[text("id","Transaction ID"),text("merchant","Merchant","/admin/merchants/"),text("account","Provider account","/admin/provider-accounts/"),text("occurred_at","Date UTC"),text("type","Type"),text("status","Status"),text("method","Payment method"),text("country","Country"),text("currency","Currency"),money("amount","Amount"),money("fees","Fee"),money("net","Net"),text("provider_reference","Gateway reference"),text("traffic_type","Traffic type"),text("conversion_source","Conversion source"),text("method_selected","Method selected"),text("psp_approved","PSP approval"),text("completed","Payment completed"),number("attempt_count","PSP attempts")];
+    sql=`SELECT t.id,t.merchant_id,t.provider_account_id,m.name merchant,a.name account,to_char(t.occurred_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') occurred_at,t.type,t.status,t.traffic_type,t.conversion->>'source' conversion_source,t.conversion->>'method_selected' method_selected,t.conversion->>'psp_approved' psp_approved,t.conversion->>'completed' completed,(t.conversion->>'attempt_count')::int attempt_count,t.payment_method_type method,t.country,t.currency,t.amount,t.fee_amount fees,t.net_amount net,t.provider_reference FROM transactions t JOIN merchants m ON m.id=t.merchant_id LEFT JOIN provider_accounts a ON a.id=t.provider_account_id WHERE ${f.where}`;
     fallback="occurred_at";
   } else {
     const definitions:Record<string,{label:string;id?:string;join?:string;title:string;link?:string}>={
@@ -28,6 +28,7 @@ export function reportPlan(q:BiQuery, mode:"test"|"live") {
       providers:{label:"a.name",id:"t.provider_account_id",join:"LEFT JOIN provider_accounts a ON a.id=t.provider_account_id",title:"Provider account",link:"/admin/provider-accounts/"},
       methods:{label:"t.payment_method_type",title:"Payment method"},
       countries:{label:"t.country",title:"Country"},
+      traffic:{label:"t.traffic_type",title:"Traffic type"},
       balances:{label:"t.currency",title:"Balance currency"},
     };
     const d=definitions[q.kind];

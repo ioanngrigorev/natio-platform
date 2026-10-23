@@ -58,6 +58,7 @@ export const payments = pgTable(
     /** Merchant's own order/reference identifier. */
     reference: text("reference"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    trafficType: text("traffic_type").notNull().default("unknown"),
     idempotencyKey: text("idempotency_key"),
     riskDecisionId: text("risk_decision_id"),
     riskScore: integer("risk_score"),
@@ -252,6 +253,8 @@ export const transactions = pgTable(
     mode: modeEnum("mode").notNull(),
     type: transactionTypeEnum("type").notNull(),
     status: transactionStatusEnum("status").notNull(),
+    trafficType: text("traffic_type").notNull().default("unknown"),
+    conversion: jsonb("conversion").$type<Record<string, unknown> | null>(),
     entityType: text("entity_type").notNull(),
     entityId: text("entity_id").notNull(),
     paymentId: text("payment_id"),

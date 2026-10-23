@@ -7,6 +7,19 @@ export const specification=z.object({
  acceptance:z.string().max(6000),technical:z.string().max(6000),risks:z.string().max(4000),questions:z.string().max(4000),
 }).strict();
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s=>{const d=new Date(s);return Number.isFinite(+d)&&d.toISOString().slice(0,10)===s},'Use a valid date');
+export const phaseKinds=['analysis','development','testing','deployment','monitoring'] as const;
+export const deliveryPhase=z.object({
+ id:z.string().min(1).max(80).regex(/^[a-zA-Z0-9_-]+$/),kind:z.enum(phaseKinds),name:z.string().trim().min(1).max(100),
+ start:date,end:date,owner:z.string().max(100).default(''),progress:z.number().int().min(0).max(100).default(0),
+}).strict().refine(v=>v.end>=v.start,'Phase end must be on or after start');
+export const scheduleInput=z.object({start:date,end:date,analyst:z.string().max(100).default(''),assignee:z.string().max(100).default(''),qa_owner:z.string().max(100).default(''),devops:z.string().max(100).default('')}).strict().refine(v=>v.end>=v.start,'End must be on or after start');
+export function scheduleTemplate(input:z.infer<typeof scheduleInput>){
+ const d=scheduleInput.parse(input),days=Math.round((Date.parse(d.end)-Date.parse(d.start))/86400000)+1;
+ const at=(n:number)=>new Date(Date.parse(d.start)+Math.min(days-1,n)*86400000).toISOString().slice(0,10);
+ const bounds=[0,.15,.55,.8,.9,1],names=['Analysis & specification','Development & review','Testing & acceptance','Deployment & verification','Post-release monitoring'];
+ const owners=[d.analyst,d.assignee,d.qa_owner,d.devops,d.devops];
+ return phaseKinds.map((kind,i)=>({id:kind,kind,name:names[i]!,start:at(Math.floor(days*bounds[i]!)),end:at(Math.max(Math.floor(days*bounds[i]!),Math.floor(days*bounds[i+1]!)-1)),owner:owners[i]!,progress:0}));
+}
 export const developmentData=z.object({
  request:z.string().trim().max(8000).default(''),source_path:z.string().max(200).regex(/^\/(admin|dashboard)(?:\/[a-zA-Z0-9_-]+)*$/).default('/admin'),
  spec:specification,
@@ -14,10 +27,13 @@ export const developmentData=z.object({
  effort_hours:z.number().min(1/60).max(100000).default(8),complexity:z.number().int().min(1).max(5).default(3),confidence_pct:z.number().int().min(0).max(100).default(0),market_pct:z.number().int().min(0).max(100).default(0),
  evidence:z.string().max(4000).default(''),method:z.enum(['kanban','scrum','pmbok','hybrid']).default('kanban'),worker:z.enum(['ai','human','hybrid']).default('hybrid'),assignee:z.string().max(100).default(''),
  plan_start:date.nullable().default(null),plan_end:date.nullable().default(null),milestone:z.boolean().default(false),dependencies:z.array(z.string().uuid()).max(30).default([]),
+ phases:z.array(deliveryPhase).max(40).default([]),
  process_type:z.enum(['delivery','payment']).default('delivery'),qa_owner:z.string().max(100).default(''),analyst:z.string().max(100).default(''),devops:z.string().max(100).default(''),
  story_points:z.number().int().min(0).max(100).default(0),definition_of_done:z.string().max(4000).default('Acceptance criteria passed; regression tests passed; reviewer approval; release verified.'),
  completion_evidence:z.string().max(4000).default(''),realized_usd:z.number().min(-1e9).max(1e9).nullable().default(null),
-}).strict().refine(v=>(v.plan_start===null)===(v.plan_end===null)&&(!v.plan_start||v.plan_end!>=v.plan_start),'Provide both dates with end on or after start').refine(v=>!v.milestone||!v.plan_start||v.plan_start===v.plan_end,'Milestones have one date');
+}).strict().refine(v=>(v.plan_start===null)===(v.plan_end===null)&&(!v.plan_start||v.plan_end!>=v.plan_start),'Provide both dates with end on or after start').refine(v=>!v.milestone||!v.plan_start||v.plan_start===v.plan_end,'Milestones have one date')
+ .refine(v=>new Set(v.phases.map(p=>p.id)).size===v.phases.length,'Phase identifiers must be unique')
+ .refine(v=>!v.phases.length||(!v.milestone&&!!v.plan_start&&!!v.plan_end&&v.phases.every(p=>p.start>=v.plan_start!&&p.end<=v.plan_end!)),'Phase dates must be inside the task schedule; milestones have no phases');
 export type DevelopmentData=z.infer<typeof developmentData>;
 export const itemInput=z.object({title:z.string().trim().min(3).max(160),public_summary:z.string().max(2000).default(''),data:developmentData}).strict();
 export const sprintInput=z.object({name:z.string().trim().min(3).max(100),goal:z.string().trim().min(5).max(2000),start_date:date,end_date:date}).strict().refine(v=>v.end_date>=v.start_date&&(Date.parse(v.end_date)-Date.parse(v.start_date))/86400000<=31,'Sprint must be 1–31 days');
