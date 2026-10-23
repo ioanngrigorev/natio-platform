@@ -1,3 +1,4 @@
+import {startRun,listRuns,changeRun,runEvents,runPatch} from '../../modules/development/runs.js';
 import type { FastifyInstance,FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -21,6 +22,14 @@ export async function registerDevelopmentRoutes(app:FastifyInstance){
  const p=getPool();
  for(const admin of [true,false]){
  const base=admin?'/admin/development':'/dashboard/development',guard=admin?requireAdmin():requireMerchant();
+ if(admin){
+ app.get(base+'/:id/runs',{preHandler:guard},async req=>listRuns(actor(req,true),parse(param,req.params).id));
+ app.post(base+'/:id/runs',{preHandler:guard,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async req=>startRun(actor(req,true),parse(param,req.params).id,parse(z.object({id:z.string().uuid(),version:v,target:z.enum(['test','production'])}).strict(),req.body)));
+ const runParam=z.object({id:z.string().uuid(),runId:z.string().uuid()});
+ app.get(base+'/:id/runs/:runId/patch',{preHandler:guard},async req=>{const p=parse(runParam,req.params);return runPatch(actor(req,true),p.id,p.runId)});
+ app.get(base+'/:id/runs/:runId/events',{preHandler:guard},async req=>{const p=parse(runParam,req.params),q=parse(z.object({after:z.coerce.number().int().min(0).default(0)}),req.query);return runEvents(actor(req,true),p.id,p.runId,q.after)});
+ app.post(base+'/:id/runs/:runId/action',{preHandler:guard},async req=>{const p=parse(runParam,req.params),b=parse(z.object({action:z.enum(['cancel','approve']),commit_sha:z.string().regex(/^[a-f0-9]{40}$/).optional()}).strict(),req.body);if(b.action==='approve'&&req.admin!.admin.role!=='superadmin')throw Errors.forbidden('Production deployment requires a system administrator');return changeRun(actor(req,true),p.id,p.runId,b.action,b.commit_sha)});
+ }
  app.get(base,{preHandler:guard},async req=>{
   const a=actor(req,admin),s=scope(a),q=parse(z.object({q:z.string().max(150).default(''),status:z.enum(stages).optional(),offset:z.coerce.number().int().min(0).max(100000).default(0),limit:z.coerce.number().int().min(1).max(200).default(100),demo:z.enum(['all','real','demo']).default('all')}),req.query);
   const where=s.sql+" AND ($5='' OR title ILIKE '%'||$5||'%') AND ($6::text IS NULL OR status=$6) AND ($7='all' OR is_demo=($7='demo'))",args=[...s.args,q.q,q.status||null,q.demo];

@@ -17,7 +17,8 @@
     "db:rotate-key": "tsx src/db/rotate-key.ts",
     "test": "vitest run",
     "test:unit": "vitest run test/unit",
-    "test:e2e": "vitest run test/e2e"
+    "test:e2e": "vitest run test/e2e",
+    "agent:runner": "tsx src/modules/development/runner.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
