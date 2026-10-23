@@ -12,7 +12,7 @@ const dateLabel = (value: string, monthOnly = false) => new Date(`${value}T00:00
   timeZone: "UTC", month: "short", ...(monthOnly ? {} : { day: "numeric" }),
 });
 const fullDate = (value: string) => new Date(`${value}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
-const compact = (value: number) => new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+const compact = (value: number) => new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 2 }).format(value);
 const axis = { fontSize: 11, fill: "var(--chart-axis)" };
 const button = (selected: boolean) => `rounded-md px-3 py-1.5 text-xs transition-colors ${selected ? "bg-brand-600 text-white" : "text-ink-500 hover:bg-ink-100"}`;
 
