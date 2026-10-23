@@ -89,7 +89,7 @@ export function Shell({ nav, brand, children }: { nav: NavItem[]; brand: { title
           <div className="ml-auto flex items-center gap-3">
             {translateUi(session.kind === "admin" ? <><Link href={"/admin/support?page="+encodeURIComponent(pathname)} className="text-xs text-ink-500 hover:text-brand-600">{translateUi("Support ↗")}</Link><AdminThemeToggle /></> : null)}
             <Link href={base+"/development?new=1&source="+encodeURIComponent(pathname)} className="hidden text-xs text-brand-600 sm:block">{translateUi("＋ Suggest improvement")}</Link>
-            {<button type="button" className="btn-secondary whitespace-nowrap !border-brand-600 !text-brand-600" onClick={()=>window.dispatchEvent(new CustomEvent('natio:ask',{detail:''}))}>{translateUi("✦ Ask AI")}</button>}<DevelopmentNotifications/>
+            {<button type="button" className="btn-secondary natio-ai-trigger whitespace-nowrap border-brand-600 text-brand-600" onClick={()=>window.dispatchEvent(new CustomEvent('natio:ask',{detail:''}))}>{translateUi("✦ Ask AI")}</button>}<DevelopmentNotifications/>
             <LanguagePicker compact/><ModeToggle />
             <button type="button" onClick={logout} className="text-[12px] text-ink-500 hover:text-ink-900">{translateUi("Sign out")}</button>
           </div>

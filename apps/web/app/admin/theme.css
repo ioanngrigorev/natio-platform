@@ -146,6 +146,9 @@
 .admin-theme .btn-secondary { background:var(--surface); }
 .admin-theme .btn-primary:disabled,.admin-theme .btn-secondary:disabled { opacity:.45; cursor:not-allowed; }
 .admin-theme .btn-secondary:hover:not(:disabled) { background:var(--chart-grid); }
+/* Keep the AI action readable in every palette; fixed brand utilities must not override theme tokens. */
+.admin-theme .natio-ai-trigger { color:var(--accent-text); border-color:var(--accent-text); background:var(--accent-soft); }
+.admin-theme .natio-ai-trigger:hover:not(:disabled) { background:var(--surface-hover); }
 .admin-theme .natio-assistant { background:var(--surface); }
 @media(prefers-reduced-motion:reduce){.admin-theme .animate-pulse{animation:none}}
 
