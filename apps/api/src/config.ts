@@ -57,6 +57,7 @@ const schema = z.object({
    * collapse onto it. "false" disables XFF parsing entirely.
    */
   TRUST_PROXY: z.string().default("loopback"),
+  GEOLOCATION_API_KEY: z.string().optional(),
 
   RATE_LIMIT_API_PER_MINUTE: int(600),
   RATE_LIMIT_DASHBOARD_PER_MINUTE: int(300),

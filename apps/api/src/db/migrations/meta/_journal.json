@@ -99,6 +99,13 @@
       "when": 1792751000000,
       "tag": "0013_traffic_conversion",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792752000000,
+      "tag": "0014_reporting_covering_indexes",
+      "breakpoints": true
     }
   ]
 }

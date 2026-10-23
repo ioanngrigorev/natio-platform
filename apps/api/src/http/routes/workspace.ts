@@ -2,6 +2,8 @@ import {localeOf} from '../../modules/localization/service.js';
 import {trafficAnalytics} from '../../modules/analytics/traffic.js';
 import {biQuery} from '../../modules/analytics/bi.js';
 import {greetingQuotes,searchQuotes} from '../../modules/quotes/service.js';
+import {LocationLookup,validTimeZone} from '../../modules/quotes/location.js';
+import {dateInZone,dailyPerspective} from '../../modules/quotes/daily.js';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../guards.js';
@@ -21,6 +23,12 @@ import { SnapshotCache } from '../../modules/analytics/snapshot-cache.js';
 const id=z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), params=z.object({id});
 export async function registerWorkspaceRoutes(app:FastifyInstance){
  const guard=requireAdmin(), pool=getPool(), snapshots=new SnapshotCache();
+ const locations=new LocationLookup(fetch,()=>Date.now(),loadConfig().GEOLOCATION_API_KEY);
+ app.get('/admin/daily-perspective',{preHandler:guard},async(req,reply)=>{
+  const q=parse(z.object({time_zone:z.string().max(80).default('UTC').refine(validTimeZone,'Invalid time zone')}),req.query);
+  const location=await locations.resolve(req.ip),timeZone=location?.time_zone??q.time_zone,date=dateInZone(new Date(),timeZone);
+  return reply.header('Cache-Control','private, no-store').send({quote:dailyPerspective(date,req.admin!.admin.id),local_date:date,time_zone:timeZone,location,source:location?'ip':'device'});
+ });
  app.post('/admin/risk-dashboard/scenario',{preHandler:guard},async(req)=>{
   if(req.dashboardMode!=='test')throw Errors.forbidden('Simulation requires Test data');
   const b=parse(z.object({settled:z.number().int().positive().max(10000000),disputes:z.number().int().nonnegative().max(10000000),average_amount:z.number().int().nonnegative().max(100000000),fee:z.number().int().nonnegative().max(1000000),currency:z.string().regex(/^[A-Z]{3}$/)}).strict().refine(v=>v.disputes<=v.settled,'Disputes cannot exceed settled payments in the same cohort'),req.body);

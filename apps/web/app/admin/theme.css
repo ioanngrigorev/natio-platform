@@ -180,11 +180,14 @@
 .greeting-date span {text-transform:none;}
 .greeting-thought {border-inline-start:1px solid var(--line);padding-inline-start:30px;position:relative;}
 .greeting-thought blockquote p {font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(15px,1.3vw,19px);line-height:1.55;text-wrap:pretty;}
-.greeting-thought footer {display:flex;gap:15px;align-items:center;margin-top:10px;font-size:10px;color:var(--muted);}
-.greeting-thought cite {font-style:normal;font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.greeting-thought footer {display:flex;justify-content:flex-end;align-items:center;margin-top:16px;font-size:11px;color:var(--muted);}
+.greeting-thought cite {font-style:normal;font-weight:500;letter-spacing:.07em;}
+.greeting-thought cite a {display:inline-flex;align-items:center;gap:8px;padding:3px 0;}
+.greeting-thought cite a::before {content:"";width:24px;height:1px;background:var(--line);margin-right:4px;}
+.greeting-thought cite svg {width:13px;height:13px;opacity:.65;}
+.greeting-thought cite a:focus-visible {outline:2px solid var(--accent);outline-offset:4px;border-radius:2px;}
+.greeting-location time {font-variant-numeric:tabular-nums;}
 .greeting-thought a:hover {color:var(--accent-text);}
-.greeting-tools {display:flex;align-items:center;gap:10px;margin-top:10px;color:var(--muted);font-size:10px;}
-.greeting-tools button {width:24px;height:24px;font-size:19px;border-radius:50%;border:1px solid var(--line);}
 .quote-library-card {padding:26px;border:1px solid var(--line);border-radius:14px;background:var(--surface);}
 .quote-library-card blockquote {font:italic 20px/1.6 Georgia,serif;margin:15px 0;}
 .quote-library-card figcaption {display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:11px;}
