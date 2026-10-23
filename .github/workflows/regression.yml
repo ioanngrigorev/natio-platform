@@ -35,7 +35,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - name: Install disposable Redis test runtime
-        timeout-minutes: 4
+        timeout-minutes: 8
         run: |
           # A stalled package mirror must not consume the entire regression job.
           sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
