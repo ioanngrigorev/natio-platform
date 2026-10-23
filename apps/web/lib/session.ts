@@ -30,14 +30,14 @@ export async function currentMode(): Promise<Mode> {
   return (await cookies()).get("natio_mode")?.value === "live" ? "live" : "test";
 }
 
-export async function getMerchantSession(): Promise<MerchantSession | null> {
+export const getMerchantSession = cache(async (): Promise<MerchantSession | null> => {
   try {
     return await apiServer<MerchantSession>("/dashboard/auth/me", { cookie: (await cookieHeader()), mode: (await currentMode()) });
   } catch (err) {
     if (err instanceof ApiRequestError && (err.status === 401 || err.status === 403)) return null;
     throw err;
   }
-}
+});
 
 export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
   try {
