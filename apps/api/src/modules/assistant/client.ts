@@ -10,9 +10,9 @@ const board=obj({name:str,from:str,to:str,currency:str,merchant_id:nullable,coun
 const connection=obj({name:{type:'string',minLength:2,maxLength:80},adapter:{type:'string',enum:['mock_acquirer','mock_qr']},currencies:{type:'array',minItems:1,maxItems:20,items:{type:'string',pattern:'^[A-Z]{3}$'}},countries:{type:'array',minItems:1,maxItems:30,items:{type:'string',pattern:'^[A-Z]{2}$'}},methods:{type:'array',minItems:1,maxItems:8,items:{type:'string',enum:['card','bank_transfer','qr','open_banking','wallet','instant','local','crypto']}},timeout_ms:{type:'integer',minimum:1000,maximum:30000}});
 export const responseSchema=obj({answer:str,sources:{type:'array',items:str},action:{type:'string',enum:['none','dashboard','connection']},dashboard:{anyOf:[board,{type:'null'}]},connection:{anyOf:[connection,{type:'null'}]}});
 const unavailable=(code='assistant_unavailable')=>new ApiError(503,'provider_error',code,"AI temporarily unavailable. Knowledge Base, BI and Lab continue working.");
-export async function openai(path:string,body:string|FormData,json=true){
+export async function openai(path:string,body:string|FormData,json=true,timeoutMs=25_000){
  const cfg=loadConfig();if(!cfg.OPENAI_API_KEY)throw unavailable('assistant_not_configured');
- let res:Response;try{res=await fetch(`https://api.openai.com/v1/${path}`,{method:'POST',headers:{authorization:`Bearer ${cfg.OPENAI_API_KEY}`,...(json?{'content-type':'application/json'}:{})},body,signal:AbortSignal.timeout(25000)});}catch{throw unavailable('assistant_timeout');}
+ let res:Response;try{res=await fetch(`https://api.openai.com/v1/${path}`,{method:'POST',headers:{authorization:`Bearer ${cfg.OPENAI_API_KEY}`,...(json?{'content-type':'application/json'}:{})},body,signal:AbortSignal.timeout(timeoutMs)});}catch{throw unavailable('assistant_timeout');}
  if(!res.ok){
   if(res.status===429){
    // Inspect only the error category; never forward raw provider content or credentials.
@@ -47,5 +47,7 @@ export async function transcribeAudio(bytes:Buffer,mime:string){
  const type=mime.split(';')[0]!, ext:Record<string,string>={'audio/webm':'webm','audio/mp4':'mp4','audio/wav':'wav','audio/mpeg':'mp3','audio/ogg':'ogg','video/webm':'webm'};
  if(!ext[type]||bytes.length<32||bytes.length>5*1024*1024)throw new ApiError(422,'invalid_request_error','invalid_audio','Use a short audio recording up to 5 MB.');
  const form=new FormData();form.append('file',new Blob([new Uint8Array(bytes)],{type}),`voice.${ext[type]}`);form.append('model',loadConfig().OPENAI_TRANSCRIPTION_MODEL);
- const r=await openai('audio/transcriptions',form,false);if(typeof r.text!=='string'||r.text.length>4000)throw unavailable('transcription_invalid');return {text:r.text};
+ // Three-minute dictation can exceed the chat latency budget; retain the full
+ // transcript for review rather than silently dropping the end of a request.
+ const r=await openai('audio/transcriptions',form,false,60_000);if(typeof r.text!=='string'||r.text.length>12000)throw unavailable('transcription_invalid');return {text:r.text};
 }

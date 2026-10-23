@@ -1,5 +1,6 @@
 import { beforeEach,afterEach,describe,it,expect,vi } from 'vitest';
 import { validateAnswer,askAssistant,transcribeAudio,responseSchema } from '../../src/modules/assistant/client.js';
+import { assistantInput } from '../../src/modules/assistant/schemas.js';
 import { resetConfigForTests } from '../../src/config.js';
 import { buildSignals,riskThresholds } from '../../src/modules/analytics/risk-dashboard.js';
 const valid={answer:'График будет рассчитан по данным системы.',sources:['charts','nonexistent'],action:'dashboard',dashboard:{name:'Оборот',from:'2025-01-01',to:'2025-12-31',currency:'EUR',merchant_id:null,country:null,widgets:['volume','outcomes']},connection:null};
@@ -31,6 +32,15 @@ describe('assistant response boundary',()=>{
   await expect(askAssistant({question:'Помоги',page:'/admin',history:[],locale:'en'},'test')).rejects.toMatchObject({code:'assistant_capacity'});
  });
  it('does not invent a response when the provider times out or refuses',async()=>{vi.stubGlobal('fetch',vi.fn().mockRejectedValue(Error('timeout')));await expect(askAssistant({question:'Помоги',page:'/admin',history:[],locale:'en'},'test')).rejects.toMatchObject({code:'assistant_timeout'});vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({output:[{content:[{type:'refusal',refusal:'no'}]}]}))));await expect(askAssistant({question:'Помоги',page:'/admin',history:[],locale:'en'},'test')).rejects.toMatchObject({code:'assistant_invalid_response'})});
+ it('preserves long dictation through transcription and message validation',async()=>{
+  const text='Please improve this payment flow and show its risks. '.repeat(150);
+  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({text}))));
+  const transcript=await transcribeAudio(Buffer.alloc(40),'audio/webm;codecs=opus');
+  const input=assistantInput.parse({question:transcript.text,page:'/admin',history:[]});
+  expect(input.question).toBe(text.trim());
+  expect(input.question.length).toBeGreaterThan(4000);
+  expect(assistantInput.safeParse({...input,question:'x'.repeat(12001)}).success).toBe(false);
+ });
  it('bounds audio and validates transcription output',async()=>{await expect(transcribeAudio(Buffer.alloc(40),'application/pdf')).rejects.toMatchObject({status:422});await expect(transcribeAudio(Buffer.alloc(6*1024*1024),'audio/webm')).rejects.toMatchObject({status:422});vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({text:'Оборот за март'}))));expect(await transcribeAudio(Buffer.alloc(40),'audio/webm')).toEqual({text:'Оборот за март'})});
 });
 describe('risk signal evidence',()=>{
