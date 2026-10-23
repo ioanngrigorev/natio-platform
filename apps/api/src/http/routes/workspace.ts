@@ -49,7 +49,7 @@ export async function registerWorkspaceRoutes(app:FastifyInstance){
  app.post('/admin/assistant/chat',{preHandler:guard,config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req)=>{const input=parse(assistantInput,req.body);return meteredAi(billingActor(req),'text',()=>askAssistant(input,req.dashboardMode!))});
  app.post('/admin/assistant/chat-with-files',{preHandler:guard,bodyLimit:11*1024*1024,config:{rateLimit:{max:8,timeWindow:'1 minute'}}},async req=>{
   let metadata:unknown,bytes=0;const files:Attachment[]=[];
-  for await(const part of req.parts({limits:{fileSize:5*1024*1024,files:4,fields:1,fieldSize:20000,parts:5}})){
+  for await(const part of req.parts({limits:{fileSize:5*1024*1024,files:4,fields:1,fieldSize:100000,parts:5}})){
    if(part.type==='file'){const b=await part.toBuffer();bytes+=b.length;if(bytes>10*1024*1024)throw Errors.validation('Maximum 10 MB of attachments per message');files.push(validateAttachment(part.filename,b));}
    else if(part.fieldname==='request'&&!metadata){try{metadata=JSON.parse(String(part.value))}catch{throw Errors.validation('Invalid message metadata')}}else throw Errors.validation('Unexpected attachment field');
   }
