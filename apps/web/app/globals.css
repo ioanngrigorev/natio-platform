@@ -231,6 +231,9 @@ body {
 
 /* Explicit language selection is persisted across public, merchant and admin pages. */
 .language-picker{display:inline-flex;align-items:center;gap:6px;color:inherit;font-size:12px;border:1px solid var(--admin-line,#d8dce5);border-radius:9px;padding:4px 8px;background:var(--admin-surface,#fff)}
+.language-control{position:relative;max-width:100%}
+.language-feedback{position:absolute;inset-inline-end:0;top:calc(100% + 8px);z-index:70;width:250px;max-width:calc(100vw - 32px);padding:12px;border:1px solid var(--line,#d8dce5);border-radius:10px;background:var(--surface,#fff);color:var(--foreground,#1c2230);font-size:12px;box-shadow:0 6px 24px #0002}
+.language-feedback button{margin-top:8px;color:var(--accent-text,#1d17f3);text-decoration:underline;text-underline-offset:3px}
 .language-picker select{color:inherit;background:transparent;border:0;box-shadow:none;padding:2px 22px 2px 2px;font-size:inherit;max-width:120px;cursor:pointer}
 .global-language-picker{position:fixed;inset-inline-start:12px;bottom:10px;z-index:60;color:#1c2230}
 body:has(.natio-sidebar) .global-language-picker{display:none}
