@@ -6,7 +6,7 @@ import {type Item,labels} from './model';
 import {DAY,day,phaseStyles,timelineWindow,timelineTicks,intervalPosition,dependencyPath,SUMMARY_HEIGHT,PHASE_HEIGHT,type Scale} from '@/lib/development-timeline';
 export function Gantt({items,onSelect}:{items:Item[];onSelect:(i:Item)=>void}){
  const {t,locale}=useI18n(),marker=useId().replaceAll(':','');
- const rows=items.filter(i=>i.data.plan_start&&i.data.plan_end).sort((a,b)=>a.data.plan_start!.localeCompare(b.data.plan_start!));
+ const rows=items.filter(i=>i.data.plan_start&&i.data.plan_end).map(i=>({...i,data:{...i.data,phases:i.data.phases??[],dependencies:i.data.dependencies??[]}})).sort((a,b)=>a.data.plan_start!.localeCompare(b.data.plan_start!));
  const first=rows[0]?.data.plan_start||day(Date.now()),last=rows.reduce((v,i)=>i.data.plan_end!>v?i.data.plan_end!:v,first);
  const [scale,setScale]=useState<Scale>('quarter'),[anchor,setAnchor]=useState(first),[expanded,setExpanded]=useState<Set<string>>(()=>new Set(rows.slice(0,1).map(i=>i.id))),[links,setLinks]=useState(true);
  useEffect(()=>{if(rows.length&&(anchor<first||anchor>last))setAnchor(first)},[first,last]);
