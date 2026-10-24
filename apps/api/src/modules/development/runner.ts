@@ -8,6 +8,7 @@ import { runnerSettings,assertAllowedFiles,assertDeployable,deploymentState } fr
 import { startAgentProxy } from './agent-proxy.js';
 import { claimRun,checkpoint,recordStage } from './run-store.js';
 
+if(process.platform!=='linux'||!process.getuid||process.getuid()===0)throw new Error('Use an unprivileged Linux service account for the agent controller');
 const cfg=runnerSettings.parse(JSON.parse(await readFile(process.env.NATIO_AGENT_CONFIG||'/etc/natio/agent-runner.json','utf8')));
 if(!process.env.OPENAI_API_KEY)throw new Error('Existing OPENAI_API_KEY is required');
 if(!process.env.NATIO_AGENT_DATABASE_URL)throw new Error('Runner database URL is required');
@@ -41,7 +42,7 @@ async function execute(c:pg.PoolClient,r:any){
  const git=(args:string[])=>command('git',['-c','core.hooksPath=/dev/null',...args],{cwd:workspace,check});
  async function sandbox(stage:string,input?:string){
   const logs=path.join(cfg.root,'diagnostics',r.id);await mkdir(logs,{recursive:true,mode:0o700});
-  const proxy=stage==='develop'||stage==='review'?await startAgentProxy(process.env.OPENAI_API_KEY!,{model:cfg.model}):null;
+  const proxy=stage==='develop'||stage==='review'?await startAgentProxy(process.env.OPENAI_API_KEY!,{model:cfg.model,host:gateway,port:cfg.proxyPort}):null;
   const args=['run','--interactive','--name',container,'--init','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--pids-limit=512','--memory='+cfg.memory,'--cpus='+cfg.cpus,'--user',`${process.getuid!()}:${process.getgid!()}`,'--tmpfs','/tmp:rw,exec,size=1g','--tmpfs','/agent-home:rw,exec,size=64m,mode=1777','--mount',`type=bind,source=${workspace},target=/workspace${stage==='review'?',readonly':''}`,'--mount',`type=bind,source=${workspace}/.git,target=/workspace/.git,readonly`,'--mount',`type=bind,source=${logs},target=/diagnostics`,'--workdir','/workspace','--env','HOME=/agent-home'];
   if(proxy)args.push('--network',cfg.network,'--add-host',`host.docker.internal:${gateway}`,'--env','NATIO_AGENT_PROXY_TOKEN','--env',`NATIO_AGENT_PROXY_URL=http://host.docker.internal:${proxy.port}/v1`);else args.push('--network=none');
   args.push(cfg.image,stage,cfg.model||'');

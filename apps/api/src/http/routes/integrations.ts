@@ -57,7 +57,7 @@ export async function registerIntegrationRoutes(app:FastifyInstance){
  });
  app.get('/admin/integrations/connectors',{preHandler:requireAdmin('integrations.read')},async()=>({data:(await db.select().from(providers).where(and(eq(providers.status,'active'),inArray(providers.adapterKey,loadConfig().NATIO_SANDBOX_ONLY?['mock_acquirer','mock_qr']:['mock_acquirer','mock_qr','yookassa']))).limit(1000)).filter(p=>p.status==='active'&&['mock_acquirer','mock_qr','yookassa'].includes(p.adapterKey)&&(!loadConfig().NATIO_SANDBOX_ONLY||p.adapterKey.startsWith('mock_'))).map(p=>({id:p.id,name:p.name,adapter:p.adapterKey,methods:p.supportedMethods,currencies:p.supportedCurrencies,countries:p.supportedCountries}))}));
  app.post('/admin/integrations/connections',{preHandler:requireAdmin('providers.manage')},async(req,reply)=>{
-  const body=parse(z.object({provider_id:id,name:z.string().trim().min(2).max(80),currency:z.string().regex(/^[A-Z]{3}$/),method:z.string().min(1).max(40),credentials:z.record(z.string().max(500)).default({}),confirmed:z.literal(true)}).strict(),req.body);
+  const body=parse(z.object({provider_id:id,name:z.string().trim().min(2).max(80),currency:z.string().regex(/^[A-Z]{3}$/),method:z.string().min(1).max(40),credentials:z.record(z.string(), z.string().max(500)).default({}),confirmed:z.literal(true)}).strict(),req.body);
   const [provider]=await db.select().from(providers).where(eq(providers.id,body.provider_id)).limit(1);
   if(!provider||provider.status!=='active'||!['mock_acquirer','mock_qr','yookassa'].includes(provider.adapterKey))throw Errors.validation('Choose an implemented connector');
   if(!provider.supportedMethods.includes(body.method))throw Errors.validation('Payment method is not supported by this connector');

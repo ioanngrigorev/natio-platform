@@ -11,6 +11,8 @@ if ! getent passwd "$(id -u)" >/dev/null; then
  export LD_PRELOAD="$(find /usr/lib -name libnss_wrapper.so -type f | head -1)"
 fi
 stage="$1"
+# A digest-pinned runtime must match the candidate dependency lock exactly.
+cmp -s /opt/template/pnpm-lock.yaml /workspace/pnpm-lock.yaml || { echo "Agent runtime dependency lock mismatch" >&2; exit 65; }
 # Tests start from the committed candidate, not ignored files or dependencies
 # left behind by the coding agent. This is an isolated disposable checkout.
 if [ "$stage" = test ]; then git clean -ffdx > /diagnostics/clean.log; fi

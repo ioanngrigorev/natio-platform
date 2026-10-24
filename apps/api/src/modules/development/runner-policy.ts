@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export const runnerSettings=z.object({
  repository:z.string().regex(/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+(?:\.git)?$/),
+ proxyPort:z.number().int().min(1024).max(65535).default(18765),
  network:z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/).default('natio-agents'),
  ref:z.string().regex(/^[\w][\w./-]*$/),
  testRef:z.string().regex(/^[\w][\w./-]*$/).default('codex/agent-test'),

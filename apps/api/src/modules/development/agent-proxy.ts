@@ -3,7 +3,7 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {Readable} from 'node:stream';
 /** Short-lived, narrowly scoped capability. The API key never enters a checkout,
  * model shell, test process, container environment or persisted log. */
-export async function startAgentProxy(key:string,options:{model?:string;limit?:number;host?:string;fetch?:typeof fetch}={}){
+export async function startAgentProxy(key:string,options:{model?:string;limit?:number;host?:string;port?:number;fetch?:typeof fetch}={}){
  const token=randomBytes(32).toString('hex'),controllers=new Set<AbortController>();let used=0;
  const upstream=options.fetch||fetch;
  const server=createServer(async(req,res)=>{
@@ -29,7 +29,7 @@ export async function startAgentProxy(key:string,options:{model?:string;limit?:n
   finally{clearTimeout(timeout);controllers.delete(controller)}
  });
  server.requestTimeout=190_000;server.headersTimeout=10_000;
- await new Promise<void>(resolve=>server.listen(0,options.host||'0.0.0.0',resolve));
+ await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(options.port||0,options.host||'0.0.0.0',resolve)});
  const port=(server.address() as {port:number}).port;
  return {port,token,close:async()=>{for(const c of controllers)c.abort();server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()))}};
 }

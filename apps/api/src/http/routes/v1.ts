@@ -239,7 +239,7 @@ export async function registerV1Routes(app: FastifyInstance) {
         provider_token: z.string().min(4).max(255),
         provider_code: z.string().max(64).optional(),
         customer: customerInputSchema.optional(),
-        display: z.record(z.string().max(64)).optional(),
+        display: z.record(z.string(), z.string().max(64)).optional(),
       })
       .strict()
       .refine((v) => !looksLikeAccountNumber(v.provider_token), { message: "provider_token must be a provider token, never a card or account number", path: ["provider_token"] })

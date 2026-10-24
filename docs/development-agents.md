@@ -39,8 +39,9 @@ production files or the Docker socket into the agent containers. The runner's
 controller checkout and `/etc/natio-agents` must not be inside run workspaces.
 
 Create the isolated bridge once with `docker network create --internal natio-agents`.
-The controller refuses a non-internal network. Its short-lived proxy listens on
-the host gateway; do not publish any application or financial service on that
+The controller refuses a non-internal network. Its short-lived proxy binds only
+to that bridge gateway on `proxyPort` (default 18765). Permit TCP to that port
+from the agent bridge subnet in the host firewall, never from public interfaces; do not publish any application or financial service on that
 bridge. Agent containers have no direct external network access.
 
 1. Apply migration `0018_development_runs`, build the API and web, and deploy them
@@ -48,7 +49,8 @@ bridge. Agent containers have no direct external network access.
 2. Build `deploy/agents/Dockerfile` from the trusted revision, with
    `--build-arg CODEX_VERSION=0.164.0`. Publish it to the organization's registry;
    use its `name@sha256:...` digest (or the immutable local `sha256:...` image ID) in `runner.json`. Dependency changes require a
-   new trusted runtime image. Do not use mutable tags.
+   new trusted runtime image; the entrypoint compares the candidate lockfile with
+   the image lockfile and refuses mismatches. Do not use mutable tags.
 3. Copy the example runner JSON to `/etc/natio-agents/runner.json`. Copy the built
    controller to `/opt/natio-agent-controller`. Install the systemd unit and
    replace the Node executable path if needed. The optional `model` field pins a
@@ -115,3 +117,10 @@ loopback `natio_test` database. Actual Docker/Codex/provider and rollout checks
 must be recorded separately; mocked state transitions are not a live release.
 
 Official execution reference: https://developers.openai.com/codex/noninteractive
+
+## Validation dependency prerequisite
+
+The release updates Zod to 4.6.6 and supplies explicit string-key schemas for
+records. CI previously stopped on GHSA-mrhx-c7xc-m3w5. A regression verifies that
+an oversized constrained array does not allocate a validation issue per element.
+See https://github.com/advisories/GHSA-mrhx-c7xc-m3w5.
