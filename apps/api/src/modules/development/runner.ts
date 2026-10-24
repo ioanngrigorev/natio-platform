@@ -44,6 +44,7 @@ async function execute(c:pg.PoolClient,r:any){
   const logs=path.join(cfg.root,'diagnostics',r.id);await mkdir(logs,{recursive:true,mode:0o700});
   const proxy=stage==='develop'||stage==='review'?await startAgentProxy(process.env.OPENAI_API_KEY!,{model:cfg.model,host:gateway,port:cfg.proxyPort}):null;
   const args=['run','--interactive','--name',container,'--init','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--pids-limit=512','--memory='+cfg.memory,'--cpus='+cfg.cpus,'--user',`${process.getuid!()}:${process.getgid!()}`,'--tmpfs','/tmp:rw,exec,size=1g','--tmpfs','/agent-home:rw,exec,size=64m,mode=1777','--mount',`type=bind,source=${workspace},target=/workspace${stage==='review'?',readonly':''}`,'--mount',`type=bind,source=${workspace}/.git,target=/workspace/.git,readonly`,'--mount',`type=bind,source=${logs},target=/diagnostics`,'--workdir','/workspace','--env','HOME=/agent-home'];
+  if(cfg.memorySwap)args.push('--memory-swap='+cfg.memorySwap);
   if(proxy)args.push('--network',cfg.network,'--add-host',`host.docker.internal:${gateway}`,'--env','NATIO_AGENT_PROXY_TOKEN','--env',`NATIO_AGENT_PROXY_URL=http://host.docker.internal:${proxy.port}/v1`);else args.push('--network=none');
   args.push(cfg.image,stage,cfg.model||'');
   try{return await command('docker',args,{env:{...baseEnv,...(proxy?{NATIO_AGENT_PROXY_TOKEN:proxy.token}:{})},input,check})}

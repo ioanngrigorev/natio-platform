@@ -11,6 +11,7 @@ export const runnerSettings=z.object({
  testDeployHook:z.string().startsWith('/'),
  productionDeployHook:z.string().startsWith('/').optional(),
  timeoutSeconds:z.number().int().min(60).max(7200).default(1800),
+ memorySwap:z.string().regex(/^\d+[mg]$/).optional(),
  memory:z.string().regex(/^\d+[mg]$/).default('4g'),
  cpus:z.number().min(0.5).max(8).default(2),
 }).strict();

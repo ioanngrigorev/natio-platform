@@ -34,7 +34,7 @@ controller files and existing regression tests) require normal reviewed delivery
 
 ## Installation
 
-Use a dedicated Linux runner with Docker and adequate build memory. Do not mount
+Prefer a dedicated Linux runner with Docker and adequate build memory. On a shared host, cap agent CPU, memory and memory+swap through `cpus`, `memory` and `memorySwap`, and use a dedicated resource-limited Docker Buildx builder via the deployment config `builder` field. Controller systemd limits alone do not constrain containers or builds. Do not mount
 production files or the Docker socket into the agent containers. The runner's
 controller checkout and `/etc/natio-agents` must not be inside run workspaces.
 

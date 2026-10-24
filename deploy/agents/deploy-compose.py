@@ -39,7 +39,8 @@ def main():
         images={}
         for kind in sorted(set(services.values())):
             tag=f'natio/agent-{kind}:{sha}'
-            args=['docker','build','--build-arg',f'NATIO_GIT_SHA={sha}','--label',f'org.opencontainers.image.revision={sha}','-t',tag,'-f',str(source/f'apps/{kind}/Dockerfile')]
+            build=['docker','buildx','build','--builder',cfg['builder'],'--load'] if cfg.get('builder') else ['docker','build']
+            args=build+['--build-arg',f'NATIO_GIT_SHA={sha}','--label',f'org.opencontainers.image.revision={sha}','-t',tag,'-f',str(source/f'apps/{kind}/Dockerfile')]
             for key,value in cfg.get('build_args',{}).get(kind,{}).items():args+=['--build-arg',f'{key}={value}']
             subprocess.run(args+[str(source)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             images[kind]=run(['docker','image','inspect','--format','{{.Id}}',tag])
