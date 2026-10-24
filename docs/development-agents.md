@@ -5,8 +5,9 @@ then selects Delivery → Start agents. The request freezes the title, specifica
 and Definition of Done. It creates one durable run and records its requester.
 No coding process is started inside the financial API or webhook worker.
 
+The coding agent runs focused checks only, one command at a time. The independent reviewer reviews source without starting builds or services.
 The standalone controller runs a coding agent, an independent read-only review,
-then type checks, API/web regressions and production builds. Agent and test
+then type checks, API/web regressions and production builds, sequentially across workspace packages. Agent and test
 processes run in resource-limited containers without Docker, SSH or production
 database credentials. Docker is the outer sandbox: non-root UID, read-only root,
 no capabilities, no privilege escalation, an internal network and only the

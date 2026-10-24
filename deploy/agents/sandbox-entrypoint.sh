@@ -46,9 +46,10 @@ case "$stage" in
   createdb -h 127.0.0.1 -U natio natio_test
   export NATIO_E2E_DATABASE_URL=postgres://natio@127.0.0.1:5432/natio_test
   export NEXT_TELEMETRY_DISABLED=1
-  pnpm typecheck
-  pnpm test
-  API_INTERNAL_URL=http://api:4000 pnpm build
+  # Keep workspace checks sequential on a shared host; run the same suites.
+  pnpm -r --workspace-concurrency=1 run typecheck
+  pnpm -r --workspace-concurrency=1 run test
+  API_INTERNAL_URL=http://api:4000 pnpm -r --workspace-concurrency=1 run build
   ;;
  *) exit 64 ;;
 esac
