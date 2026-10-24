@@ -49,7 +49,7 @@ export function hasUnmaskedDigits(value: string, maxRun: number): boolean {
 }
 
 export const metadataSchema = z
-  .record(z.union([z.string().max(500), z.number(), z.boolean(), z.null()]))
+  .record(z.string(), z.union([z.string().max(500), z.number(), z.boolean(), z.null()]))
   .refine((m) => Object.keys(m).length <= 50, { message: "at most 50 metadata keys" });
 
 export const customerInputSchema = z.object({

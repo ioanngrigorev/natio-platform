@@ -268,7 +268,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         limits: z.object({ minAmount: z.number().int().nonnegative().optional(), maxAmount: z.number().int().positive().optional() }).optional(),
         currencies: z.array(z.string().length(3)).max(60).optional(),
         config: z.object({ simulation: z.object({ forceOutcome: z.enum(["success", "soft_decline", "hard_decline", "technical_error", "timeout", "provider_unavailable"]).nullable().optional(), technicalErrorRate: z.number().min(0).max(1).optional(), latencyMs: z.number().int().min(0).max(30000).optional() }).optional() }).passthrough().optional(),
-        credentials: z.record(z.unknown()).optional(),
+        credentials: z.record(z.string(), z.unknown()).optional(),
       });
       r.patch<{ Params: { id: string } }>("/provider-accounts/:id", async (req) => {
         need(req, "providers.manage");

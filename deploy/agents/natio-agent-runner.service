@@ -1,0 +1,24 @@
+[Unit]
+Description=NATIO isolated development agent controller
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=natio-agent
+Group=natio-agent
+SupplementaryGroups=docker
+WorkingDirectory=/opt/natio-agent-controller/apps/api
+EnvironmentFile=/etc/natio-agents/runner.env
+Environment=NATIO_AGENT_CONFIG=/etc/natio-agents/runner.json
+ExecStart=/usr/bin/node /opt/natio-agent-controller/apps/api/dist/modules/development/runner.js
+Restart=on-failure
+RestartSec=15
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

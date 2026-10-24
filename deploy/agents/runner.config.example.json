@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/ioanngrigorev/natio-platform.git",
+  "ref": "main",
+  "testRef": "codex/agent-test",
+  "network": "natio-agents",
+  "root": "/var/lib/natio-agents/runs",
+  "image": "natio/agent-runtime@sha256:REPLACE_WITH_BUILT_IMAGE_DIGEST",
+  "testDeployHook": "/etc/natio-agents/deploy-test",
+  "productionDeployHook": "/etc/natio-agents/deploy-production",
+  "timeoutSeconds": 1800,
+  "memory": "4g",
+  "cpus": 2
+}
