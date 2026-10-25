@@ -6,14 +6,15 @@ import {fileURLToPath} from 'node:url';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {startTestEnv,stopTestEnv,type TestEnv} from './setup.js';
 let env:TestEnv,web:ChildProcess,origin:string,cookie:string,csrf:string;
+const productionWeb=process.env.NATIO_WEB_CONTRACT_PRODUCTION==='true';
 let output='';
 async function request(path:string,options:RequestInit={}) {return fetch(origin+path,{...options,headers:{cookie,...options.headers},signal:AbortSignal.timeout(90_000)});}
 beforeAll(async()=>{
  env=await startTestEnv();
- const apiOrigin=await env.app.listen({host:'127.0.0.1',port:0});
+ const apiOrigin=await env.app.listen({host:'127.0.0.1',port:productionWeb?4000:0});
  const socket=createServer();await new Promise<void>(r=>socket.listen(0,'127.0.0.1',r));const port=(socket.address() as {port:number}).port;await new Promise<void>(r=>socket.close(()=>r()));
  origin=`http://127.0.0.1:${port}`;
- web=spawn(process.execPath,['node_modules/next/dist/bin/next','dev','--hostname','127.0.0.1','--port',String(port)],{cwd:fileURLToPath(new URL('../../../web/',import.meta.url)),env:{...process.env,NODE_ENV:'development',API_INTERNAL_URL:apiOrigin,NEXT_TELEMETRY_DISABLED:'1'},stdio:['ignore','pipe','pipe']});
+ web=spawn(process.execPath,['node_modules/next/dist/bin/next',productionWeb?'start':'dev','--hostname','127.0.0.1','--port',String(port)],{cwd:fileURLToPath(new URL('../../../web/',import.meta.url)),env:{...process.env,NODE_ENV:productionWeb?'production':'development',API_INTERNAL_URL:apiOrigin,NEXT_TELEMETRY_DISABLED:'1'},stdio:['ignore','pipe','pipe']});
  web.stdout?.on('data',c=>{output=(output+c).slice(-4000)});web.stderr?.on('data',c=>{output=(output+c).slice(-4000)});
  for(let i=0;i<100;i++){try{if((await fetch(origin+'/api/health',{signal:AbortSignal.timeout(1000)})).ok)break;}catch{}if(i===99)throw Error('Next failed to start: '+output);await new Promise(r=>setTimeout(r,200));}
  const login=await request('/api/admin/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:env.seed.adminEmail,password:env.seed.password})});
