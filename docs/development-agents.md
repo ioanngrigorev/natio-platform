@@ -117,6 +117,14 @@ production approval. Execute the integration suite only against a disposable
 loopback `natio_test` database. Actual Docker/Codex/provider and rollout checks
 must be recorded separately; mocked state transitions are not a live release.
 
+On constrained runners, the trusted test stage runs typechecks, builds the
+workspace with `API_INTERNAL_URL=http://127.0.0.1:4000`, then runs all tests
+sequentially with `NATIO_WEB_CONTRACT_PRODUCTION=true`. The HTTP fixture binds
+its disposable API to port 4000 and exercises the prebuilt Next production
+server with unchanged assertions and deadlines. CI additionally retains the
+default development-server coverage. Deployment builds use the target-specific
+API URL, not the loopback validation URL.
+
 Official execution reference: https://developers.openai.com/codex/noninteractive
 
 ## Validation dependency prerequisite

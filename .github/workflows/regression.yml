@@ -48,4 +48,8 @@ jobs:
       - name: Production builds
         run: pnpm build
         env:
-          API_INTERNAL_URL: http://api:4000
+          API_INTERNAL_URL: http://127.0.0.1:4000
+      - name: Production server HTTP contracts
+        run: pnpm --filter @natio/api exec vitest run test/e2e/web-contract.test.ts
+        env:
+          NATIO_WEB_CONTRACT_PRODUCTION: 'true'

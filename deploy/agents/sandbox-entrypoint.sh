@@ -48,8 +48,10 @@ case "$stage" in
   export NEXT_TELEMETRY_DISABLED=1
   # Keep workspace checks sequential on a shared host; run the same suites.
   pnpm -r --workspace-concurrency=1 run typecheck
-  pnpm -r --workspace-concurrency=1 run test
-  API_INTERNAL_URL=http://api:4000 pnpm -r --workspace-concurrency=1 run build
+  # Build once, then exercise the production server instead of retaining dev
+  # compiler caches for every dashboard route in the constrained sandbox.
+  API_INTERNAL_URL=http://127.0.0.1:4000 pnpm -r --workspace-concurrency=1 run build
+  NATIO_WEB_CONTRACT_PRODUCTION=true pnpm -r --workspace-concurrency=1 run test
   ;;
  *) exit 64 ;;
 esac
