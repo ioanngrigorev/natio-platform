@@ -1,7 +1,7 @@
 'use client';
 import {useI18n} from '@/lib/i18n/provider';
 
-import {useId,useState} from 'react';
+import {useId,useState,useLayoutEffect,useRef} from 'react';
 import {download} from './model';
 import {bpmnXml,processModel,type FlowNode,type Bounds,type ProcessType} from '@/lib/bpmn-model';
 export {bpmnXml} from '@/lib/bpmn-model';
@@ -16,11 +16,32 @@ function TaskIcon({kind}:{kind:FlowNode['kind']}){
  if(kind==='userTask')return <g fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="3" r="3"/><path d="M3 15v-5a5 5 0 0 1 10 0v5M5 10v5m6-5v5"/></g>;
  return <g fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2"/>{translateUi(Array.from({length:8},(_,i)=><path key={i} d="M8 0v3" transform={`rotate(${i*45} 8 8)`}/>))}</g>;
 }
+// HTML wrapping uses the actual translated glyph widths, unlike fixed SVG tspans.
+function TaskLabel({node:n}:{node:FlowNode}){
+ const {t,locale}=useI18n(),ref=useRef<HTMLDivElement>(null);
+ const text=n.lines.map(line=>t(line)).join(' '),width=n.width-16,height=n.height-28;
+ useLayoutEffect(()=>{
+  let active=true;
+  const fit=()=>{
+   const label=ref.current;if(!active||!label)return;
+   for(let size=16;size>=9;size-=0.5){
+    label.style.fontSize=`${size}px`;
+    const content=label.firstElementChild;
+    if(content&&content.getBoundingClientRect().height<=label.getBoundingClientRect().height&&label.scrollWidth<=width)break;
+   }
+  };
+  fit();void document.fonts?.ready.then(fit);
+  return ()=>{active=false};
+ },[text,locale,width,height]);
+ return <foreignObject x={n.x+8} y={n.y+24} width={width} height={height}>
+  <div ref={ref} lang={locale} dir={locale==='ar'?'rtl':'ltr'} style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center',fontSize:12,lineHeight:1.15,overflowWrap:'normal',color:'inherit'}}><span style={{width:'100%',flexShrink:0}}>{text}</span></div>
+ </foreignObject>;
+}
 function BpmnNode({node:n}:{node:FlowNode}){
  const {t:translateUi,locale:uiLocale}=useI18n();
 
  const event=n.kind==='startEvent'||n.kind==='endEvent',gate=n.kind==='exclusiveGateway',cx=n.x+n.width/2,cy=n.y+n.height/2;
- return <g><title>{n.name}</title>{translateUi(event?<><circle cx={cx} cy={cy} r="18" fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth={n.kind==='endEvent'?4:1.8}/>{translateUi(n.messageStart?<g transform={`translate(${cx-8.5} ${cy-6})`}><TaskIcon kind="receiveTask"/></g>:null)}</>:gate?<><path d={`M${cx} ${n.y} L${n.x+n.width} ${cy} L${cx} ${n.y+n.height} L${n.x} ${cy} Z`} fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth="1.8"/><path d={`M${cx-8} ${cy-8}l16 16m0-16-16 16`} stroke="currentColor" strokeWidth="2.2"/></>:<><rect x={n.x} y={n.y} width={n.width} height={n.height} rx="10" fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth="1.8"/><g transform={`translate(${n.x+9} ${n.y+8})`}><TaskIcon kind={n.kind}/></g><text x={cx} y={cy+(n.lines.length===1?12:4)} textAnchor="middle" fill="currentColor" fontSize="16">{translateUi(n.lines.map((s,i)=><tspan key={i} x={cx} dy={i?20:0}>{translateUi(s)}</tspan>))}</text></>)}{translateUi(n.label?<TextLabel box={n.label} text={n.name}/>:null)}</g>
+ return <g><title>{n.name}</title>{translateUi(event?<><circle cx={cx} cy={cy} r="18" fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth={n.kind==='endEvent'?4:1.8}/>{translateUi(n.messageStart?<g transform={`translate(${cx-8.5} ${cy-6})`}><TaskIcon kind="receiveTask"/></g>:null)}</>:gate?<><path d={`M${cx} ${n.y} L${n.x+n.width} ${cy} L${cx} ${n.y+n.height} L${n.x} ${cy} Z`} fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth="1.8"/><path d={`M${cx-8} ${cy-8}l16 16m0-16-16 16`} stroke="currentColor" strokeWidth="2.2"/></>:<><rect x={n.x} y={n.y} width={n.width} height={n.height} rx="10" fill="var(--bpmn-paper)" stroke="currentColor" strokeWidth="1.8"/><g transform={`translate(${n.x+9} ${n.y+8})`}><TaskIcon kind={n.kind}/></g><TaskLabel node={n}/></>)}{translateUi(n.label?<TextLabel box={n.label} text={n.name}/>:null)}</g>
 }
 function defaultMark(points:[number,number][]){const [a,b]=points,dx=Math.sign(b[0]-a[0]),dy=Math.sign(b[1]-a[1]),x=a[0]+dx*12,y=a[1]+dy*12;return `M${x-5} ${y-5}l10 10`}
 export function ProcessDiagram({title,type}:{title:string;type:ProcessType}){
