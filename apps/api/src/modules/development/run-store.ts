@@ -23,9 +23,9 @@ export async function recordStage(c:PoolClient,r:any,state:string,message:string
   if(!result.rowCount)throw new Error('Run ownership lost');
   await c.query('INSERT INTO development_run_events(run_id,stage,message) VALUES($1,$2,$3)',[r.id,state,message]);
   await c.query("INSERT INTO development_events(item_id,actor_kind,actor_id,event,detail) VALUES($1,'admin',$2,'agent_run_progress',$3)",[r.item_id,r.requester_id,JSON.stringify({run_id:r.id,state,note:message,commit_sha:fields.commit||r.commit_sha})]);
-  // The task remains in review: a successful deployment does not assert that all
+  // The task remains in test: a successful deployment does not assert that all
   // business acceptance criteria have been verified by the owner.
-  if(['awaiting_approval','deploy_queued','succeeded'].includes(state))await c.query("UPDATE development_items SET status='review',version=version+1,updated_at=now(),data=jsonb_set(data,'{completion_evidence}',to_jsonb($2::text)) WHERE id=$1 AND status IN ('in_progress','review')",[r.item_id,`Agent run ${r.id}: ${message}; commit ${fields.commit||r.commit_sha||''}`]);
+  if(['awaiting_approval','deploy_queued','succeeded'].includes(state))await c.query("UPDATE development_items SET status='test',version=version+1,updated_at=now(),data=jsonb_set(data,'{completion_evidence}',to_jsonb($2::text)) WHERE id=$1 AND status IN ('in_progress','review','test')",[r.item_id,`Agent run ${r.id}: ${message}; commit ${fields.commit||r.commit_sha||''}`]);
   await c.query('COMMIT');
  }catch(e){await c.query('ROLLBACK');throw e}
 }
