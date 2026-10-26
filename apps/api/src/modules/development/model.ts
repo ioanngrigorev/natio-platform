@@ -1,7 +1,7 @@
 import { z } from 'zod';
-export const stages=['draft','idea','backlog','todo','in_progress','review','test','done','rejected','archived'] as const;
+export const stages=['draft','idea','backlog','analysis','todo','in_progress','review','test','done','rejected','archived'] as const;
 export type Stage=typeof stages[number];
-export const flowStages=['todo','in_progress','review','test','done'] as const;
+export const flowStages=['analysis','todo','in_progress','test','done'] as const;
 export const specification=z.object({
  objective:z.string().max(4000),users:z.string().max(2000),scope:z.string().max(6000),
  acceptance:z.string().max(6000),technical:z.string().max(6000),risks:z.string().max(4000),questions:z.string().max(4000),
@@ -43,7 +43,7 @@ export function priority(d:Pick<DevelopmentData,'monthly_revenue_usd'|'monthly_s
  return Math.round(net*(d.confidence_pct/100)*(.5+.5*d.market_pct/100)/(d.effort_hours*risk)*100)/100;
 }
 export const priorityFormula='max(0, 3 × (monthly revenue + monthly savings) − one-time cost) × confidence × (0.5 + 0.5 × market evidence) ÷ (engineering hours × (1 + 0.15 × (complexity − 1)))';
-export const transitions:Record<Stage,Stage[]>={draft:['idea','backlog','rejected','archived'],idea:['draft','backlog','rejected','archived'],backlog:['idea','todo','rejected','archived'],todo:['backlog','in_progress','archived'],in_progress:['todo','review'],review:['in_progress','test'],test:['in_progress','done'],done:['backlog','archived'],rejected:['idea','archived'],archived:['idea']};
+export const transitions:Record<Stage,Stage[]>={draft:['idea','backlog','rejected','archived'],idea:['draft','backlog','rejected','archived'],backlog:['idea','analysis','todo','rejected','archived'],analysis:['backlog','todo','rejected','archived'],todo:['backlog','analysis','in_progress','archived'],in_progress:['todo','test'],review:['in_progress','test'],test:['in_progress','done'],done:['backlog','archived'],rejected:['idea','archived'],archived:['idea']};
 export function hasCycle(id:string,deps:string[],graph:Map<string,string[]>){const walk=(node:string,seen:Set<string>):boolean=>{if(node===id)return true;if(seen.has(node))return false;seen.add(node);return (graph.get(node)||[]).some(n=>walk(n,seen))};return deps.some(d=>walk(d,new Set()));}
 
 // Planning cost is separate from expected business value and never initiates a charge.

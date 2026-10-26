@@ -6,7 +6,7 @@ Status: follow-up release acceptance is tracked in [the consolidated matrix](rel
 
 All authenticated admin and merchant roles can see shared roadmap summaries. Premium merchant users and all admin roles can submit their own private requests. Text or a 45-second voice recording becomes an AI-generated, editable specification only when a working server-side OpenAI key is configured. Requests include objective, roles, scope, acceptance tests, technical work, risks and open questions. Manual specifications remain available without AI. No customer/payment records are sent to the model.
 
-An author reviews and saves the specification before choosing Ideas, Backlog, Rejected or Archive. Rejection and archive require a reason. The author can queue their approved request in To do or return it to the backlog. Operations/superadmin staff perform actual development transitions: In progress → Code review → Test → Done. Done requires recorded review/test/release evidence. No coding agent or production deployment is automatically launched by changing a task status.
+An author reviews and saves the specification before choosing Ideas, Backlog, Rejected or Archive. Rejection and archive require a reason. The author can queue their approved request in To do or return it to the backlog. Operations/superadmin staff perform actual development transitions: In progress → Test → Done. Done requires recorded review/test/release evidence. No coding agent or production deployment is automatically launched by changing a task status.
 
 Specifications support browser Print / Save PDF with a dedicated A4 layout and an editable BPMN 2.0 XML export. Two non-executable BPMN collaboration templates cover feature delivery and payment interactions. External participants are separate pools; internal roles are lanes. Message start events, end events, typed tasks, exclusive gateways and labelled default/conditional branches use standard notation. Solid sequence flows remain in a process; dashed message flows connect participants. All waypoints are orthogonal and are shared by the SVG preview and BPMN DI export. Payment exceptions stay away from the ledger, and failed QA returns to engineering. The XML is checked against the [OMG BPMN 2.0.2 schemas](https://www.omg.org/spec/BPMN/2.0.2). They are conceptual diagrams; they do not claim a payment integration is already deployed or substitute for complete exception handling.
 
@@ -20,7 +20,7 @@ Confidence and market evidence range from 0 to 1. Complexity ranges from 1 to 5.
 
 ## Delivery views
 
-- Kanban: To do, In progress, Review, Test, Done; maximum five actual In-progress items per test/live workspace; dependency cycles and starting unfinished dependencies are rejected.
+- Kanban: Backlog, Analysis, To do, In progress, Test, Done; maximum five actual In-progress items per test/live workspace; dependency cycles and starting unfinished dependencies are rejected.
 - Scrum: sprint goal, 1–31-day date range, assignment, one active sprint per mode, completion counts and story points. Unfinished items must be explicitly returned/unassigned before sprint completion. Story points are not translated into AI minutes.
 - PMBOK-inspired plan: schedule, assigned developer, analyst, QA, DevOps, dependencies and one-date milestones; Gantt timeline and on-time/late outcomes. These tools do not represent certification or implementation of every PMBOK practice.
 - Metrics: actual WIP, last-30-day throughput, elapsed cycle time, oldest active work and separately measured AI/human work timers. Manual timers use server timestamps, one active timer per actor, and do not pretend to launch coding agents.
@@ -66,8 +66,7 @@ The Gantt opens in a month with weekly ticks. Expandable phase rows distinguish 
 
 ## Board movement and ICE (26 October 2026)
 
-Scrum and Kanban share the same board: Backlog → To do → In progress → Code
-review → Test → Done. Dragging highlights only transitions returned by the API;
+Scrum and Kanban share the same board: Backlog → Analysis → To do → In progress → Test → Done. Dragging highlights only transitions returned by the API;
 a per-card select provides keyboard access. Each drop sends the current version
 to the existing status endpoint. The server remains authoritative for role,
 active agent run, sprint, dependency, WIP and completion-evidence checks. Failed
