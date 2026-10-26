@@ -10,7 +10,7 @@ export const scope=(a:Actor)=>({sql:'mode=$1 AND ($2::boolean OR visibility=\'sh
 export function view(r:any,a:Actor){
  const privateAccess=a.kind==='admin'||owns(r,a), data={...r.data};
  if(!privateAccess){for(const k of ['request','source_path','spec','evidence','completion_evidence','realized_usd'])delete data[k];}
- return {...r,data,ice_score:iceScore(data),cost_estimate:engineeringCost(data.effort_hours ?? 8),owner_id:privateAccess?r.owner_id:undefined,merchant_id:undefined,can_edit:a.manager||(owns(r,a)&&['draft','idea','backlog','analysis','todo','rejected','archived'].includes(r.status)),private_access:privateAccess,can_manage:a.manager};
+ return {...r,issue_key:r.issue_number?`NAT-${r.issue_number}`:undefined,data,ice_score:iceScore(data),cost_estimate:engineeringCost(data.effort_hours ?? 8),owner_id:privateAccess?r.owner_id:undefined,merchant_id:undefined,can_edit:a.manager||(owns(r,a)&&['draft','idea','backlog','analysis','todo','rejected','archived'].includes(r.status)),private_access:privateAccess,can_manage:a.manager};
 }
 export async function atomic<T>(mode:string,fn:(c:PoolClient)=>Promise<T>){const c=await getPool().connect();try{await c.query('BEGIN');await c.query("SELECT pg_advisory_xact_lock(hashtext('development:'||$1))",[mode]);const r=await fn(c);await c.query('COMMIT');return r}catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}
 export async function item(c:PoolClient|ReturnType<typeof getPool>,id:string,a:Actor,lock=false){const s=scope(a),r=(await c.query(`SELECT * FROM development_items WHERE id=$5 AND ${s.sql} ${lock?'FOR UPDATE':''}`,[...s.args,id])).rows[0];if(!r)throw Errors.notFound('Development item');return r}
@@ -22,12 +22,12 @@ export async function validateDependencies(c:PoolClient,id:string,deps:string[],
  for(const dep of deps){const row=all.find(r=>r.id===dep);if(!row||(a.kind!=='admin'&&row.visibility!=='shared'&&!owns(row,a)))throw Errors.validation('Dependency is not accessible');}
  if(hasCycle(id,deps,new Map(all.map(r=>[r.id,r.data.dependencies||[]]))))throw Errors.validation('Dependencies must not form a cycle');
 }
-export async function createItem(a:Actor,b:any){return atomic(a.mode,async c=>{const id=b.id||randomUUID();const old=(await c.query('SELECT * FROM development_items WHERE id=$1',[id])).rows[0];
+export async function createItem(a:Actor,b:any,initialStatus:'draft'|'backlog'='draft'){return atomic(a.mode,async c=>{const id=b.id||randomUUID();const old=(await c.query('SELECT * FROM development_items WHERE id=$1',[id])).rows[0];
  if(old){if(!owns(old,a)||old.mode!==a.mode||old.title!==b.title||old.public_summary!==b.public_summary||!isDeepStrictEqual(old.data,b.data))throw Errors.conflict('request_reused','Use a new request identifier');return view(old,a)}
  await validateDependencies(c,id,b.data.dependencies,a);
  if(!a.manager&&b.data.realized_usd!==null)throw Errors.forbidden('Only delivery managers can record realized value');
- const r=(await c.query('INSERT INTO development_items(id,mode,owner_kind,owner_id,merchant_id,title,public_summary,data,priority_score) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *',[id,a.mode,a.kind,a.id,a.merchantId||null,b.title,b.public_summary,JSON.stringify(b.data),priority(b.data)])).rows[0];await event(c,id,a,'created');return view(r,a)})}
-async function assertNoActiveRun(c:PoolClient,id:string){if((await c.query("SELECT 1 FROM development_runs WHERE item_id=$1 AND state IN ('queued','developing','testing','awaiting_approval','deploy_queued','deploying')",[id])).rowCount)throw Errors.conflict('agent_run_active','Cancel or finish the agent run before changing this task');}
+ const r=(await c.query('INSERT INTO development_items(id,mode,owner_kind,owner_id,merchant_id,title,public_summary,data,priority_score,status,board_rank) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,COALESCE((SELECT max(board_rank)+1024 FROM development_items WHERE mode=$2 AND status=$10),1024)) RETURNING *',[id,a.mode,a.kind,a.id,a.merchantId||null,b.title,b.public_summary,JSON.stringify(b.data),priority(b.data),initialStatus])).rows[0];await event(c,id,a,'created',{status:initialStatus});return view(r,a)})}
+export async function assertNoActiveRun(c:PoolClient,id:string){if((await c.query("SELECT 1 FROM development_runs WHERE item_id=$1 AND state IN ('queued','developing','testing','awaiting_approval','deploy_queued','deploying')",[id])).rowCount)throw Errors.conflict('agent_run_active','Cancel or finish the agent run before changing this task');}
 export async function updateItem(a:Actor,id:string,b:any){return atomic(a.mode,async c=>{const r=await item(c,id,a,true);version(r,b.version);await assertNoActiveRun(c,id);if(!a.manager&&(!owns(r,a)||!['draft','idea','backlog','analysis','todo','rejected','archived'].includes(r.status)))throw Errors.forbidden('Only the author or a delivery manager can edit this specification');
  if(!a.manager&&b.data.realized_usd!==r.data.realized_usd)throw Errors.forbidden('Only delivery managers can record realized value');
  await validateDependencies(c,id,b.data.dependencies,a);
@@ -35,7 +35,7 @@ export async function updateItem(a:Actor,id:string,b:any){return atomic(a.mode,a
 export async function moveItem(a:Actor,id:string,b:{version:number;status:Stage;reason:string}){return atomic(a.mode,async c=>{const r=await item(c,id,a,true);version(r,b.version);await assertNoActiveRun(c,id);if(!transitions[r.status as Stage].includes(b.status))throw Errors.invalidTransition('Development item',r.status,b.status);
  if(!a.manager&&(!owns(r,a)||!['draft','idea','backlog','analysis','todo','rejected','archived'].includes(r.status)||!['draft','idea','backlog','analysis','todo','rejected','archived'].includes(b.status)))throw Errors.forbidden('Only delivery managers can start, test or release work');
  const d=developmentData.parse(r.data);
- if(['backlog','todo'].includes(b.status)&&(!d.spec.objective.trim()||!d.spec.acceptance.trim()))throw Errors.validation('Review the objective and acceptance criteria before adding to backlog');
+ if(['todo','in_progress'].includes(b.status)&&(!d.spec.objective.trim()||!d.spec.acceptance.trim()))throw Errors.validation('Review the objective and acceptance criteria before starting development');
  if(['rejected','archived'].includes(b.status)&&b.reason.trim().length<3)throw Errors.validation('Provide a decision reason');
  if(b.status==='in_progress'){
  const blocked=(await c.query("SELECT id FROM development_items WHERE id=ANY($1::uuid[]) AND status<>'done'",[d.dependencies])).rowCount;if(blocked)throw Errors.conflict('dependencies_incomplete','Complete dependencies before starting work');
