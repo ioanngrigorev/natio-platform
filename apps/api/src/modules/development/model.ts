@@ -23,6 +23,7 @@ export function scheduleTemplate(input:z.infer<typeof scheduleInput>){
 export const developmentData=z.object({
  request:z.string().trim().max(12000).default(''),source_path:z.string().max(200).regex(/^\/(admin|dashboard)(?:\/[a-zA-Z0-9_-]+)*$/).default('/admin'),
  spec:specification,
+ ice:z.object({impact:z.number().int().min(1).max(10),confidence:z.number().int().min(1).max(10),ease:z.number().int().min(1).max(10)}).strict().nullable().optional(),
  monthly_revenue_usd:z.number().min(0).max(1e9).default(0),monthly_savings_usd:z.number().min(0).max(1e9).default(0),one_time_cost_usd:z.number().min(0).max(1e9).default(0),
  effort_hours:z.number().min(1/60).max(100000).default(8),complexity:z.number().int().min(1).max(5).default(3),confidence_pct:z.number().int().min(0).max(100).default(0),market_pct:z.number().int().min(0).max(100).default(0),
  evidence:z.string().max(4000).default(''),method:z.enum(['kanban','scrum','pmbok','hybrid']).default('kanban'),worker:z.enum(['ai','human','hybrid']).default('hybrid'),assignee:z.string().max(100).default(''),
@@ -50,3 +51,5 @@ export const ENGINEERING_RATE_USD = 30;
 export function engineeringCost(hours: number) {
  return {currency:'USD' as const,hourly_rate:ENGINEERING_RATE_USD,estimated_hours:hours,estimated_cost:Math.round(hours*ENGINEERING_RATE_USD*100)/100};
 }
+
+export const iceScore=(d:{ice?:{impact:number;confidence:number;ease:number}|null})=>d.ice?d.ice.impact*d.ice.confidence*d.ice.ease:null;

@@ -34,3 +34,21 @@ it('derives planning costs at $30 per hour on the server without changing busine
  expect(r.json().cost_estimate.estimated_cost).toBe(.5);
  r=await call(admin,'GET','/admin/development/'+b.id);expect(r.json().item.cost_estimate.hourly_rate).toBe(30);
 });
+
+it('validates ICE and ranks it before pagination without changing USD value',async()=>{
+ const a=body('ICE fixture low'),b=body('ICE fixture high'),unrated=body('ICE fixture unrated');
+ a.data.ice={impact:5,confidence:5,ease:5};b.data.ice={impact:9,confidence:8,ease:7};
+ for(const entry of [a,b,unrated])expect((await call(admin,'POST','/admin/development',entry)).statusCode).toBe(200);
+ const first=(await call(admin,'GET','/admin/development?q=ICE%20fixture&limit=1')).json();
+ expect(first.total).toBe(3);expect(first.data[0].id).toBe(b.id);expect(first.data[0].ice_score).toBe(504);expect(first.data[0].priority_score).toBe(priority(b.data));
+ const last=(await call(admin,'GET','/admin/development?q=ICE%20fixture&limit=1&offset=2')).json();expect(last.data[0].id).toBe(unrated.id);expect(last.data[0].ice_score).toBeNull();
+ for(const impact of [0,11,1.5])expect((await call(admin,'POST','/admin/development',{...body(),data:{...a.data,ice:{...a.data.ice,impact}}})).statusCode).toBe(422);
+});
+
+it('uses versioned board moves and rejects a stale drop',async()=>{
+ const b=body('Board move fixture');await call(admin,'POST','/admin/development',b);
+ expect((await call(admin,'POST','/admin/development/'+b.id+'/status',{version:1,status:'backlog'})).statusCode).toBe(200);
+ expect((await call(admin,'POST','/admin/development/'+b.id+'/status',{version:2,status:'todo'})).statusCode).toBe(200);
+ expect((await call(admin,'POST','/admin/development/'+b.id+'/status',{version:2,status:'in_progress'})).statusCode).toBe(409);
+ expect((await call(admin,'GET','/admin/development/'+b.id)).json().item.status).toBe('todo');
+});
