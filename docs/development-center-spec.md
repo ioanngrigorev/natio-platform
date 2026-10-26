@@ -63,3 +63,22 @@ The funded project key is stored only in the protected server environment. Live 
 ## Follow-up delivery plan
 
 The Gantt opens in a month with weekly ticks. Expandable phase rows distinguish analysis, development, testing, deployment and monitoring. Quarter/year/full-plan views, focus, date editing and Excel phase export preserve the same recorded dates. Synthetic dates are visibly labelled and do not influence real delivery metrics.
+
+## Board movement and ICE (26 October 2026)
+
+Scrum and Kanban share the same board: Backlog → To do → In progress → Code
+review → Test → Done. Dragging highlights only transitions returned by the API;
+a per-card select provides keyboard access. Each drop sends the current version
+to the existing status endpoint. The server remains authoritative for role,
+active agent run, sprint, dependency, WIP and completion-evidence checks. Failed
+or stale drops reload the board and display the error; they never leave a locally
+moved card behind. The WIP count distinguishes actual workspace work from demo
+cards and filtered column counts.
+
+Optional ICE fields are integers from 1 to 10: Impact × Confidence × Ease.
+Higher Ease means less effort. The score is a planning judgment, not measured
+revenue. Rated tasks sort by ICE descending before database pagination; unrated
+tasks follow using the previous financial ranking. Existing USD forecasts and
+priority values retain their meaning. ICE is editable in Value & priority and
+included in the Excel and printable specification exports. Record assumptions
+and sources in Evidence. Backlog creation does not start an agent run.
