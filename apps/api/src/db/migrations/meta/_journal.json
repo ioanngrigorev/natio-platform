@@ -148,6 +148,13 @@
       "when": 1792960000001,
       "tag": "0020_development_planning",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792960000002,
+      "tag": "0021_development_automation",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import {applyStatusRules} from './automation.js';
 import { loadConfig } from '../../config.js';
 import { getPool } from '../../db/client.js';
 import { Errors } from '../../lib/errors.js';
@@ -30,6 +31,7 @@ export async function startRun(a:Actor,id:string,b:{id:string;version:number;tar
     if(r.status!=='in_progress'&&count>=5)throw Errors.conflict('wip_limit','Finish active work first');
     const run=(await c.query('INSERT INTO development_runs(id,item_id,mode,requester_id,item_version,snapshot,target) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',[b.id,id,a.mode,a.id,b.version,JSON.stringify({title:r.title,spec:r.data.spec,definition_of_done:r.data.definition_of_done}),b.target])).rows[0];
     await c.query("UPDATE development_items SET status='in_progress',version=version+1,started_at=COALESCE(started_at,now()),updated_at=now() WHERE id=$1",[id]);
+    if(r.status!=='in_progress'){const eventId=await event(c,id,a,'status_changed',{from:r.status,to:'in_progress',reason:'Agent run requested'});await applyStatusRules(c,await item(c,id,a),eventId)}
     await event(c,id,a,'agent_run_requested',{run_id:b.id,target:b.target});
     return publicRun(run);
   });

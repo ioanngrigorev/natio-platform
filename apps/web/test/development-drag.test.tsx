@@ -35,3 +35,8 @@ it('drops a card before another card in manual order without changing its status
   expect(rank).toHaveBeenCalledExactlyOnceWith(second,'first');expect(move).not.toHaveBeenCalled();
  }finally{act(()=>root.unmount());host.remove()}
 });
+
+it('restores the selected ordering for the same workspace view',()=>{
+ Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});const host=document.createElement('div');document.body.append(host);let root=createRoot(host);const props={items:[],transitions:{},busy:false,onOpen:()=>{},onMove:async()=>{},onRank:async()=>{},preferenceKey:'order-test'};
+ try{act(()=>root.render(<DeliveryBoard {...props}/>));act(()=>{const select=host.querySelector('select')!;select.value='manual';select.dispatchEvent(new Event('change',{bubbles:true}))});act(()=>root.unmount());root=createRoot(host);act(()=>root.render(<DeliveryBoard {...props}/>));expect(host.querySelector('select')!.value).toBe('manual');}finally{act(()=>root.unmount());host.remove();localStorage.removeItem('natio-board-order:order-test')}
+});

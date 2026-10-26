@@ -1,3 +1,4 @@
+import {applyStatusRules} from './automation.js';
 import { isDeepStrictEqual } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
@@ -14,7 +15,7 @@ export function view(r:any,a:Actor){
 }
 export async function atomic<T>(mode:string,fn:(c:PoolClient)=>Promise<T>){const c=await getPool().connect();try{await c.query('BEGIN');await c.query("SELECT pg_advisory_xact_lock(hashtext('development:'||$1))",[mode]);const r=await fn(c);await c.query('COMMIT');return r}catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}
 export async function item(c:PoolClient|ReturnType<typeof getPool>,id:string,a:Actor,lock=false){const s=scope(a),r=(await c.query(`SELECT * FROM development_items WHERE id=$5 AND ${s.sql} ${lock?'FOR UPDATE':''}`,[...s.args,id])).rows[0];if(!r)throw Errors.notFound('Development item');return r}
-export async function event(c:PoolClient,id:string,a:Actor,name:string,detail:unknown={}){await c.query('INSERT INTO development_events(item_id,actor_kind,actor_id,event,detail) VALUES($1,$2,$3,$4,$5)',[id,a.kind,a.id,name,JSON.stringify(detail)])}
+export async function event(c:PoolClient,id:string,a:Actor,name:string,detail:unknown={}){return (await c.query('INSERT INTO development_events(item_id,actor_kind,actor_id,event,detail) VALUES($1,$2,$3,$4,$5) RETURNING id',[id,a.kind,a.id,name,JSON.stringify(detail)])).rows[0].id as number}
 export function version(r:any,v:number){if(r.version!==v)throw Errors.conflict('version_conflict','This item changed. Refresh before saving.');}
 export async function validateDependencies(c:PoolClient,id:string,deps:string[],a:Actor){
  if(new Set(deps).size!==deps.length)throw Errors.validation('Duplicate dependencies');
@@ -46,7 +47,7 @@ export async function moveItem(a:Actor,id:string,b:{version:number;status:Stage;
  const saved=(await c.query(`UPDATE development_items SET status=$2,version=version+1,updated_at=now(),started_at=CASE WHEN $2='in_progress' THEN COALESCE(started_at,now()) WHEN $2 IN ('draft','idea','backlog','analysis','todo') AND completed_at IS NOT NULL THEN NULL ELSE started_at END,completed_at=CASE WHEN $2='done' THEN now() WHEN $2 IN ('draft','idea','backlog','analysis','todo') THEN NULL ELSE completed_at END WHERE id=$1 RETURNING *`,[id,b.status])).rows[0];
  if(!['in_progress','review','test'].includes(b.status))await c.query("UPDATE development_work_sessions SET ended_at=now(),outcome='Stopped on status change' WHERE item_id=$1 AND ended_at IS NULL",[id]);
  if(b.status==='done'&&saved.visibility==='shared'&&!saved.is_demo)await c.query('INSERT INTO development_notices(id,mode,title,body,item_id) VALUES($1,$2,$3,$4,$5)',[randomUUID(),a.mode,'Released: '+saved.title,saved.public_summary,id]);
- await event(c,id,a,'status_changed',{from:r.status,to:b.status,reason:b.reason});return view(saved,a)})}
+ const eventId=await event(c,id,a,'status_changed',{from:r.status,to:b.status,reason:b.reason});return view(await applyStatusRules(c,saved,eventId),a)})}
 export async function timer(a:Actor,id:string,b:{action:'start'|'stop';worker:'ai'|'human';outcome:string}){return atomic(a.mode,async c=>{if(!a.manager)throw Errors.forbidden('Delivery manager required');const r=await item(c,id,a,true);if(b.action==='start'){
  if(!['in_progress','review','test'].includes(r.status)||r.is_demo)throw Errors.validation('Start timers only on real active development work');
  const running=await c.query('SELECT 1 FROM development_work_sessions WHERE actor_kind=$1 AND actor_id=$2 AND ended_at IS NULL',[a.kind,a.id]);if(running.rowCount)throw Errors.conflict('timer_running','Stop your existing timer first');
