@@ -15,7 +15,11 @@ Existing: versioned tasks, specifications, assignments, dependencies, sprint goa
 
 This change: Backlog → Analysis → To do → In progress → Test → Done; draggable cards and keyboard status control; create directly from the backlog column; actual-work default. Legacy review records move to Test with an audit event. Independent agent code review remains mandatory. Done still requires acceptance/release evidence. Existing reviewed backlog items may go directly to To do. Unprepared new requests remain drafts until objective and acceptance criteria are supplied.
 
-## Remaining capability backlog
+## Planning release (in validation)
+
+Stable NAT keys and epic/story/task/bug/subtask hierarchy; title-only backlog capture with readiness checks at To do; persistent manual card ordering with workspace serialization and version conflict detection; drag or button assignment between unassigned backlog and an open sprint, preserving status. ICE remains the default selectable order. Hierarchy selectors use the currently loaded authorized tasks. Full-text/JQL search and arbitrary custom hierarchy levels are not included.
+
+## Capability acceptance matrix
 
 | Capability | Acceptance criteria | I/C/E | ICE |
 |---|---|---|---|
