@@ -26,6 +26,7 @@ export async function registerDevelopmentRoutes(app:FastifyInstance){
  for(const admin of [true,false]){
  const base=admin?'/admin/development':'/dashboard/development',guard=admin?requireAdmin():requireMerchant();
  if(admin){
+ app.get(base+'/people',{preHandler:guard},async req=>{if(!actor(req,true).manager)throw Errors.forbidden('Delivery manager required');return {data:(await p.query("SELECT id,name,email FROM admin_users WHERE status='active' AND length(email)<=100 ORDER BY name,id LIMIT 200")).rows}});
  app.get(base+'/:id/runs',{preHandler:guard},async req=>listRuns(actor(req,true),parse(param,req.params).id));
  app.post(base+'/:id/runs',{preHandler:guard,config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async req=>startRun(actor(req,true),parse(param,req.params).id,parse(z.object({id:z.string().uuid(),version:v,target:z.enum(['test','production'])}).strict(),req.body)));
  const runParam=z.object({id:z.string().uuid(),runId:z.string().uuid()});
