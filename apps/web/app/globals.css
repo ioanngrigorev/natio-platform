@@ -226,7 +226,7 @@ body {
 .bpmn-canvas { --bpmn-paper: var(--surface, #fff); --bpmn-lane: var(--surface, #f7f8fa); --bpmn-border: var(--chart-grid, #dedee8); color: inherit; }
 @media print {
   .bpmn-diagram { break-inside: avoid; }
-  .bpmn-canvas { min-width: 0 !important; --bpmn-paper: #fff; --bpmn-lane: #f7f8fa; --bpmn-border: #d8dbe0; color: #192332 !important; }
+  .bpmn-canvas { width: 100% !important; min-width: 0 !important; --bpmn-paper: #fff; --bpmn-lane: #f7f8fa; --bpmn-border: #d8dbe0; color: #192332 !important; }
 }
 
 /* Explicit language selection is persisted across public, merchant and admin pages. */
